@@ -33,21 +33,10 @@ namespace LxRunHook
 
 		IntPtr InternetOpenUrlAHook(IntPtr hInternet, string lpszUrl, string lpszHeaders, int dwHeadersLength, IntPtr dwContext)
 		{
-			try
-			{
-				var hFile = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
-				WriteLine($"Captured InternetOpenUrlA: {hInternet} {hFile} {lpszUrl} {lpszHeaders} {dwHeadersLength}");
-				if (lpszUrl.EndsWith("747853")) currentFile = iconFile;
-				else if (lpszUrl.EndsWith("730581") || lpszUrl.EndsWith("827586")) currentFile = imageFile;
-				else WriteLine("Invalid request detected!");
-				return hFile;
-			}
-			catch (Exception e)
-			{
-				WriteLine(e);
-				Environment.FailFast(e.Message);
-				return IntPtr.Zero;
-			}
+			var hFile = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
+			if (lpszUrl.EndsWith("747853")) currentFile = iconFile;
+			else if (lpszUrl.EndsWith("730581") || lpszUrl.EndsWith("827586")) currentFile = imageFile;
+			return hFile;
 		}
 
 		#endregion
@@ -64,11 +53,7 @@ namespace LxRunHook
 		{
 			try
 			{
-				if (currentFile == null)
-				{
-					WriteLine("Invalid request detected!");
-					return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
-				}
+				if (currentFile == null) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
 				var buffer = new byte[dwNumberOfBytesToRead];
 				lpdwNumberOfBytesRead = currentFile.Read(buffer, 0, dwNumberOfBytesToRead);
 				if (lpdwNumberOfBytesRead == 0)

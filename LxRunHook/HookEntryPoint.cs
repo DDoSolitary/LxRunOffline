@@ -1,9 +1,8 @@
 ﻿using System;
-using EasyHook;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
-using System.Threading;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading;
+using EasyHook;
 
 namespace LxRunHook
 {

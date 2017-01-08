@@ -35,7 +35,7 @@ namespace LxRunHook
 		IntPtr InternetOpenUrlAHook(IntPtr hInternet, string lpszUrl, string lpszHeaders, int dwHeadersLength, IntPtr dwContext)
 		{
 			var hUrl = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
-			if (hUrl != IntPtr.Zero)
+			if (hUrl != IntPtr.Zero && lpszUrl != null)
 			{
 				try
 				{
@@ -52,6 +52,7 @@ namespace LxRunHook
 				}
 				catch (Exception e)
 				{
+					WriteLine("Error: Failed to open the file.");
 					WriteLine(e);
 					return IntPtr.Zero;
 				}
@@ -71,15 +72,24 @@ namespace LxRunHook
 
 		bool InternetCloseHandleHook(IntPtr hInternet)
 		{
-			if (hInternet == imageHandle)
+			try
 			{
-				imageFile.Dispose();
-				imageHandle = IntPtr.Zero;
+				if (hInternet == imageHandle)
+				{
+					imageFile.Dispose();
+					imageHandle = IntPtr.Zero;
+				}
+				else if (hInternet == iconHandle)
+				{
+					iconFile.Dispose();
+					iconHandle = IntPtr.Zero;
+				}
 			}
-			else if (hInternet == iconHandle)
+			catch (Exception e)
 			{
-				iconFile.Dispose();
-				iconHandle = IntPtr.Zero;
+				WriteLine("Error: Failed to close the file.");
+				WriteLine(e);
+				return false;
 			}
 			return InternetCloseHandle(hInternet);
 		}
@@ -96,12 +106,12 @@ namespace LxRunHook
 
 		bool InternetReadFileHook(IntPtr hFile, IntPtr lpBuffer, int dwNumberOfBytesToRead, out int lpdwNumberOfBytesRead)
 		{
+			FileStream file = null;
+			if (hFile == imageHandle) file = imageFile;
+			else if (hFile == iconHandle) file = iconFile;
+			if (file == null || hFile == IntPtr.Zero) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
 			try
 			{
-				FileStream file = null;
-				if (hFile == imageHandle) file = imageFile;
-				else if (hFile == iconHandle) file = iconFile;
-				if (file == null || hFile == IntPtr.Zero) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
 				var buffer = new byte[dwNumberOfBytesToRead];
 				lpdwNumberOfBytesRead = file.Read(buffer, 0, dwNumberOfBytesToRead);
 				Marshal.Copy(buffer, 0, lpBuffer, lpdwNumberOfBytesRead);
@@ -109,8 +119,8 @@ namespace LxRunHook
 			}
 			catch (Exception e)
 			{
+				WriteLine("Error: Failed to read the file.");
 				WriteLine(e);
-				Environment.FailFast(e.Message);
 				lpdwNumberOfBytesRead = 0;
 				return false;
 			}
@@ -120,12 +130,12 @@ namespace LxRunHook
 
 		public void Run(RemoteHooking.IContext context)
 		{
+			Write("Enter path to the Ubuntu image file: ");
+			imagePath = Console.ReadLine();
+			Write("Enter path to the icon file: ");
+			iconPath = Console.ReadLine();
 			try
 			{
-				Write("Enter path to the Ubuntu image file: ");
-				imagePath = Console.ReadLine();
-				Write("Enter path to the icon file: ");
-				iconPath = Console.ReadLine();
 				using (var hook1 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetOpenUrlA"), new InternetOpenUrlADelegate(InternetOpenUrlAHook), null))
 				using (var hook2 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetCloseHandle"), new InternetCloseHandleDelegate(InternetCloseHandleHook), null))
 				using (var hook3 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetReadFile"), new InternetReadFileDelegate(InternetReadFileHook), null))
@@ -133,13 +143,13 @@ namespace LxRunHook
 					hook1.ThreadACL.SetExclusiveACL(new[] { 0 });
 					hook2.ThreadACL.SetExclusiveACL(new[] { 0 });
 					hook3.ThreadACL.SetExclusiveACL(new[] { 0 });
-					WriteLine("Hooked: " + Process.GetCurrentProcess().ProcessName);
 					RemoteHooking.WakeUpProcess();
 					Thread.Sleep(Timeout.Infinite);
 				}
 			}
 			catch (Exception e)
 			{
+				WriteLine("Error: Failed to install hooks in LxRun.");
 				WriteLine(e);
 				Environment.FailFast(e.Message);
 			}

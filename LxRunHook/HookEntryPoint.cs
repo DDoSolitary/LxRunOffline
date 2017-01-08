@@ -9,7 +9,9 @@ namespace LxRunHook
 {
 	public class HookEntryPoint : IEntryPoint
 	{
-		FileStream imageFile, iconFile, currentFile;
+		string imagePath, iconPath;
+		IntPtr imageHandle, iconHandle;
+		FileStream imageFile, iconFile;
 
 		public HookEntryPoint(RemoteHooking.IContext context) { }
 
@@ -22,7 +24,6 @@ namespace LxRunHook
 
 		void WriteLine(object s) { Write(s + Environment.NewLine); }
 
-
 		#region InternetOpenUrlA
 
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
@@ -33,10 +34,54 @@ namespace LxRunHook
 
 		IntPtr InternetOpenUrlAHook(IntPtr hInternet, string lpszUrl, string lpszHeaders, int dwHeadersLength, IntPtr dwContext)
 		{
-			var hFile = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
-			if (lpszUrl.EndsWith("747853")) currentFile = iconFile;
-			else if (lpszUrl.EndsWith("730581") || lpszUrl.EndsWith("827586")) currentFile = imageFile;
-			return hFile;
+			var hUrl = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
+			if (hUrl != IntPtr.Zero)
+			{
+				try
+				{
+					if (lpszUrl.EndsWith("747853"))
+					{
+						iconFile = File.OpenRead(iconPath);
+						iconHandle = hUrl;
+					}
+					else if (lpszUrl.EndsWith("730581") || lpszUrl.EndsWith("827586"))
+					{
+						imageFile = File.OpenRead(imagePath);
+						imageHandle = hUrl;
+					}
+				}
+				catch (Exception e)
+				{
+					WriteLine(e);
+					return IntPtr.Zero;
+				}
+			}
+			return hUrl;
+		}
+
+		#endregion
+
+		#region InternetCloseHandle
+
+		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
+		delegate bool InternetCloseHandleDelegate(IntPtr hInternet);
+
+		[DllImport("wininet.dll", SetLastError = true)]
+		static extern bool InternetCloseHandle(IntPtr hInternet);
+
+		bool InternetCloseHandleHook(IntPtr hInternet)
+		{
+			if (hInternet == imageHandle)
+			{
+				imageFile.Dispose();
+				imageHandle = IntPtr.Zero;
+			}
+			else if (hInternet == iconHandle)
+			{
+				iconFile.Dispose();
+				iconHandle = IntPtr.Zero;
+			}
+			return InternetCloseHandle(hInternet);
 		}
 
 		#endregion
@@ -53,14 +98,12 @@ namespace LxRunHook
 		{
 			try
 			{
-				if (currentFile == null) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
+				FileStream file = null;
+				if (hFile == imageHandle) file = imageFile;
+				else if (hFile == iconHandle) file = iconFile;
+				if (file == null || hFile == IntPtr.Zero) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
 				var buffer = new byte[dwNumberOfBytesToRead];
-				lpdwNumberOfBytesRead = currentFile.Read(buffer, 0, dwNumberOfBytesToRead);
-				if (lpdwNumberOfBytesRead == 0)
-				{
-					currentFile.Dispose();
-					currentFile = null;
-				}
+				lpdwNumberOfBytesRead = file.Read(buffer, 0, dwNumberOfBytesToRead);
 				Marshal.Copy(buffer, 0, lpBuffer, lpdwNumberOfBytesRead);
 				return true;
 			}
@@ -80,14 +123,16 @@ namespace LxRunHook
 			try
 			{
 				Write("Enter path to the Ubuntu image file: ");
-				imageFile = File.OpenRead(Console.ReadLine());
+				imagePath = Console.ReadLine();
 				Write("Enter path to the icon file: ");
-				iconFile = File.OpenRead(Console.ReadLine());
+				iconPath = Console.ReadLine();
 				using (var hook1 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetOpenUrlA"), new InternetOpenUrlADelegate(InternetOpenUrlAHook), null))
-				using (var hook2 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetReadFile"), new InternetReadFileDelegate(InternetReadFileHook), null))
+				using (var hook2 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetCloseHandle"), new InternetCloseHandleDelegate(InternetCloseHandleHook), null))
+				using (var hook3 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetReadFile"), new InternetReadFileDelegate(InternetReadFileHook), null))
 				{
 					hook1.ThreadACL.SetExclusiveACL(new[] { 0 });
 					hook2.ThreadACL.SetExclusiveACL(new[] { 0 });
+					hook3.ThreadACL.SetExclusiveACL(new[] { 0 });
 					WriteLine("Hooked: " + Process.GetCurrentProcess().ProcessName);
 					RemoteHooking.WakeUpProcess();
 					Thread.Sleep(Timeout.Infinite);

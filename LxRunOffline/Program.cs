@@ -11,7 +11,7 @@ namespace LxRunOffline
 			int pId = 0;
 			try
 			{
-				RemoteHooking.CreateAndInject(@"C:\Windows\System32\LxRun.exe", "/install", 0, "LxRunHook.dll", "LxRunHook.dll", out pId);
+				RemoteHooking.CreateAndInject(@"C:\Windows\System32\LxRun.exe", string.Join(" ", args), 0, "LxRunHook.dll", "LxRunHook.dll", out pId);
 			}
 			catch (Exception e)
 			{

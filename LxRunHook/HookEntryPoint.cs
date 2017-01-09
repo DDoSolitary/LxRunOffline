@@ -25,6 +25,9 @@ namespace LxRunHook
 
 		void WriteLine(object s) { Write(s + Environment.NewLine); }
 
+		[DllImport("wininet.dll", SetLastError = true)]
+		static extern IntPtr InternetOpenA(string lpszAgent, int dwAccessType, string lpszProxyName, string lpszProxyBypass, int dwFlags);
+
 		#region InternetOpenUrlA
 
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
@@ -35,15 +38,16 @@ namespace LxRunHook
 
 		IntPtr InternetOpenUrlAHook(IntPtr hInternet, string lpszUrl, string lpszHeaders, int dwHeadersLength, IntPtr dwContext)
 		{
-			var hUrl = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
-			if (hUrl != IntPtr.Zero && lpszUrl != null)
+			IntPtr hUrl = IntPtr.Zero;
+			if (string.Equals(lpszUrl, urlTemplate + "747853", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(lpszUrl, urlTemplate + "730581", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(lpszUrl, urlTemplate + "827586", StringComparison.OrdinalIgnoreCase))
 			{
 				try
 				{
-					if (lpszUrl.Equals(urlTemplate + "747853", StringComparison.OrdinalIgnoreCase))
-						handleDic.Add(hUrl, File.OpenRead(iconPath));
-					else if (lpszUrl.Equals(urlTemplate + "730581", StringComparison.OrdinalIgnoreCase)|| lpszUrl.Equals(urlTemplate + "827586", StringComparison.OrdinalIgnoreCase))
-						handleDic.Add(hUrl, File.OpenRead(imagePath));
+					// Get a dummy handle
+					hUrl = InternetOpenA("", 0, null, null, 0);
+					handleDic.Add(hUrl, File.OpenRead(lpszUrl.EndsWith("747853") ? iconPath : imagePath));
 				}
 				catch (Exception e)
 				{
@@ -52,6 +56,7 @@ namespace LxRunHook
 					return IntPtr.Zero;
 				}
 			}
+			else hUrl = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
 			return hUrl;
 		}
 

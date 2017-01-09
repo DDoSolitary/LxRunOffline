@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -11,8 +12,7 @@ namespace LxRunHook
 		const string urlTemplate = "https://go.microsoft.com/fwlink/?LinkID=";
 
 		string imagePath, iconPath;
-		IntPtr imageHandle, iconHandle;
-		FileStream imageFile, iconFile;
+		Dictionary<IntPtr, FileStream> handleDic = new Dictionary<IntPtr, FileStream>();
 
 		public HookEntryPoint(RemoteHooking.IContext context) { }
 
@@ -41,15 +41,9 @@ namespace LxRunHook
 				try
 				{
 					if (lpszUrl.Equals(urlTemplate + "747853", StringComparison.OrdinalIgnoreCase))
-					{
-						iconFile = File.OpenRead(iconPath);
-						iconHandle = hUrl;
-					}
+						handleDic.Add(hUrl, File.OpenRead(iconPath));
 					else if (lpszUrl.Equals(urlTemplate + "730581", StringComparison.OrdinalIgnoreCase)|| lpszUrl.Equals(urlTemplate + "827586", StringComparison.OrdinalIgnoreCase))
-					{
-						imageFile = File.OpenRead(imagePath);
-						imageHandle = hUrl;
-					}
+						handleDic.Add(hUrl, File.OpenRead(imagePath));
 				}
 				catch (Exception e)
 				{
@@ -75,15 +69,11 @@ namespace LxRunHook
 		{
 			try
 			{
-				if (hInternet == imageHandle)
+				if (handleDic.ContainsKey(hInternet))
 				{
-					imageHandle = IntPtr.Zero;
-					imageFile.Dispose();
-				}
-				else if (hInternet == iconHandle)
-				{
-					iconHandle = IntPtr.Zero;
-					iconFile.Dispose();
+					var file = handleDic[hInternet];
+					handleDic.Remove(hInternet);
+					file.Dispose();
 				}
 			}
 			catch (Exception e)
@@ -107,10 +97,8 @@ namespace LxRunHook
 
 		bool InternetReadFileHook(IntPtr hFile, IntPtr lpBuffer, int dwNumberOfBytesToRead, out int lpdwNumberOfBytesRead)
 		{
-			FileStream file = null;
-			if (hFile == imageHandle) file = imageFile;
-			else if (hFile == iconHandle) file = iconFile;
-			if (file == null || hFile == IntPtr.Zero) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
+			if (!handleDic.ContainsKey(hFile)) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
+			FileStream file = handleDic[hFile];
 			try
 			{
 				var buffer = new byte[dwNumberOfBytesToRead];

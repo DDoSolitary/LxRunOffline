@@ -18,6 +18,7 @@ namespace LxRunOffline
 				Console.ForegroundColor = ConsoleColor.Yellow;
 				Console.WriteLine("Error: Failed to launch LxRun.");
 				Console.WriteLine(e);
+				Console.ResetColor();
 				Environment.Exit(-1);
 			}
 			var process = Process.GetProcessById(pId);

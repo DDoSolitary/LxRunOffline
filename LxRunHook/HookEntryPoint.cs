@@ -75,18 +75,18 @@ namespace LxRunHook
 			{
 				if (hInternet == imageHandle)
 				{
-					imageFile.Dispose();
 					imageHandle = IntPtr.Zero;
+					imageFile.Dispose();
 				}
 				else if (hInternet == iconHandle)
 				{
-					iconFile.Dispose();
 					iconHandle = IntPtr.Zero;
+					iconFile.Dispose();
 				}
 			}
 			catch (Exception e)
 			{
-				WriteLine("Error: Failed to close the file.");
+				WriteLine("Warning: Failed to close the file.");
 				WriteLine(e);
 				return false;
 			}
@@ -150,7 +150,7 @@ namespace LxRunHook
 			{
 				WriteLine("Error: Failed to install hooks in LxRun.");
 				WriteLine(e);
-				Environment.FailFast(e.Message);
+				Environment.Exit(-1);
 			}
 		}
 	}

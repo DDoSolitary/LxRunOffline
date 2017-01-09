@@ -12,7 +12,7 @@ namespace LxRunHook
 		const string urlTemplate = "https://go.microsoft.com/fwlink/?LinkID=";
 
 		string imagePath, iconPath;
-		Dictionary<IntPtr, FileStream> handleDic = new Dictionary<IntPtr, FileStream>();
+		Dictionary<IntPtr, string> handleDic = new Dictionary<IntPtr, string>();
 
 		public HookEntryPoint(RemoteHooking.IContext context) { }
 
@@ -25,9 +25,6 @@ namespace LxRunHook
 
 		void WriteLine(object s) { Write(s + Environment.NewLine); }
 
-		[DllImport("wininet.dll", SetLastError = true)]
-		static extern IntPtr InternetOpenA(string lpszAgent, int dwAccessType, string lpszProxyName, string lpszProxyBypass, int dwFlags);
-
 		#region InternetOpenUrlA
 
 		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
@@ -38,26 +35,40 @@ namespace LxRunHook
 
 		IntPtr InternetOpenUrlAHook(IntPtr hInternet, string lpszUrl, string lpszHeaders, int dwHeadersLength, IntPtr dwContext)
 		{
-			IntPtr hUrl = IntPtr.Zero;
 			if (string.Equals(lpszUrl, urlTemplate + "747853", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(lpszUrl, urlTemplate + "730581", StringComparison.OrdinalIgnoreCase) ||
 				string.Equals(lpszUrl, urlTemplate + "827586", StringComparison.OrdinalIgnoreCase))
 			{
-				try
-				{
-					// Get a dummy handle
-					hUrl = InternetOpenA("", 0, null, null, 0);
-					handleDic.Add(hUrl, File.OpenRead(lpszUrl.EndsWith("747853") ? iconPath : imagePath));
-				}
-				catch (Exception e)
-				{
-					WriteLine("Error: Failed to open the file.");
-					WriteLine(e);
-					return IntPtr.Zero;
-				}
+				var path = lpszUrl.EndsWith("747853") ? iconPath : imagePath;
+				var hUrl = InternetOpenUrlA(hInternet, "file://" + path, lpszHeaders, dwHeadersLength, dwContext);
+				handleDic.Add(hUrl, path);
+				return hUrl;
 			}
-			else hUrl = InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
-			return hUrl;
+			return InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwContext);
+		}
+
+		#endregion
+
+		#region HttpQueryInfoA
+
+		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
+		delegate bool HttpQueryInfoADelegate(IntPtr hRequest, int dwInfoLevel, IntPtr lpvBuffer, ref uint lpdwBufferLength, IntPtr lpdwIndex);
+
+		[DllImport("wininet.dll", SetLastError = true)]
+		static extern bool HttpQueryInfoA(IntPtr hRequest, int dwInfoLevel, IntPtr lpvBuffer, ref uint lpdwBufferLength, IntPtr lpdwIndex);
+
+		bool HttpQueryInfoAHook(IntPtr hRequest, int dwInfoLevel, IntPtr lpvBuffer, ref uint lpdwBufferLength, IntPtr lpdwIndex)
+		{
+			if (handleDic.ContainsKey(hRequest))
+			{
+				if (dwInfoLevel != 0x20000000 + 5 || !File.Exists(handleDic[hRequest])) return false;
+				var length = lpdwBufferLength;
+				lpdwBufferLength = 4;
+				if (length < 4) return false;
+				Marshal.WriteInt32(lpvBuffer, (int)new FileInfo(handleDic[hRequest]).Length);
+				return true;
+			}
+			return HttpQueryInfoA(hRequest, dwInfoLevel, lpvBuffer, ref lpdwBufferLength, lpdwIndex);
 		}
 
 		#endregion
@@ -72,52 +83,8 @@ namespace LxRunHook
 
 		bool InternetCloseHandleHook(IntPtr hInternet)
 		{
-			try
-			{
-				if (handleDic.ContainsKey(hInternet))
-				{
-					var file = handleDic[hInternet];
-					handleDic.Remove(hInternet);
-					file.Dispose();
-				}
-			}
-			catch (Exception e)
-			{
-				WriteLine("Warning: Failed to close the file.");
-				WriteLine(e);
-				return false;
-			}
+			if (handleDic.ContainsKey(hInternet)) handleDic.Remove(hInternet);
 			return InternetCloseHandle(hInternet);
-		}
-
-		#endregion
-
-		#region InternetReadFile
-
-		[UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-		delegate bool InternetReadFileDelegate(IntPtr hFile, IntPtr lpBuffer, int dwNumberOfBytesToRead, out int lpdwNumberOfBytesRead);
-
-		[DllImport("wininet.dll", SetLastError = true)]
-		static extern bool InternetReadFile(IntPtr hFile, IntPtr lpBuffer, int dwNumberOfBytesToRead, out int lpdwNumberOfBytesRead);
-
-		bool InternetReadFileHook(IntPtr hFile, IntPtr lpBuffer, int dwNumberOfBytesToRead, out int lpdwNumberOfBytesRead)
-		{
-			if (!handleDic.ContainsKey(hFile)) return InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, out lpdwNumberOfBytesRead);
-			FileStream file = handleDic[hFile];
-			try
-			{
-				var buffer = new byte[dwNumberOfBytesToRead];
-				lpdwNumberOfBytesRead = file.Read(buffer, 0, dwNumberOfBytesToRead);
-				Marshal.Copy(buffer, 0, lpBuffer, lpdwNumberOfBytesRead);
-				return true;
-			}
-			catch (Exception e)
-			{
-				WriteLine("Error: Failed to read the file.");
-				WriteLine(e);
-				lpdwNumberOfBytesRead = 0;
-				return false;
-			}
 		}
 
 		#endregion
@@ -131,8 +98,8 @@ namespace LxRunHook
 			try
 			{
 				using (var hook1 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetOpenUrlA"), new InternetOpenUrlADelegate(InternetOpenUrlAHook), null))
-				using (var hook2 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetCloseHandle"), new InternetCloseHandleDelegate(InternetCloseHandleHook), null))
-				using (var hook3 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetReadFile"), new InternetReadFileDelegate(InternetReadFileHook), null))
+				using (var hook2 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "HttpQueryInfoA"), new HttpQueryInfoADelegate(HttpQueryInfoAHook), null))
+				using (var hook3 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetCloseHandle"), new InternetCloseHandleDelegate(InternetCloseHandleHook), null))
 				{
 					hook1.ThreadACL.SetExclusiveACL(new[] { 0 });
 					hook2.ThreadACL.SetExclusiveACL(new[] { 0 });

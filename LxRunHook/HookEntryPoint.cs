@@ -8,6 +8,8 @@ namespace LxRunHook
 {
 	public class HookEntryPoint : IEntryPoint
 	{
+		const string urlTemplate = "https://go.microsoft.com/fwlink/?LinkID=";
+
 		string imagePath, iconPath;
 		IntPtr imageHandle, iconHandle;
 		FileStream imageFile, iconFile;
@@ -38,12 +40,12 @@ namespace LxRunHook
 			{
 				try
 				{
-					if (lpszUrl.EndsWith("747853"))
+					if (lpszUrl.Equals(urlTemplate + "747853", StringComparison.OrdinalIgnoreCase))
 					{
 						iconFile = File.OpenRead(iconPath);
 						iconHandle = hUrl;
 					}
-					else if (lpszUrl.EndsWith("730581") || lpszUrl.EndsWith("827586"))
+					else if (lpszUrl.Equals(urlTemplate + "730581", StringComparison.OrdinalIgnoreCase)|| lpszUrl.Equals(urlTemplate + "827586", StringComparison.OrdinalIgnoreCase))
 					{
 						imageFile = File.OpenRead(imagePath);
 						imageHandle = hUrl;

@@ -1,4 +1,7 @@
 # LxRunOffline
+
+[![Build status](https://ci.appveyor.com/api/projects/status/wnqrsjk1rdc1cmpn?svg=true)](https://ci.appveyor.com/project/sqc1999/lxrunoffline)
+
 An offline installer for Bash on Windows.
 
 # Features
@@ -6,9 +9,9 @@ An offline installer for Bash on Windows.
 - **Install any version of Ubuntu!**
 
 # How to use
-1. Prepare an Ubuntu pre-installed disk image.<br/>
+1. Prepare an Ubuntu pre-installed disk image.  
   You have several choices.
-  - Download an image from Ubuntu Cloud Image: https://cloud-images.ubuntu.com/releases/.<br/>
+  - Download an image from Ubuntu Cloud Image: https://cloud-images.ubuntu.com/releases/.  
     Note: Download the files that are named as `xx-server-cloudimg-amd64-root.tar.gz`.
   - Download the Ubuntu 14.04 image from Microsoft: https://wsldownload.azureedge.net/trusty-server-cloudimg-amd64-root.tar.gz.
   - Download the Ubuntu 16.04 image from Microsoft: https://wsldownload.azureedge.net/16.4.1-server-cloudimg-amd64-root.tar.gz.

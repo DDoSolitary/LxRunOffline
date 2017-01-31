@@ -1,0 +1,33 @@
+image: Visual Studio 2017 RC
+init:
+  - ps: |
+      if ($Env:APPVEYOR_REPO_TAG -eq "true") { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }
+      else { Update-AppveyorBuild -Version "dev-$($Env:APPVEYOR_REPO_COMMIT.Substring(0, 7))" }
+install:
+  - ps: |
+      Invoke-WebRequest -Uri "https://dotnet.myget.org/F/nuget-build/api/v2/package/NuGet.CommandLine" -OutFile "NuGet.nupkg"
+      7z e "NuGet.nupkg" "tools\NuGet.exe"
+      rm NuGet.nupkg
+configuration: Release
+build:
+  parallel: true
+before_build:
+  - ps: .\NuGet restore
+after_build:
+  - ps: |
+      $project = $Env:APPVEYOR_PROJECT_NAME
+      $name = "$project-$Env:APPVEYOR_BUILD_VERSION"
+      $dir = "$project\bin\$Env:CONFIGURATION"
+      md "$name"
+      cp @("$dir\$project.exe", "$dir\$project.exe.config", "$dir\*.dll") "$name"
+      7z a "$name.zip" "$name"
+artifacts:
+  - path: '*.zip'
+
+deploy:
+  - provider: GitHub
+    artifact: /.*\.zip/
+    auth_token:
+      secure: 5AlQWeRE8ygXF64hrS4Eix9lMiicAnetjiu9l91QHTb2Oao+gBnPHsIGdEh5GCvM
+    on:
+      appveyor_repo_tag: true

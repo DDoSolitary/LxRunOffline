@@ -1,4 +1,4 @@
-# LxRunOffline
+﻿# LxRunOffline
 
 [![Build status](https://ci.appveyor.com/api/projects/status/wnqrsjk1rdc1cmpn?svg=true)](https://ci.appveyor.com/project/ddosolitary/lxrunoffline)
 

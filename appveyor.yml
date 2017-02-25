@@ -1,4 +1,4 @@
-image: Visual Studio 2017 RC
+﻿image: Visual Studio 2017 RC
 init:
   - ps: |
       if ($Env:APPVEYOR_REPO_TAG -eq "true") { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }

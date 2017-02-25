@@ -23,11 +23,10 @@ after_build:
       7z a "$name.zip" "$name"
 artifacts:
   - path: '*.zip'
-
 deploy:
   - provider: GitHub
     artifact: /.*\.zip/
     auth_token:
-      secure: 5AlQWeRE8ygXF64hrS4Eix9lMiicAnetjiu9l91QHTb2Oao+gBnPHsIGdEh5GCvM
+      secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:
       appveyor_repo_tag: true

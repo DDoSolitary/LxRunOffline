@@ -9,14 +9,8 @@ An offline installer for Bash on Windows.
 - **Install any version of Ubuntu!**
 
 # How to use
-1. Prepare an Ubuntu pre-installed disk image.  
-  You have several choices.
-  - Download an image from Ubuntu Cloud Image: https://cloud-images.ubuntu.com/releases/.  
-    Note: Download the files that are named as `xx-server-cloudimg-amd64-root.tar.gz`.
-  - Download the Ubuntu 14.04 image from Microsoft: https://wsldownload.azureedge.net/trusty-server-cloudimg-amd64-root.tar.gz.
-  - Download the Ubuntu 16.04 image from Microsoft: https://wsldownload.azureedge.net/16.4.1-server-cloudimg-amd64-root.tar.gz.
-  - Use an image from somewhere else if you want to.
-2. Download the icon file: https://wsldownload.azureedge.net/ubuntu.ico. (You can use another one too!)
+1. [Prepare an Ubuntu pre-installed disk image.](https://github.com/DDoSolitary/LxRunOffline/wiki/Guide-for-fetching-Ubuntu-pre-installed-images)
+2. Download the icon file: https://wsldownload.azureedge.net/ubuntu.ico.
 3. Run `LxRunOffline /install`. Or use other arguments you need, just like you're using `LxRun.exe`.
 4. Enter the paths of the two files you prepared when prompted. (**Note: You should use absolute paths, relative ones are not supported**)
 5. Finish the installation.

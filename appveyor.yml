@@ -26,6 +26,10 @@ artifacts:
 deploy:
   - provider: GitHub
     artifact: /.*\.zip/
+    description: |
+      **Release Notes**
+      - Relative paths are now supported.
+      - The EasyHook package is updated.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

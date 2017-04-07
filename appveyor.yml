@@ -19,7 +19,7 @@ after_build:
       $name = "$project-$Env:APPVEYOR_BUILD_VERSION"
       $dir = "$project\bin\$Env:CONFIGURATION"
       md "$name"
-      cp @("$dir\$project.exe", "$dir\$project.exe.config", "$dir\*.dll") "$name"
+      cp @("$dir\$project.exe", "$dir\$project.exe.config", "$dir\*.dll", "LICENSE", "LICENSE-3RD-PARTY") "$name"
       7z a "$name.zip" "$name"
 artifacts:
   - path: '*.zip'

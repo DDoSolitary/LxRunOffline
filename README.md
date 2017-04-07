@@ -12,7 +12,7 @@ An offline installer for Bash on Windows.
 1. [Prepare an Ubuntu pre-installed disk image.](https://github.com/DDoSolitary/LxRunOffline/wiki/Guide-for-fetching-Ubuntu-pre-installed-images)
 2. Download the icon file: https://wsldownload.azureedge.net/ubuntu.ico.
 3. Run `LxRunOffline /install`. Or use other arguments you need, just like you're using `LxRun.exe`.
-4. Enter the paths of the two files you prepared when prompted. (**Note: You should use absolute paths, relative ones are not supported**)
+4. Enter the paths of the two files you prepared when prompted.
 5. Finish the installation.
 
 # How it works

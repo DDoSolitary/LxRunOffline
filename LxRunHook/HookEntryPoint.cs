@@ -14,16 +14,7 @@ namespace LxRunHook
 		string imagePath, iconPath;
 		Dictionary<IntPtr, string> handleDic = new Dictionary<IntPtr, string>();
 
-		public HookEntryPoint(RemoteHooking.IContext context) { }
-
-		void Write(object s)
-		{
-			Console.ForegroundColor = ConsoleColor.Yellow;
-			Console.Write(s);
-			Console.ResetColor();
-		}
-
-		void WriteLine(object s) { Write(s + Environment.NewLine); }
+		public HookEntryPoint(RemoteHooking.IContext context, string imagePath, string iconPath) { }
 
 		#region InternetOpenUrlA
 
@@ -89,12 +80,11 @@ namespace LxRunHook
 
 		#endregion
 
-		public void Run(RemoteHooking.IContext context)
+		public void Run(RemoteHooking.IContext context, string imagePath, string iconPath)
 		{
-			Write("Enter path to the Ubuntu image file: ");
-			imagePath = Console.ReadLine();
-			Write("Enter path to the icon file: ");
-			iconPath = Console.ReadLine();
+			this.imagePath = imagePath;
+			this.iconPath = iconPath;
+			Console.WriteLine($"{imagePath} {iconPath}");
 			try
 			{
 				using (var hook1 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetOpenUrlA"), new InternetOpenUrlADelegate(InternetOpenUrlAHook), null))
@@ -110,8 +100,10 @@ namespace LxRunHook
 			}
 			catch (Exception e)
 			{
-				WriteLine("Error: Failed to install hooks in LxRun.");
-				WriteLine(e);
+				Console.ForegroundColor = ConsoleColor.Yellow;
+				Console.WriteLine("Error: Failed to install hooks in LxRun.");
+				Console.WriteLine(e);
+				Console.ResetColor();
 				Environment.Exit(-1);
 			}
 		}

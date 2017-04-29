@@ -84,7 +84,6 @@ namespace LxRunHook
 		{
 			this.imagePath = imagePath;
 			this.iconPath = iconPath;
-			Console.WriteLine($"{imagePath} {iconPath}");
 			try
 			{
 				using (var hook1 = LocalHook.Create(LocalHook.GetProcAddress("wininet.dll", "InternetOpenUrlA"), new InternetOpenUrlADelegate(InternetOpenUrlAHook), null))

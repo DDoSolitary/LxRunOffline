@@ -20,18 +20,29 @@ See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) for ways to cre
 
 ```
 LxRunOffline install <name> <path to .tar.gz> <target installation directory>
-"name" is used to identify this installation when running other commands.
-
-LxRunOffline uninstall <name>
-
-LxRunOffline info <name>
-
-LxRunOffline config <name> <UID of the default user> <WSL_DISTRIBUTION_FLAGS_ENABLE_INTEROP> <WSL_DISTRIBUTION_FLAGS_APPEND_NT_PATH> <WSL_DISTRIBUTION_FLAGS_ENABLE_DRIVE_MOUNTING>
-The last three options are for the WSL_DISTRIBUTION_FLAGS(visit https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for more information). They should be integers and zero(0) means enabled while non-zero means disabled.
-
-LxRunOffline run <name> [command]
-if "command" is not provided, "/bin/bash --login" is executed by default. The exit code of the command will be used as the exit code of current process.
-
-LxRunOffline list
-List the names of all installations of current user.
 ```
+`name` is used to identify this installation when running other commands.
+
+```
+LxRunOffline uninstall <name>
+```
+
+```
+LxRunOffline info <name>
+```
+
+```
+LxRunOffline config <name> <UID of the default user> <WSL_DISTRIBUTION_FLAGS_ENABLE_INTEROP> <WSL_DISTRIBUTION_FLAGS_APPEND_NT_PATH> <WSL_DISTRIBUTION_FLAGS_ENABLE_DRIVE_MOUNTING>
+```
+
+The last three options are for the [WSL_DISTRIBUTION_FLAGS](https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx). They should be integers and zero(0) means enabled while non-zero means disabled.
+
+```
+LxRunOffline run <name> [command]
+```
+if `command` is not provided, `/bin/bash --login` will be used default. The exit code of the command will be used as the exit code of current process.
+
+```
+LxRunOffline list
+```
+List the names of all installations of current user.

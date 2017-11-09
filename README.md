@@ -52,7 +52,7 @@ The last three options are for the [WSL_DISTRIBUTION_FLAGS](https://msdn.microso
 LxRunOffline run <name> [command]
 ```
 
-if `command` is not provided, `/bin/bash --login` will be used default. The exit code of the command will be used as the exit code of current process.
+if `command` is not provided, `/bin/bash --login` will be used by default. The exit code of the command will be used as the exit code of current process.
 
 ---
 

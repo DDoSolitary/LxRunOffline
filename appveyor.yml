@@ -21,8 +21,8 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Relative paths are now supported.
-      - The EasyHook package is updated.
+      - Many new features.
+      - Use the API from wslapi.dll to perform most of the operation, so this program no longer depends on LxRun.exe.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

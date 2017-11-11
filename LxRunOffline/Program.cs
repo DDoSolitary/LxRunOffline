@@ -1,146 +1,210 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using CommandLine;
 
-#if DEBUG
-using System.Diagnostics;
-#endif
+namespace LxRunOffline {
+	[Verb("list", HelpText = "List all installed distributions.")]
+	class ListOptions {}
 
-namespace LxRunOffline
-{
-	class Program
-	{
-		static void Main(string[] args)
-		{
-			Action<int, int> checkArgLength = (min, max) => {
-			#if DEBUG
-				Debug.Assert(args.Length >= min && args.Length <= max);
-			#else
-				if (args.Length < min || args.Length > max) {
-					Utils.Error("Invalid arguments.");
-				}
-			#endif
-			};
+	[Verb("default", HelpText = "Get or set the default distribution, which is used by bash.exe.")]
+	class DefaultOptions {
+		[Option('n', HelpText = "Name of the distribution to be set us default.")]
+		public string Name { get; set; }
+	}
 
-			Action<DistroFlags> processFlag = flag => {
-				if (args.Length == 3) {
-					Console.WriteLine(Wsl.GetFlag(args[1], flag) ? 1 : 0);
-				} else {
-					checkArgLength(4, 4);
-					Wsl.SetFlag(args[1], flag, args[3] != "0");
-				}
-			};
+	[Verb("install", HelpText = "Install a new distribution.")]
+	class InstallOptions {
+		[Option('n', HelpText = "Name used to register the distribution.", Required = true)]
+		public string Name { get; set; }
 
-			checkArgLength(1, int.MaxValue);
-			var action = args[0].ToLower();
-			switch (action) {
+		[Option('f', HelpText = "A file containing the root filesystem of the distribution to be installed.", Required = true)]
+		public string TarGzFile { get; set; }
 
-			case "install":
-				checkArgLength(4, 4);
-				Wsl.InstallDistro(args[1], args[2], args[3]);
-				break;
+		[Option('d', HelpText = "The directory to install the distribution into. It should not exist and will be created automatically.", Required = true)]
+		public string TargetDirectory { get; set; }
+	}
 
-			case "register":
-				checkArgLength(3, 3);
-				Wsl.RegisterDistro(args[1], args[2]);
-				break;
+	[Verb("register", HelpText = "Register an existing installation directory.")]
+	class RegisterOptions {
+		[Option('n', HelpText = "Name used to register the distribution.", Required = true)]
+		public string Name { get; set; }
+		
+		[Option('d', HelpText = "The directory containing the distribution to be registered.", Required = true)]
+		public string InstallationDirectory { get; set; }
+	}
 
-			case "uninstall":
-				checkArgLength(2, 2);
-				Wsl.UninstallDistro(args[1]);
-				break;
+	[Verb("uninstall", HelpText = "Uninstall a distribution")]
+	class UninstallOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
+	}
 
-			case "unregister":
-				checkArgLength(2, 2);
-				Wsl.UnregisterDistro(args[1]);
-				break;
+	[Verb("unregister", HelpText = "Unregister a distribution but not delete the directory containing it.")]
+	class UnregisterOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
+	}
 
-			case "move":
-				checkArgLength(3, 3);
-				Wsl.MoveDistro(args[1], args[2]);
-				break;
+	[Verb("move", HelpText = "Move a distribution to a new directory.")]
+	class MoveOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
 
-			case "run":
-				checkArgLength(2, 3);
-				string cmd = "/bin/bash --login";
-				if (args.Length == 3) cmd = args[2];
-				Environment.Exit((int)Wsl.LaunchDistro(args[1], cmd));
-				break;
+		[Option('d', HelpText = "The directory to move the distribution to. It should not exist and will be created automatically. It should be in the same drive as the original directory.", Required = true)]
+		public string TargetDirectory { get; set; }
+	}
 
-			case "list":
-				checkArgLength(1, 1);
-				Console.WriteLine(string.Join("\n", Wsl.ListDistros().ToArray()));
-				break;
+	[Verb("run", HelpText = "Run a command in a distribution.")]
+	class RunOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
 
-			case "default":
-				if (args.Length == 1) {
-					Console.WriteLine(Wsl.GetDefaultDistro());
-				} else {
-					checkArgLength(2, 2);
-					Wsl.SetDefaultDistro(args[1]);
-				}
-				break;
+		[Option('c', HelpText = "The command to be run.", Default = "/bin/bash --login")]
+		public string Command { get; set; }
+	}
 
-			case "config":
-				checkArgLength(3, int.MaxValue);
+	[Verb("dir", HelpText = "Get the installation directory of a distribution.")]
+	class DirOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
+	}
 
-				switch (args[2]) {
+	[Verb("config-env", HelpText = "Get or set the default environment variable of a distribution. (Currently unusable because of a problem of the command line parser.)")]
+	class ConfigEnvOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
 
-				case "dir":
-					checkArgLength(3, 3);
-					Console.WriteLine(Wsl.GetInstallationDirectory(args[1]));
-					break;
+		[Option('v', HelpText = "A space separated list of environment variables to be set.")]
+		public string[] EnvironmentVariables { get; set; }
+	}
 
-				case "env":
-					if (args.Length == 3) {
-						var envVars = Wsl.GetDefaultEnvironment(args[1]);
-						if (envVars != null) Console.WriteLine(string.Join("\n", envVars));
+	[Verb("config-uid", HelpText = "Get or set the UID of the default user of a distribution.")]
+	class ConfigUidOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
+
+		[Option('v', HelpText = "UID to be set.")]
+		public int? Uid { get; set; }
+	}
+
+	[Verb("config-kernelcmd", HelpText = "Get or set the default kernel command line of a distribution.")]
+	class ConfigKernelCmdOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
+
+		[Option('v', HelpText = "Kernel command line to be set.")]
+		public string Commandline { get; set; }
+	}
+
+	[Verb("config-flag", HelpText = "Get or set some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details.")]
+	class ConfigFlagOptions {
+		[Option('n', HelpText = "Name of the distribution.", Required = true)]
+		public string Name { get; set; }
+
+		[Option('f', HelpText = "Name of the flag to get or set.", Required = true)]
+		public string FlagName { get; set; }
+
+		[Option('v', HelpText = "Flag value to be set. Zero for on while non-zero for off.")]
+		public int? Flag { get; set; }
+	}
+
+	class Program {
+		static int Main(string[] args) {
+			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(
+				(ListOptions opts) => {
+					Console.WriteLine(string.Join("\n", Wsl.ListDistros().ToArray()));
+					return 0;
+				},
+				(DefaultOptions opts) => {
+					if (opts.Name == null) {
+						Console.WriteLine(Wsl.GetDefaultDistro());
 					} else {
-						var envVars = new string[args.Length - 3];
-						Array.Copy(args, 3, envVars, 0, envVars.Length);
-						Wsl.SetDefaultEnvironment(args[1], envVars);
+						Wsl.SetDefaultDistro(opts.Name);
 					}
-					break;
-
-				case "uid":
-					if (args.Length == 3) {
-						Console.WriteLine(Wsl.GetDefaultUid(args[1]));
+					return 0;
+				},
+				(InstallOptions opts) => {
+					Wsl.InstallDistro(opts.Name, opts.TarGzFile, opts.TargetDirectory);
+					return 0;
+				},
+				(RegisterOptions opts) => {
+					Wsl.RegisterDistro(opts.Name, opts.InstallationDirectory);
+					return 0;
+				},
+				(UninstallOptions opts) => {
+					Wsl.UninstallDistro(opts.Name);
+					return 0;
+				},
+				(UnregisterOptions opts) => {
+					Wsl.UnregisterDistro(opts.Name);
+					return 0;
+				},
+				(MoveOptions opts) => {
+					Wsl.MoveDistro(opts.Name, opts.TargetDirectory);
+					return 0;
+				},
+				(RunOptions opts) => {
+					return (int)Wsl.LaunchDistro(opts.Name, opts.Command);
+				},
+				(DirOptions opts) => {
+					Console.WriteLine(Wsl.GetInstallationDirectory(opts.Name));
+					return 0;
+				},
+				(ConfigEnvOptions opts) => {
+					if (opts.EnvironmentVariables == null) {
+						Console.WriteLine(string.Join("\n", Wsl.GetDefaultEnvironment(opts.Name)));
 					} else {
-						checkArgLength(4, 4);
-						if (!int.TryParse(args[3], out var uid)) Utils.Error("Invalid arguments");
-						Wsl.SetDefaultUid(args[1], uid);
+						Wsl.SetDefaultEnvironment(opts.Name, opts.EnvironmentVariables);
 					}
-					break;
-
-				case "kernelcmd":
-					if (args.Length == 3) {
-						Console.WriteLine(Wsl.GetKernelCommandLine(args[1]));
+					return 0;
+				},
+				(ConfigUidOptions opts) => {
+					if (opts.Uid == null) {
+						Console.WriteLine(Wsl.GetDefaultUid(opts.Name));
 					} else {
-						checkArgLength(4, 4);
-						Wsl.SetKernelCommandLine(args[1], args[3]);
+						Wsl.SetDefaultUid(opts.Name, opts.Uid.Value);
 					}
-					break;
-
-				case "interop":
-					processFlag(DistroFlags.EnableInterop);
-					break;
-				case "appendpath":
-					processFlag(DistroFlags.AppendNtPath);
-					break;
-				case "mount":
-					processFlag(DistroFlags.EnableDriveMounting);
-					break;
-
-				default:
-					Utils.Error("Invalid arguments.");
-					break;
-				}
-
-				break;
-			
-			default:
-				Utils.Error("Invalid arguments.");
-				break;
-			}
+					return 0;
+				},
+				(ConfigKernelCmdOptions opts) => {
+					if (opts.Commandline == null) {
+						Console.WriteLine(Wsl.GetKernelCommandLine(opts.Name));
+					} else {
+						Wsl.SetKernelCommandLine(opts.Name, opts.Commandline);
+					}
+					return 0;
+				},
+				(ConfigFlagOptions opts) => {
+					switch (opts.FlagName) {
+					case "WSL_DISTRIBUTION_FLAGS_ENABLE_INTEROP":
+						if (opts.Flag == null) {
+							Console.WriteLine(Wsl.GetFlag(opts.Name, DistroFlags.EnableInterop) ? 1 : 0);
+						} else {
+							Wsl.SetFlag(opts.Name, DistroFlags.EnableInterop, opts.Flag != 0);
+						}
+						return 0;
+					case "WSL_DISTRIBUTION_FLAGS_APPEND_NT_PATH":
+						if (opts.Flag == null) {
+							Console.WriteLine(Wsl.GetFlag(opts.Name, DistroFlags.AppendNtPath) ? 1 : 0);
+						} else {
+							Wsl.SetFlag(opts.Name, DistroFlags.AppendNtPath, opts.Flag != 0);
+						}
+						return 0;
+					case "WSL_DISTRIBUTION_FLAGS_ENABLE_DRIVE_MOUNTING":
+						if (opts.Flag == null) {
+							Console.WriteLine(Wsl.GetFlag(opts.Name, DistroFlags.EnableDriveMounting) ? 1 : 0);
+						} else {
+							Wsl.SetFlag(opts.Name, DistroFlags.EnableDriveMounting, opts.Flag != 0);
+						}
+						return 0;
+					default:
+						Console.Error.WriteLine("Flag name not found.");
+						return 1;
+					}
+				},
+				errs => 1
+			);
 		}
 	}
 }

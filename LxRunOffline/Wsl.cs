@@ -173,7 +173,13 @@ namespace LxRunOffline {
 		}
 
 		public static string[] GetDefaultEnvironment(string distroName) {
-			return (string[])(GetRegistryValue(distroName, "DefaultEnvironment") ?? new string[0]);
+			return (string[])(GetRegistryValue(distroName, "DefaultEnvironment")
+				?? new string[] {
+					"HOSTTYPE=x86_64",
+					"LANG=en_US.UTF-8",
+					"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+					"TERM=xterm-256color"
+				});
 		}
 
 		public static void SetDefaultEnvironment(string distroName, string[] environmentVariables) {
@@ -189,7 +195,7 @@ namespace LxRunOffline {
 		}
 
 		public static string GetKernelCommandLine(string distroName) {
-			return (string)GetRegistryValue(distroName, "KernelCommandLine");
+			return (string)GetRegistryValue(distroName, "KernelCommandLine") ?? "BOOT_IMAGE=/kernel init=/init ro";
 		}
 
 		public static void SetKernelCommandLine(string distroName, string commandLine) {
@@ -197,11 +203,11 @@ namespace LxRunOffline {
 		}
 
 		public static bool GetFlag(string distroName, DistroFlags mask) {
-			return ((DistroFlags)(GetRegistryValue(distroName, "Flags") ?? 0) & mask) > 0;
+			return ((DistroFlags)(GetRegistryValue(distroName, "Flags") ?? 7) & mask) > 0;
 		}
 
 		public static void SetFlag(string distroName, DistroFlags mask, bool value) {
-			var flag = (DistroFlags)(GetRegistryValue(distroName, "Flags") ?? 0);
+			var flag = (DistroFlags)(GetRegistryValue(distroName, "Flags") ?? 7);
 			SetRegistryValue(distroName, "Flags", (int)(flag & ~mask | (value ? mask : 0)));
 		}
 

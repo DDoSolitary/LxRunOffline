@@ -34,7 +34,8 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Include="Program.cs" />
-		<Compile Include="PInvoke.cs" />
+		<Compile Include="Wsl.cs" />
+		<Compile Include="WslWinApi.cs"/>
 		<Compile Include="AssemblyInfo.cs" />
 	</ItemGroup>
 	<ItemGroup>

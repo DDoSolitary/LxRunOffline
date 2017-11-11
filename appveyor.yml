@@ -3,6 +3,8 @@ init:
   - ps: |
       if ($Env:APPVEYOR_REPO_TAG -eq "true") { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }
       else { Update-AppveyorBuild -Version "dev-$($Env:APPVEYOR_REPO_COMMIT.Substring(0, 7))" }
+install:
+  - ps: .paket\paket.exe install
 configuration: Release
 build:
   parallel: true
@@ -12,7 +14,7 @@ after_build:
       $name = "$project-$Env:APPVEYOR_BUILD_VERSION"
       $dir = "$project\bin\$Env:CONFIGURATION"
       md "$name"
-      cp @("$dir\$project.exe", "$dir\$project.exe.config", "LICENSE") "$name"
+      cp @("$dir\$project.exe", "$dir\$project.exe.config", "$dir\*.dll", "LICENSE", "LICENSE-3RD-PARTY") "$name"
       7z a "$name.zip" "$name"
 artifacts:
   - path: '*.zip'

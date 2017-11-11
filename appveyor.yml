@@ -23,8 +23,9 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Many new features.
-      - Use the API from wslapi.dll to perform most of the operation, so this program no longer depends on LxRun.exe.
+       - Directly manipulate registry to provide better flexibility.
+       - Add some usefull commands.
+       - Use CommandLineParser for the CLI.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

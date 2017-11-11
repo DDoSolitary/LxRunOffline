@@ -29,7 +29,7 @@ namespace LxRunOffline {
 	class RegisterOptions {
 		[Option('n', HelpText = "Name used to register the distribution.", Required = true)]
 		public string Name { get; set; }
-		
+
 		[Option('d', HelpText = "The directory containing the distribution to be registered.", Required = true)]
 		public string InstallationDirectory { get; set; }
 	}

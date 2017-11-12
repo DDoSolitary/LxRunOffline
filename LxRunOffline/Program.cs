@@ -9,7 +9,7 @@ namespace LxRunOffline {
 
 	[Verb("default", HelpText = "Get or set the default distribution, which is used by bash.exe.")]
 	class DefaultOptions {
-		[Option('n', HelpText = "Name of the distribution to be set us default.")]
+		[Option('n', HelpText = "Name of the distribution to be set as default.")]
 		public string Name { get; set; }
 	}
 
@@ -18,7 +18,7 @@ namespace LxRunOffline {
 		[Option('n', HelpText = "Name used to register the distribution.", Required = true)]
 		public string Name { get; set; }
 
-		[Option('f', HelpText = "A file containing the root filesystem of the distribution to be installed.", Required = true)]
+		[Option('f', HelpText = "A file containing the root filesystem of the distribution to be installed. See project's Wiki on GitHub for how to create it.", Required = true)]
 		public string TarGzFile { get; set; }
 
 		[Option('d', HelpText = "The directory to install the distribution into. It should not exist and will be created automatically.", Required = true)]
@@ -51,7 +51,7 @@ namespace LxRunOffline {
 		[Option('n', HelpText = "Name of the distribution.", Required = true)]
 		public string Name { get; set; }
 
-		[Option('d', HelpText = "The directory to move the distribution to. It should not exist and will be created automatically. It should be in the same drive as the original directory.", Required = true)]
+		[Option('d', HelpText = "The directory to move the distribution to. It should not exist and will be created automatically. Only moving to the same drive as the original directory is supported.", Required = true)]
 		public string TargetDirectory { get; set; }
 	}
 
@@ -70,12 +70,12 @@ namespace LxRunOffline {
 		public string Name { get; set; }
 	}
 
-	[Verb("config-env", HelpText = "Get or set the default environment variable of a distribution. (Currently unusable because of a problem of the command line parser.)")]
+	[Verb("config-env", HelpText = "Get or set the default environment variables of a distribution. (Currently unusable because of a problem of the command line parser library.)")]
 	class ConfigEnvOptions {
 		[Option('n', HelpText = "Name of the distribution.", Required = true)]
 		public string Name { get; set; }
 
-		[Option('v', HelpText = "A space separated list of environment variables to be set.")]
+		[Option('v', HelpText = "A space-separated list of environment variables to be set.")]
 		public string[] EnvironmentVariables { get; set; }
 	}
 
@@ -105,7 +105,7 @@ namespace LxRunOffline {
 		[Option('f', HelpText = "Name of the flag to get or set.", Required = true)]
 		public string FlagName { get; set; }
 
-		[Option('v', HelpText = "Flag value to be set. Zero for on while non-zero for off.")]
+		[Option('v', HelpText = "Flag value to be set. Zero for off while non-zero for on.")]
 		public int? Flag { get; set; }
 	}
 

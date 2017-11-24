@@ -23,9 +23,8 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-       - Directly manipulate registry to provide better flexibility.
-       - Add some usefull commands.
-       - Use CommandLineParser for the CLI.
+       - Fix some typos in the help text.
+       - Remove unnecessary DLLs in the released files.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

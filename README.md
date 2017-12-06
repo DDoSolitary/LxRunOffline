@@ -24,7 +24,7 @@ Run `LxRunOffline help` for the command line interface.
 
 # Compatibility
 
-- *v1.x*: All Windows 10 versions with the Linux subsystem support.
-- *v2.x*: Only Windows 10 Fall Creators Update or later.
+- **v1.x**: All Windows 10 versions with the Linux subsystem support.
+- **v2.x**: Only Windows 10 Fall Creators Update or later.
 
 It is strongly recommended to install the Creators Update and use v2.x releases.

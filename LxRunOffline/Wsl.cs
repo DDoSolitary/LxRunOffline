@@ -5,7 +5,7 @@ using System.Reflection;
 using Microsoft.Win32;
 
 namespace LxRunOffline {
-	public enum DistroFlags : int {
+	enum DistroFlags : int {
 		None = 0,
 		EnableInterop = 1,
 		AppendNtPath = 2,

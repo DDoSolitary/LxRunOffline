@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using Microsoft.Win32;
@@ -56,6 +57,33 @@ namespace LxRunOffline {
 			}
 		}
 
+		static void DeleteDirectory(string path) {
+			try {
+				Directory.Delete(path);
+			} catch (IOException e) {
+				Console.WriteLine($"Error: {e.Message}");
+				Console.WriteLine($"Couldn't delete the directory \"{path}\", you may have to delete it manually.");
+			}
+		}
+
+		static void MoveDirectory(string oldPath, string newPath) {
+			try {
+				Directory.Move(oldPath, newPath);
+				return;
+			} catch (IOException e) {
+				Console.WriteLine($"Error: {e.Message}");
+				Console.WriteLine("Couldn't move the directory falling back to use robocopy.");
+			}
+
+			using (var process = Process.Start("robocopy", $"/E /COPYALL \"{oldPath}\" \"{newPath}\"")) {
+				process.WaitForExit();
+				if (process.ExitCode != 0) {
+					Error($"robocopy exited with a non-zero code: {process.ExitCode}");
+				}
+			}
+			DeleteDirectory(oldPath);
+		}
+
 		#endregion
 
 		#region Global operations
@@ -110,7 +138,7 @@ namespace LxRunOffline {
 			CheckWinApiResult(WslWinApi.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
 
 			Directory.CreateDirectory(targetPath);
-			Directory.Move(tmpRootPath, Path.Combine(targetPath, "rootfs"));
+			MoveDirectory(tmpRootPath, Path.Combine(targetPath, "rootfs"));
 
 			SetInstallationDirectory(distroName, targetPath);
 		}
@@ -134,8 +162,8 @@ namespace LxRunOffline {
 			var installPath = GetInstallationDirectory(distroName);
 			if (!Directory.Exists(installPath)) Error("Installation directory not found.");
 
-			Directory.Delete(installPath, true);
 			UnregisterDistro(distroName);
+			DeleteDirectory(installPath);
 		}
 
 		public static void UnregisterDistro(string distroName) {
@@ -155,7 +183,7 @@ namespace LxRunOffline {
 			if (Directory.Exists(newPath)) Error("Target directory already exists.");
 
 			var oldPath = GetInstallationDirectory(distroName);
-			Directory.Move(oldPath, newPath);
+			MoveDirectory(oldPath, newPath);
 			SetInstallationDirectory(distroName, newPath);
 		}
 

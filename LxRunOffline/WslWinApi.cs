@@ -13,5 +13,8 @@ namespace LxRunOffline {
 
 		[DllImport("wslapi.dll", CharSet = CharSet.Unicode)]
 		public static extern uint WslRegisterDistribution(string distributionName, string tarGzFilename);
+
+		[DllImport("wslapi.dll", CharSet = CharSet.Unicode)]
+		public static extern uint WslUnregisterDistribution(string distributionName);
 	}
 }

@@ -131,11 +131,11 @@ namespace LxRunOffline {
 		}
 
 		public static void UninstallDistro(string distroName) {
-			using (var distroKey = FindDistroKey(distroName)) {
-				if (distroKey == null) Error("Name not found.");
-			}
+			var installPath = GetInstallationDirectory(distroName);
+			if (!Directory.Exists(installPath)) Error("Installation directory not found.");
 
-			CheckWinApiResult(WslWinApi.WslUnregisterDistribution(distroName));
+			Directory.Delete(installPath, true);
+			UnregisterDistro(distroName);
 		}
 
 		public static void UnregisterDistro(string distroName) {

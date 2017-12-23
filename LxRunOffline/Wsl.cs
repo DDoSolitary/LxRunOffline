@@ -58,11 +58,20 @@ namespace LxRunOffline {
 		}
 
 		static void DeleteDirectory(string path) {
-			try {
-				Directory.Delete(path);
-			} catch (IOException e) {
-				Console.WriteLine($"Error: {e.Message}");
-				Console.WriteLine($"Couldn't delete the directory \"{path}\", you may have to delete it manually.");
+			var retryCount = 3;
+			while (true) {
+				retryCount--;
+				try {
+					Directory.Delete(path, true);
+					return;
+				} catch (IOException e) {
+					Console.WriteLine($"Error: {e.Message}");
+					if (retryCount == 0) {
+						Console.WriteLine($"Couldn't delete the directory \"{path}\", you may have to delete it manually.");
+					} else {
+						Console.WriteLine($"Couldn't delete the directory \"{path}\", retrying.");
+					}
+				}
 			}
 		}
 

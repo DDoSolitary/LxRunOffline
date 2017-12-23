@@ -15,6 +15,10 @@ namespace LxRunOffline {
 
 	class Wsl {
 
+		const string LxssKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Lxss";
+		const string RobocopyArguments = "/E /COPYALL /NFL /NDL /IS /IT";
+		const int DeletionRetryCount = 3;
+
 		#region Helpers
 
 		static void Error(string output) {
@@ -27,7 +31,7 @@ namespace LxRunOffline {
 		}
 
 		static RegistryKey GetLxssKey(bool write = false) {
-			return Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Lxss", write);
+			return Registry.CurrentUser.OpenSubKey(LxssKeyPath, write);
 		}
 
 		static RegistryKey FindDistroKey(string distroName, bool write = false) {
@@ -58,7 +62,7 @@ namespace LxRunOffline {
 		}
 
 		static void DeleteDirectory(string path) {
-			var retryCount = 3;
+			var retryCount = DeletionRetryCount;
 			while (true) {
 				retryCount--;
 				try {
@@ -87,7 +91,7 @@ namespace LxRunOffline {
 
 			var startInfo = new ProcessStartInfo {
 				FileName = "robocopy",
-				Arguments = $"/E /COPYALL /NFL /NDL /IS /IT \"{oldPath}\" \"{newPath}\"",
+				Arguments = $"{RobocopyArguments} \"{oldPath}\" \"{newPath}\"",
 				Verb = "runas"
 			};
 			using (var process = Process.Start(startInfo)) {

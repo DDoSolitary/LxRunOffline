@@ -73,12 +73,18 @@ namespace LxRunOffline {
 			} catch (IOException e) {
 				Console.WriteLine($"Error: {e.Message}");
 				Console.WriteLine("Couldn't move the directory falling back to use robocopy.");
+				// TODO: warning
 			}
 
-			using (var process = Process.Start("robocopy", $"/E /COPYALL \"{oldPath}\" \"{newPath}\"")) {
+			var startInfo = new ProcessStartInfo {
+				FileName = "robocopy",
+				Arguments = $"/E /COPYALL /NFL /NDL /IS /IT \"{oldPath}\" \"{newPath}\"",
+				Verb = "runas"
+			};
+			using (var process = Process.Start(startInfo)) {
 				process.WaitForExit();
-				if (process.ExitCode != 0) {
-					Error($"robocopy exited with a non-zero code: {process.ExitCode}");
+				if (process.ExitCode > 1) {
+					Error($"robocopy exited with a non-successful code: {process.ExitCode}");
 				}
 			}
 			DeleteDirectory(oldPath);

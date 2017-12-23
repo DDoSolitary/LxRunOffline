@@ -31,7 +31,7 @@ namespace LxRunOffline {
 		}
 
 		static RegistryKey GetLxssKey(bool write = false) {
-			return Registry.CurrentUser.OpenSubKey(LxssKeyPath, write);
+			return Registry.CurrentUser.CreateSubKey(LxssKeyPath, write);
 		}
 
 		static RegistryKey FindDistroKey(string distroName, bool write = false) {
@@ -119,7 +119,7 @@ namespace LxRunOffline {
 
 		public static string GetDefaultDistro() {
 			using (var lxssKey = GetLxssKey(true)) {
-				using (var distroKey = lxssKey.OpenSubKey((string)lxssKey.GetValue("DefaultDistribution"))) {
+				using (var distroKey = lxssKey.OpenSubKey((string)lxssKey.GetValue("DefaultDistribution") ?? string.Empty)) {
 					if (distroKey == null) Error("Distro not found.");
 					return (string)distroKey.GetValue("DistributionName");
 				}

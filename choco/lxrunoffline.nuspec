@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>lxrunoffline</id>
+    <version>{VERSION}</version>
+    <title>LxRunOffline</title>
+    <authors>DDoSolitary</authors>
+    <owners>DDoSolitary</owners>
+    <licenseUrl>https://github.com/DDoSolitary/LxRunOffline/blob/v{VERSION}/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/DDoSolitary/LxRunOffline</projectUrl>
+    <bugTrackerUrl>https://github.com/DDoSolitary/LxRunOffline/issues</bugTrackerUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>An offline installer for Windows Subsystem for Linux (WSL)</description>
+    <summary>An offline installer for Windows Subsystem for Linux (WSL)</summary>
+    <releaseNotes>https://github.com/DDoSolitary/LxRunOffline/releases/tag/v{VERSION}</releaseNotes>
+    <copyright>2016-2017 LxRunOffline DDoSolitary</copyright>
+    <tags>lxrunoffline wsl bash bash-on-windows windows-subsystem-linux</tags>
+  </metadata>
+</package>

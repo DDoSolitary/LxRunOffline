@@ -31,8 +31,9 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Fix some typos in the help text.
-      - Remove unnecessary DLLs in the released files.
+      - Use `robocopy` to support installing to different volumes.
+      - Retry on directory deletion failures.
+      - Fix the problem that the program crashes when some registry keys doesn't exist. (#14)
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

@@ -51,7 +51,7 @@ namespace LxRunOffline {
 		[Option('n', HelpText = "Name of the distribution.", Required = true)]
 		public string Name { get; set; }
 
-		[Option('d', HelpText = "The directory to move the distribution to. It should not exist and will be created automatically. Only moving to the same drive as the original directory is supported.", Required = true)]
+		[Option('d', HelpText = "The directory to move the distribution to. It should not exist and will be created automatically.", Required = true)]
 		public string TargetDirectory { get; set; }
 	}
 

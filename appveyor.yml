@@ -1,7 +1,7 @@
 ﻿image: Visual Studio 2017
 init:
   - ps: |
-      if ($Env:APPVEYOR_REPO_TAG -eq "true") { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }
+      if ($Env:APPVEYOR_REPO_TAG -eq 'true') { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }
       else { Update-AppveyorBuild -Version "dev-$($Env:APPVEYOR_REPO_COMMIT.Substring(0, 7))" }
 install:
   - ps: .paket\paket.exe install
@@ -11,21 +11,37 @@ build:
 after_build:
   - ps: |
       $project = $Env:APPVEYOR_PROJECT_NAME
-      $name = "$project-$Env:APPVEYOR_BUILD_VERSION"
-      $dir = "$project\bin\$Env:CONFIGURATION"
-      md "$name"
-      cp @("$dir\$project.exe", "$dir\$project.exe.config", "$dir\CommandLine.dll", "LICENSE", "LICENSE-3RD-PARTY") "$name"
-      7z a "$name.zip" "$name"
+      $name = "$project-$Env:APPVEYOR_BUILD_VERSION.zip"
+      $dir = ".\$project\bin\$Env:CONFIGURATION"
+      7z a $name "$dir\$project.exe" "$dir\$project.exe.config" "$dir\CommandLine.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
+      if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
+          $hash = (Get-FileHash $name -Algorithm SHA256).Hash
+          $version = $Env:APPVEYOR_REPO_TAG_NAME.Substring(1)
+          cd choco
+          (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
+          (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii
+          (cat tools\chocolateyInstall.ps1) -replace '{CHECKSUM}', $hash | sc tools\chocolateyInstall.ps1 -Encoding Ascii
+          choco pack
+      }
 artifacts:
   - path: '*.zip'
+  - path: choco\*.nupkg
 deploy:
   - provider: GitHub
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-       - Fix some typos in the help text.
-       - Remove unnecessary DLLs in the released files.
+      - Fix some typos in the help text.
+      - Remove unnecessary DLLs in the released files.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
+    on:
+      appveyor_repo_tag: true
+
+  - provider: NuGet
+    artifact: /.*\.nupkg/
+    server: https://push.chocolatey.org/
+    api_key:
+      secure: Vo2L43MTVd1m6V60iP3G2B1MiAzLjnriIjlkD/B9SUJCRM/6HH5E1jbxyg7MmtB0
     on:
       appveyor_repo_tag: true

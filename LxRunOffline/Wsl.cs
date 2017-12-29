@@ -91,7 +91,7 @@ namespace LxRunOffline {
 
 			var startInfo = new ProcessStartInfo {
 				FileName = "robocopy",
-				Arguments = $"{RobocopyArguments} \"{oldPath}\" \"{newPath}\"",
+				Arguments = $"{RobocopyArguments} \"{Path.GetFullPath(oldPath)}\" \"{Path.GetFullPath(newPath)}\"",
 				Verb = "runas"
 			};
 			using (var process = Process.Start(startInfo)) {

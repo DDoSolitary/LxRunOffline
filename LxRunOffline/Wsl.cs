@@ -206,12 +206,12 @@ namespace LxRunOffline {
 			SetInstallationDirectory(distroName, newPath);
 		}
 
-		public static uint LaunchDistro(string distroName, string command) {
+		public static uint LaunchDistro(string distroName, string command, bool useCwd) {
 			using (var distroKey = FindDistroKey(distroName)) {
 				if (distroKey == null) Error("Name not found.");
 			}
 
-			CheckWinApiResult(WslWinApi.WslLaunchInteractive(distroName, command, true, out var exitCode));
+			CheckWinApiResult(WslWinApi.WslLaunchInteractive(distroName, command, useCwd, out var exitCode));
 			return exitCode;
 		}
 

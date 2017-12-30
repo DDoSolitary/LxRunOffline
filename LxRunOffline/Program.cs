@@ -62,6 +62,9 @@ namespace LxRunOffline {
 
 		[Option('c', HelpText = "The command to be run.", Default = "/bin/bash --login")]
 		public string Command { get; set; }
+
+		[Option('w', HelpText = "Don't use current working directory.", Default = false)]
+		public bool NoCwd { get; set; }
 	}
 
 	[Verb("dir", HelpText = "Get the installation directory of a distribution.")]
@@ -145,7 +148,7 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(RunOptions opts) => {
-					return (int)Wsl.LaunchDistro(opts.Name, opts.Command);
+					return (int)Wsl.LaunchDistro(opts.Name, opts.Command, !opts.NoCwd);
 				},
 				(DirOptions opts) => {
 					Console.WriteLine(Wsl.GetInstallationDirectory(opts.Name));

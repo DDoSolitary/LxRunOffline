@@ -114,6 +114,11 @@ namespace LxRunOffline {
 
 	class Program {
 		static int Main(string[] args) {
+			if (Utils.IsAdministrator()) {
+				Utils.Warning("You are running LxRunOffline with administrator privileges. It may cause problems.");
+				if (!Utils.Prompt()) return 0;
+			}
+
 			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(
 				(ListOptions opts) => {
 					Console.WriteLine(string.Join("\n", Wsl.ListDistros().ToArray()));

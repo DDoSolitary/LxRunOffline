@@ -21,13 +21,22 @@ namespace LxRunOffline {
 
 		#region Helpers
 
-		static void Error(string output) {
-			Console.Error.WriteLine(output);
-			Environment.Exit(1);
+		static void CheckWinApiResult(uint errorCode) {
+			if (errorCode != 0) {
+				Utils.Error($"Win32 API returned an error: 0x{errorCode.ToString("X").PadLeft(8, '0')}.");
+			}
 		}
 
-		static void CheckWinApiResult(uint errorCode) {
-			if (errorCode != 0) Error($"Error: {errorCode.ToString("X").PadLeft(8, '0')}");
+		static void ErrorNameNotFound(string distroName) {
+			Utils.Error($"Distribution name not found: {distroName}.");
+		}
+
+		static void ErrorNameExists(string distroName) {
+			Utils.Error($"Distribution name already exists: {distroName}.");
+		}
+
+		static void ErrorDirectoryExists(string distroName) {
+			Utils.Error($"Target directory already exists: {distroName}.");
 		}
 
 		static RegistryKey GetLxssKey(bool write = false) {
@@ -49,14 +58,14 @@ namespace LxRunOffline {
 
 		static object GetRegistryValue(string distroName, string valueName) {
 			using (var distroKey = FindDistroKey(distroName)) {
-				if (distroKey == null) Error("Name not found.");
+				if (distroKey == null) ErrorNameNotFound(distroName);
 				return distroKey.GetValue(valueName);
 			}
 		}
 
 		static void SetRegistryValue(string distroName, string valueName, object value) {
 			using (var distroKey = FindDistroKey(distroName, true)) {
-				if (distroKey == null) Error("Name not found.");
+				if (distroKey == null) ErrorNameNotFound(distroName);
 				distroKey.SetValue(valueName, value);
 			}
 		}
@@ -68,25 +77,25 @@ namespace LxRunOffline {
 				try {
 					Directory.Delete(path, true);
 					return;
-				} catch (IOException e) {
-					Console.WriteLine($"Error: {e.Message}");
+				} catch (Exception e) {
+					Utils.Warning($"Couldn't delete the directory \"{path}\": {e.Message}");
 					if (retryCount == 0) {
-						Console.WriteLine($"Couldn't delete the directory \"{path}\", you may have to delete it manually.");
+						Utils.Warning($"You may have to delete it manually.");
 					} else {
-						Console.WriteLine($"Couldn't delete the directory \"{path}\", retrying.");
+						Utils.Warning($"Retrying.");
 					}
 				}
 			}
 		}
 
-		static void MoveDirectory(string oldPath, string newPath) {
+		static bool MoveDirectory(string oldPath, string newPath) {
 			try {
 				Directory.Move(oldPath, newPath);
-				return;
-			} catch (IOException e) {
-				Console.WriteLine($"Error: {e.Message}");
-				Console.WriteLine("Couldn't move the directory falling back to use robocopy.");
-				// TODO: warning
+				return true;
+			} catch (Exception e) {
+			Utils.Warning($"Couldn't move the directory from \"{oldPath}\" to \"{newPath}\": {e.Message}");
+				Utils.Warning("It is still possible to move the directory using \"robocopy\", but it will cause problems including loss of directory permission and some files. You may have to fix them manually later.");
+				if (!Utils.Prompt()) return false;
 			}
 
 			var startInfo = new ProcessStartInfo {
@@ -97,10 +106,12 @@ namespace LxRunOffline {
 			using (var process = Process.Start(startInfo)) {
 				process.WaitForExit();
 				if (process.ExitCode > 1) {
-					Error($"robocopy exited with a non-successful code: {process.ExitCode}");
+					Utils.Warning($"robocopy exited with a non-successful code: {process.ExitCode}.");
+					return false;
 				}
 			}
 			DeleteDirectory(oldPath);
+			return true;
 		}
 
 		#endregion
@@ -120,7 +131,7 @@ namespace LxRunOffline {
 		public static string GetDefaultDistro() {
 			using (var lxssKey = GetLxssKey(true)) {
 				using (var distroKey = lxssKey.OpenSubKey((string)lxssKey.GetValue("DefaultDistribution") ?? string.Empty)) {
-					if (distroKey == null) Error("Distro not found.");
+					if (distroKey == null) Utils.Error($"Distribution not found, some registry keys may be corrupt. Set a new default to fix it.");
 					return (string)distroKey.GetValue("DistributionName");
 				}
 			}
@@ -130,7 +141,7 @@ namespace LxRunOffline {
 			string distroKeyName = "";
 
 			using (var distroKey = FindDistroKey(distroName)) {
-				if (distroKey == null) Error("Name not found.");
+				if (distroKey == null) ErrorNameNotFound(distroName);
 				distroKeyName = Path.GetFileName(distroKey.Name);
 			}
 
@@ -145,28 +156,34 @@ namespace LxRunOffline {
 
 		public static void InstallDistro(string distroName, string tarGzPath, string targetPath) {
 			using (var distroKey = FindDistroKey(distroName)) {
-				if (distroKey != null) Error("Name already exists.");
+				if (distroKey != null) ErrorNameExists(distroName);
 			}
-			if (!File.Exists(tarGzPath)) Error("File not found.");
-			if (Directory.Exists(targetPath)) Error("Target directory already exists.");
+			if (!File.Exists(tarGzPath)) Utils.Error($"File not found: {tarGzPath}.");
+			if (Directory.Exists(targetPath)) Utils.Error($"Target directory already exists: {targetPath}.");
 
 			string tmpRootPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "rootfs");
 			if (Directory.Exists(tmpRootPath))
-				Error("The \"rootfs\" directory already exists in the directory containing the program.");
+				Utils.Error($"The \"rootfs\" directory already exists in the directory containing the program: {tmpRootPath}. It may be caused by a crash of this program. Please delete it manually.");
 
 			CheckWinApiResult(WslWinApi.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
 
 			Directory.CreateDirectory(targetPath);
-			MoveDirectory(tmpRootPath, Path.Combine(targetPath, "rootfs"));
+			if (!MoveDirectory(tmpRootPath, Path.Combine(targetPath, "rootfs"))) {
+				Utils.Warning("Directory moving failed, cleaning up.");
+				UnregisterDistro(distroName);
+				DeleteDirectory(targetPath);
+				DeleteDirectory(tmpRootPath);
+				Environment.Exit(1);
+			}
 
 			SetInstallationDirectory(distroName, targetPath);
 		}
 
 		public static void RegisterDistro(string distroName, string installPath) {
 			using (var distroKey = FindDistroKey(distroName)) {
-				if (distroKey != null) Error("Name already exists.");
+				if (distroKey != null) ErrorNameExists(distroName);
 			}
-			if (!Directory.Exists(installPath)) Error("Installation directory not found.");
+			if (!Directory.Exists(installPath)) ErrorDirectoryExists(installPath);
 
 			using (var lxssKey = GetLxssKey(true))
 			using (var distroKey = lxssKey.CreateSubKey(Guid.NewGuid().ToString("B"))) {
@@ -179,7 +196,7 @@ namespace LxRunOffline {
 
 		public static void UninstallDistro(string distroName) {
 			var installPath = GetInstallationDirectory(distroName);
-			if (!Directory.Exists(installPath)) Error("Installation directory not found.");
+			if (!Directory.Exists(installPath)) ErrorDirectoryExists(installPath);
 
 			UnregisterDistro(distroName);
 			DeleteDirectory(installPath);
@@ -189,7 +206,7 @@ namespace LxRunOffline {
 			string distroKeyName = "";
 
 			using (var distroKey = FindDistroKey(distroName)) {
-				if (distroKey == null) Error("Name not found.");
+				if (distroKey == null) ErrorNameNotFound(distroName);
 				distroKeyName = Path.GetFileName(distroKey.Name);
 			}
 
@@ -199,16 +216,18 @@ namespace LxRunOffline {
 		}
 
 		public static void MoveDistro(string distroName, string newPath) {
-			if (Directory.Exists(newPath)) Error("Target directory already exists.");
+			if (Directory.Exists(newPath)) ErrorDirectoryExists(newPath);
 
 			var oldPath = GetInstallationDirectory(distroName);
-			MoveDirectory(oldPath, newPath);
+			if (!MoveDirectory(oldPath, newPath)) {
+				Utils.Error("Directory moving failed.");
+			}
 			SetInstallationDirectory(distroName, newPath);
 		}
 
 		public static uint LaunchDistro(string distroName, string command, bool useCwd) {
 			using (var distroKey = FindDistroKey(distroName)) {
-				if (distroKey == null) Error("Name not found.");
+				if (distroKey == null) ErrorNameNotFound(distroName);
 			}
 
 			CheckWinApiResult(WslWinApi.WslLaunchInteractive(distroName, command, useCwd, out var exitCode));

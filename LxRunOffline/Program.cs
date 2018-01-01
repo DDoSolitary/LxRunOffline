@@ -73,13 +73,16 @@ namespace LxRunOffline {
 		public string Name { get; set; }
 	}
 
-	[Verb("config-env", HelpText = "Get or set the default environment variables of a distribution. (Currently unusable because of a problem of the command line parser library.)")]
+	[Verb("config-env", HelpText = "Get or set the default environment variables of a distribution.")]
 	class ConfigEnvOptions {
 		[Option('n', HelpText = "Name of the distribution.", Required = true)]
 		public string Name { get; set; }
 
-		[Option('v', HelpText = "A space-separated list of environment variables to be set.")]
-		public string[] EnvironmentVariables { get; set; }
+		[Option('a', HelpText = "Environment variable to add. (NAME=value)", SetName = "add")]
+		public string VariableToAdd { get; set; }
+
+		[Option('r', HelpText = "Name of the environment variable to remove.", SetName = "remove")]
+		public string VariableToRemove { get; set; }
 	}
 
 	[Verb("config-uid", HelpText = "Get or set the UID of the default user of a distribution.")]
@@ -160,10 +163,24 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(ConfigEnvOptions opts) => {
-					if (opts.EnvironmentVariables == null) {
-						Console.WriteLine(string.Join("\n", Wsl.GetDefaultEnvironment(opts.Name)));
+					var envVars = Wsl.GetDefaultEnvironment(opts.Name).ToList();
+					if (opts.VariableToAdd != null) {
+						if (!opts.VariableToAdd.Contains('=')) {
+							Utils.Error($"Environment variable must contain \"=\": \"{opts.VariableToAdd}\".");
+						}
+						envVars.Add(opts.VariableToAdd);
+						Wsl.SetDefaultEnvironment(opts.Name, envVars.ToArray());
+					} else if (opts.VariableToRemove != null) {
+						if (opts.VariableToRemove.Contains('=')) {
+							Utils.Error($"Environment variable name should not contain \"=\": \"{opts.VariableToRemove}\".");
+						}
+						var newEnvVars = envVars.Where(s => !s.StartsWith($"{opts.VariableToRemove}="));
+						if (envVars.Count == newEnvVars.Count()) {
+							Utils.Error($"Environment variable not found: {opts.VariableToRemove}.");
+						}
+						Wsl.SetDefaultEnvironment(opts.Name, newEnvVars.ToArray());
 					} else {
-						Wsl.SetDefaultEnvironment(opts.Name, opts.EnvironmentVariables);
+						Console.Write(string.Join("\n", envVars));
 					}
 					return 0;
 				},

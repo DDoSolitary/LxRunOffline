@@ -63,7 +63,7 @@ namespace LxRunOffline {
 		[Option('c', HelpText = "The command to be run.", Default = "/bin/bash --login")]
 		public string Command { get; set; }
 
-		[Option('w', HelpText = "Don't use current working directory.", Default = false)]
+		[Option('w', HelpText = "Don't use the working directory in Windows for the Linux program.", Default = false)]
 		public bool NoCwd { get; set; }
 	}
 

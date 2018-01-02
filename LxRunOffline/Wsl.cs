@@ -40,10 +40,14 @@ namespace LxRunOffline {
 		}
 
 		static RegistryKey GetLxssKey(bool write = false) {
+			Utils.Log("Opening the registry key for LXSS.");
+
 			return Registry.CurrentUser.CreateSubKey(LxssKeyPath, write);
 		}
 
 		static RegistryKey FindDistroKey(string distroName, bool write = false) {
+			Utils.Log($"Looking for a distribution: {nameof(distroName)}=\"{distroName}\" {nameof(write)}=\"{write}\"");
+
 			using (var lxssKey = GetLxssKey()) {
 				foreach (var keyName in lxssKey.GetSubKeyNames()) {
 					using (var distroKey = lxssKey.OpenSubKey(keyName)) {
@@ -57,6 +61,8 @@ namespace LxRunOffline {
 		}
 
 		static object GetRegistryValue(string distroName, string valueName) {
+			Utils.Log($"Getting registry key value: {nameof(distroName)}=\"{distroName}\" {nameof(valueName)}=\"{valueName}\"");
+
 			using (var distroKey = FindDistroKey(distroName)) {
 				if (distroKey == null) ErrorNameNotFound(distroName);
 				return distroKey.GetValue(valueName);
@@ -64,6 +70,8 @@ namespace LxRunOffline {
 		}
 
 		static void SetRegistryValue(string distroName, string valueName, object value) {
+			Utils.Log($"Setting registry key value: {nameof(distroName)}=\"{distroName}\" {nameof(valueName)}=\"{valueName}\" {nameof(value)}=\"{value}\"");
+
 			using (var distroKey = FindDistroKey(distroName, true)) {
 				if (distroKey == null) ErrorNameNotFound(distroName);
 				distroKey.SetValue(valueName, value);
@@ -71,6 +79,8 @@ namespace LxRunOffline {
 		}
 
 		static void DeleteDirectory(string path) {
+			Utils.Log($"Deleting a directory: {nameof(path)}=\"{path}\"");
+
 			var retryCount = DeletionRetryCount;
 			while (true) {
 				retryCount--;
@@ -89,6 +99,8 @@ namespace LxRunOffline {
 		}
 
 		static bool MoveDirectory(string oldPath, string newPath) {
+			Utils.Log($"Moving a directory: {nameof(oldPath)}=\"{oldPath}\" {nameof(newPath)}=\"{newPath}\"");
+
 			try {
 				Directory.Move(oldPath, newPath);
 				return true;
@@ -165,6 +177,7 @@ namespace LxRunOffline {
 			if (Directory.Exists(tmpRootPath))
 				Utils.Error($"The \"rootfs\" directory already exists in the directory containing the program: {tmpRootPath}. It may be caused by a crash of this program. Please delete it manually.");
 
+			Utils.Log($"Calling Win32 API {nameof(WslWinApi.WslRegisterDistribution)}.");
 			CheckWinApiResult(WslWinApi.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
 
 			Directory.CreateDirectory(targetPath);
@@ -230,6 +243,7 @@ namespace LxRunOffline {
 				if (distroKey == null) ErrorNameNotFound(distroName);
 			}
 
+			Utils.Log($"Calling Win32 API {nameof(WslWinApi.WslLaunchInteractive)}");
 			CheckWinApiResult(WslWinApi.WslLaunchInteractive(distroName, command, useCwd, out var exitCode));
 			return exitCode;
 		}

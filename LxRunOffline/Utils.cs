@@ -4,6 +4,7 @@ using System.Security.Principal;
 namespace LxRunOffline {
 	static class Utils {
 		static string promptAnswer = Environment.GetEnvironmentVariable("LXRUNOFFLINE_PROMPT_ANSWER");
+		static bool showLog = Environment.GetEnvironmentVariable("LXRUNOFFLINE_VERBOSE") == "1";
 
 		static void WriteLine(string output, ConsoleColor color) {
 			Console.ForegroundColor = color;
@@ -12,7 +13,9 @@ namespace LxRunOffline {
 		}
 
 		public static void Log(string output) {
-			Console.Error.WriteLine(output);
+			if (showLog) {
+				Console.Error.WriteLine($"[LOG] {output}");
+			}
 		}
 
 		public static void Warning(string output) {

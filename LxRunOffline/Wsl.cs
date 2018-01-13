@@ -39,48 +39,50 @@ namespace LxRunOffline {
 			Utils.Error($"Target directory already exists: {distroName}.");
 		}
 
-		static RegistryKey GetLxssKey(bool write = false) {
-			Utils.Log("Opening the registry key for LXSS.");
+		static void LogDistributionFound(string path) {
+			Utils.Log($"Distribution found, ID is {path}.");
+		}
 
+		static RegistryKey GetLxssKey(bool write = false) {
+			Utils.Log($"Opening the LXSS registry key.");
 			return Registry.CurrentUser.CreateSubKey(LxssKeyPath, write);
 		}
 
 		static RegistryKey FindDistroKey(string distroName, bool write = false) {
-			Utils.Log($"Looking for a distribution: {nameof(distroName)}=\"{distroName}\" {nameof(write)}=\"{write}\"");
-
+			Utils.Log($"Looking for the registry key of the distribution \"{distroName}\". Write access: {write}.");
 			using (var lxssKey = GetLxssKey()) {
 				foreach (var keyName in lxssKey.GetSubKeyNames()) {
 					using (var distroKey = lxssKey.OpenSubKey(keyName)) {
 						if ((string)distroKey.GetValue("DistributionName") == distroName) {
+							LogDistributionFound(keyName);
 							return lxssKey.OpenSubKey(keyName, write);
 						}
 					}
 				}
 			}
+			Utils.Log($"Distribution \"{distroName}\" not found.");
 			return null;
 		}
 
 		static object GetRegistryValue(string distroName, string valueName) {
-			Utils.Log($"Getting registry key value: {nameof(distroName)}=\"{distroName}\" {nameof(valueName)}=\"{valueName}\"");
-
 			using (var distroKey = FindDistroKey(distroName)) {
 				if (distroKey == null) ErrorNameNotFound(distroName);
-				return distroKey.GetValue(valueName);
+				var value = distroKey.GetValue(valueName);
+				Utils.Log($"Getting the value of \"{valueName}\", which is \"{value}\".");
+				return value;
 			}
 		}
 
 		static void SetRegistryValue(string distroName, string valueName, object value) {
-			Utils.Log($"Setting registry key value: {nameof(distroName)}=\"{distroName}\" {nameof(valueName)}=\"{valueName}\" {nameof(value)}=\"{value}\"");
-
 			using (var distroKey = FindDistroKey(distroName, true)) {
 				if (distroKey == null) ErrorNameNotFound(distroName);
+				Utils.Log($"Setting the value of \"{valueName}\" to \"{value}\".");
 				distroKey.SetValue(valueName, value);
 			}
 		}
 
 		static void DeleteDirectory(string path) {
-			Utils.Log($"Deleting a directory: {nameof(path)}=\"{path}\"");
-
+			Utils.Log($"Deleting the directory \"{path}\".");
 			var retryCount = DeletionRetryCount;
 			while (true) {
 				retryCount--;
@@ -99,13 +101,12 @@ namespace LxRunOffline {
 		}
 
 		static bool MoveDirectory(string oldPath, string newPath) {
-			Utils.Log($"Moving a directory: {nameof(oldPath)}=\"{oldPath}\" {nameof(newPath)}=\"{newPath}\"");
-
+			Utils.Log($"Moving the directory \"{oldPath}\" to \"{newPath}\".");
 			try {
 				Directory.Move(oldPath, newPath);
 				return true;
 			} catch (Exception e) {
-			Utils.Warning($"Couldn't move the directory from \"{oldPath}\" to \"{newPath}\": {e.Message}");
+				Utils.Warning($"Couldn't move the directory \"{oldPath}\" to \"{newPath}\": {e.Message}");
 				Utils.Warning("It is still possible to move the directory using \"robocopy\", but it will cause problems including loss of directory permission and some files. You may have to fix them manually later.");
 				if (!Utils.Prompt()) return false;
 			}
@@ -115,6 +116,7 @@ namespace LxRunOffline {
 				Arguments = $"{RobocopyArguments} \"{Path.GetFullPath(oldPath)}\" \"{Path.GetFullPath(newPath)}\"",
 				Verb = "runas"
 			};
+			Utils.Log($"Starting the process: {startInfo.FileName} {startInfo.Arguments}");
 			using (var process = Process.Start(startInfo)) {
 				process.WaitForExit();
 				if (process.ExitCode > 1) {
@@ -134,6 +136,7 @@ namespace LxRunOffline {
 			using (var lxssKey = GetLxssKey()) {
 				foreach (var keyName in lxssKey.GetSubKeyNames()) {
 					using (var distroKey = lxssKey.OpenSubKey(keyName)) {
+						LogDistributionFound(keyName);
 						yield return (string)distroKey.GetValue("DistributionName");
 					}
 				}
@@ -142,8 +145,10 @@ namespace LxRunOffline {
 
 		public static string GetDefaultDistro() {
 			using (var lxssKey = GetLxssKey(true)) {
-				using (var distroKey = lxssKey.OpenSubKey((string)lxssKey.GetValue("DefaultDistribution") ?? string.Empty)) {
+				var keyName = (string)lxssKey.GetValue("DefaultDistribution") ?? string.Empty;
+				using (var distroKey = lxssKey.OpenSubKey(keyName)) {
 					if (distroKey == null) Utils.Error($"Distribution not found, some registry keys may be corrupt. Set a new default to fix it.");
+					LogDistributionFound(keyName);
 					return (string)distroKey.GetValue("DistributionName");
 				}
 			}
@@ -158,6 +163,7 @@ namespace LxRunOffline {
 			}
 
 			using (var lxssKey = GetLxssKey(true)) {
+				Utils.Log($"Setting the value of \"DefaultDistribution\" to \"{distroKeyName}\".");
 				lxssKey.SetValue("DefaultDistribution", distroKeyName);
 			}
 		}
@@ -180,7 +186,9 @@ namespace LxRunOffline {
 			Utils.Log($"Calling Win32 API {nameof(WslWinApi.WslRegisterDistribution)}.");
 			CheckWinApiResult(WslWinApi.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
 
+			Utils.Log($"Creating the directory \"{targetPath}\".");
 			Directory.CreateDirectory(targetPath);
+
 			if (!MoveDirectory(tmpRootPath, Path.Combine(targetPath, "rootfs"))) {
 				Utils.Warning("Directory moving failed, cleaning up.");
 				UnregisterDistro(distroName);
@@ -198,13 +206,15 @@ namespace LxRunOffline {
 			}
 			if (!Directory.Exists(installPath)) ErrorDirectoryExists(installPath);
 
+			var id = Guid.NewGuid().ToString("B");
+			Utils.Log($"Creating registry key {id} for the distribution \"{distroName}\".");
 			using (var lxssKey = GetLxssKey(true))
-			using (var distroKey = lxssKey.CreateSubKey(Guid.NewGuid().ToString("B"))) {
+			using (var distroKey = lxssKey.CreateSubKey(id)) {
 				distroKey.SetValue("DistributionName", distroName);
-				distroKey.SetValue("BasePath", Path.GetFullPath(installPath).TrimEnd('\\'));
 				distroKey.SetValue("State", 1);
 				distroKey.SetValue("Version", 1);
 			}
+			SetInstallationDirectory(distroName, Path.GetFullPath(installPath).TrimEnd('\\'));
 		}
 
 		public static void UninstallDistro(string distroName) {
@@ -216,7 +226,7 @@ namespace LxRunOffline {
 		}
 
 		public static void UnregisterDistro(string distroName) {
-			string distroKeyName = "";
+			string distroKeyName;
 
 			using (var distroKey = FindDistroKey(distroName)) {
 				if (distroKey == null) ErrorNameNotFound(distroName);
@@ -224,6 +234,7 @@ namespace LxRunOffline {
 			}
 
 			using (var lxssKey = GetLxssKey(true)) {
+				Utils.Log($"Deleting the registry key {distroKeyName}.");
 				lxssKey.DeleteSubKey(distroKeyName);
 			}
 		}
@@ -243,8 +254,9 @@ namespace LxRunOffline {
 				if (distroKey == null) ErrorNameNotFound(distroName);
 			}
 
-			Utils.Log($"Calling Win32 API {nameof(WslWinApi.WslLaunchInteractive)}");
+			Utils.Log($"Calling Win32 API {nameof(WslWinApi.WslLaunchInteractive)}.");
 			CheckWinApiResult(WslWinApi.WslLaunchInteractive(distroName, command, useCwd, out var exitCode));
+			Utils.Log($"Exit code is {exitCode}.");
 			return exitCode;
 		}
 

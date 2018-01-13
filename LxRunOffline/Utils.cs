@@ -13,9 +13,10 @@ namespace LxRunOffline {
 		}
 
 		public static void Log(string output) {
-			if (showLog) {
-				Console.Error.WriteLine($"[LOG] {output}");
-			}
+#if !DEBUG
+			if (!showLog) return;
+#endif
+			WriteLine($"[LOG] {output}", ConsoleColor.White);
 		}
 
 		public static void Warning(string output) {

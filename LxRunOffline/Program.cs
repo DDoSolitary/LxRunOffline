@@ -224,8 +224,8 @@ namespace LxRunOffline {
 						}
 						return 0;
 					default:
-						Console.Error.WriteLine("Flag name not found.");
-						return 1;
+						Utils.Error("Flag name not found.");
+						return 1; // Never reached.
 					}
 				},
 				errs => 1

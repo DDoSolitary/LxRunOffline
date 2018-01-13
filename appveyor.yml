@@ -31,9 +31,11 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Use `robocopy` to support installing to different volumes.
-      - Retry on directory deletion failures.
-      - Fix the problem that the program crashes when some registry keys doesn't exist. (#14)
+      - Fix the problem that `robocopy` doesn't work when using relative paths.
+      - Fix the problem that the program crashes if user disallow starting `robocopy` using UAC.
+      - Fix the `config-env` command.
+      - Support running a distribution without propagating current working directory. (`run -w`)
+      - Improve error output, add logging.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

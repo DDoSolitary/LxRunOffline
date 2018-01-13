@@ -117,12 +117,23 @@ namespace LxRunOffline {
 				Verb = "runas"
 			};
 			Utils.Log($"Starting the process: {startInfo.FileName} {startInfo.Arguments}");
-			using (var process = Process.Start(startInfo)) {
+
+			Process process = null;
+			int exitCode;
+			try {
+				process = Process.Start(startInfo);
 				process.WaitForExit();
-				if (process.ExitCode > 1) {
-					Utils.Warning($"robocopy exited with a non-successful code: {process.ExitCode}.");
-					return false;
-				}
+				exitCode = process.ExitCode;
+			} catch (Exception e) {
+				Utils.Warning($"Could not start the process: {e.Message}");
+				return false;
+			} finally {
+				process?.Dispose();
+			}
+
+			if (exitCode > 1) {
+				Utils.Warning($"robocopy exited with a non-successful code: {exitCode}.");
+				return false;
 			}
 			DeleteDirectory(oldPath);
 			return true;
@@ -194,7 +205,7 @@ namespace LxRunOffline {
 				UnregisterDistro(distroName);
 				DeleteDirectory(targetPath);
 				DeleteDirectory(tmpRootPath);
-				Environment.Exit(1);
+				Utils.Error("Installation failed.");
 			}
 
 			SetInstallationDirectory(distroName, targetPath);

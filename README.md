@@ -2,13 +2,16 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/wnqrsjk1rdc1cmpn?svg=true)](https://ci.appveyor.com/project/ddosolitary/lxrunoffline)
 
-An offline installer for *Windows Subsystem for Linux (WSL)*.
+A full-featured utility for *Windows Subsystem for Linux (WSL)*.
 
 # Features
 
 - No Internet access required when installing.
-- Install any Linux distros that you like.
-- Install the Linux filesystem to any directory.
+- Install any Linux distros to any location on your disk.
+- Moving existing installations to other locations.
+- Register existing installation directories. (For portable usage.)
+- Running arbitrary Linux commands on installations.
+- Configure default user, environment variables and various configuration flags.
 
 # Install
 
@@ -21,6 +24,8 @@ You can install via Chocolatey `choco install lxrunoffline`, or download the bin
 See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) for ways to create the ".tar.gz" files for different distros, which is required by the `LxRunOffline install` command.
 
 Run `LxRunOffline help` for the command line interface.
+
+Set the environment variable `LXRUNOFFLINE_PROMPT_ANSWER` to `y` or `n` to answer confirmations automatically. Set `LXRUNOFFLINE_VERBOSE` to `1` to enable verbose output.
 
 # Compatibility
 

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("LxRunOffline")]
 [assembly: AssemblyProduct("LxRunOffline")]
-[assembly: AssemblyDescription("An offline installer for Bash on Windows.")]
+[assembly: AssemblyDescription("A full-featured utility for Windows Subsystem for Linux (WSL).")]
 [assembly: AssemblyCompany("DDoSolitary")]
 
 [assembly: ComVisible(false)]

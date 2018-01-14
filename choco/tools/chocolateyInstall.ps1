@@ -4,6 +4,10 @@ if ($osVersion -ne 10 -or $osRelId -lt 1703) {
 	throw "This package requires Windows 10 Fall Creators Update or later."
 }
 
+if ($Env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
+	throw "This package requires a 64-bit Windows."
+}
+
 $packageName = 'lxrunoffline'
 $url = 'https://github.com/DDoSolitary/LxRunOffline/releases/download/v{VERSION}/LxRunOffline-v{VERSION}.zip'
 $unzipLocation = Join-Path $Env:ChocolateyToolsLocation $packageName

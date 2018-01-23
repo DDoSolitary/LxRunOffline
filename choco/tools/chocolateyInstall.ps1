@@ -8,6 +8,9 @@ if ($Env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
 	throw "This package requires a 64-bit Windows."
 }
 
+New-ItemProperty -Force -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\Kernel' -Name 'obcaseinsensitive' -Value 0 -PropertyType Dword
+echo 'Please restart your system to let registry changes take effect.'
+
 $packageName = 'lxrunoffline'
 $url = 'https://github.com/DDoSolitary/LxRunOffline/releases/download/v{VERSION}/LxRunOffline-v{VERSION}.zip'
 $unzipLocation = Join-Path $Env:ChocolateyToolsLocation $packageName

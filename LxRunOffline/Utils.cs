@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Principal;
+using Microsoft.Win32;
 
 namespace LxRunOffline {
 	static class Utils {
@@ -40,11 +41,26 @@ namespace LxRunOffline {
 			}
 		}
 
-		public static bool IsAdministrator()
+		public static bool CheckAdministrator()
 		{
 			var identity = WindowsIdentity.GetCurrent();
 			var principal = new WindowsPrincipal(identity);
-			return principal.IsInRole(WindowsBuiltInRole.Administrator);
+
+			if (!principal.IsInRole(WindowsBuiltInRole.Administrator)) return true;
+
+			Warning("You are running LxRunOffline with administrator privileges. It may cause problems.");
+			return Prompt();
+		}
+
+		public static bool CheckCaseInsensitive() {
+			const string regKey = @"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Kernel";
+			const string regValueName = "obcaseinsensitive";
+
+			var value = Registry.GetValue(regKey, regValueName, 1);
+			if (value is int intValue && intValue == 0) return true;
+
+			Warning($"The registry value \"{regKey}\\{regValueName}\" is NOT set to \"0\", which will cause problems. Please set it to \"0\" and restart your system.");
+			return Prompt();
 		}
 	}
 }

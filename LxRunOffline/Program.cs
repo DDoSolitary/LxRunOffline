@@ -117,10 +117,7 @@ namespace LxRunOffline {
 
 	class Program {
 		static int Main(string[] args) {
-			if (Utils.IsAdministrator()) {
-				Utils.Warning("You are running LxRunOffline with administrator privileges. It may cause problems.");
-				if (!Utils.Prompt()) return 0;
-			}
+			if (!Utils.CheckAdministrator()) return 0;
 
 			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(
 				(ListOptions opts) => {
@@ -136,6 +133,8 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(InstallOptions opts) => {
+					if (!Utils.CheckCaseInsensitive()) return 0;
+
 					Wsl.InstallDistro(opts.Name, opts.TarGzFile, opts.TargetDirectory);
 					return 0;
 				},
@@ -152,6 +151,8 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(MoveOptions opts) => {
+					if (!Utils.CheckCaseInsensitive()) return 0;
+
 					Wsl.MoveDistro(opts.Name, opts.TargetDirectory);
 					return 0;
 				},

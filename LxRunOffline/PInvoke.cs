@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 
 namespace LxRunOffline {
-	class WslWinApi {
+	static class PInvoke {
 		[DllImport("wslapi.dll", CharSet = CharSet.Unicode)]
 		public static extern uint WslLaunchInteractive(
 			string distributionName,

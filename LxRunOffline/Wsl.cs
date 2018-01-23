@@ -13,7 +13,7 @@ namespace LxRunOffline {
 		EnableDriveMounting = 4
 	}
 
-	class Wsl {
+	static class Wsl {
 
 		const string LxssKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Lxss";
 		const string RobocopyArguments = "/E /COPYALL /NFL /NDL /IS /IT";
@@ -194,8 +194,8 @@ namespace LxRunOffline {
 			if (Directory.Exists(tmpRootPath))
 				Utils.Error($"The \"rootfs\" directory already exists in the directory containing the program: {tmpRootPath}. It may be caused by a crash of this program. Please delete it manually.");
 
-			Utils.Log($"Calling Win32 API {nameof(WslWinApi.WslRegisterDistribution)}.");
-			CheckWinApiResult(WslWinApi.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
+			Utils.Log($"Calling Win32 API {nameof(PInvoke.WslRegisterDistribution)}.");
+			CheckWinApiResult(PInvoke.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
 
 			Utils.Log($"Creating the directory \"{targetPath}\".");
 			Directory.CreateDirectory(targetPath);
@@ -265,8 +265,8 @@ namespace LxRunOffline {
 				if (distroKey == null) ErrorNameNotFound(distroName);
 			}
 
-			Utils.Log($"Calling Win32 API {nameof(WslWinApi.WslLaunchInteractive)}.");
-			CheckWinApiResult(WslWinApi.WslLaunchInteractive(distroName, command, useCwd, out var exitCode));
+			Utils.Log($"Calling Win32 API {nameof(PInvoke.WslLaunchInteractive)}.");
+			CheckWinApiResult(PInvoke.WslLaunchInteractive(distroName, command, useCwd, out var exitCode));
 			Utils.Log($"Exit code is {exitCode}.");
 			return exitCode;
 		}

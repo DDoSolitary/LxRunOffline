@@ -38,8 +38,6 @@
     <Compile Include="PInvoke.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,5 @@
-﻿bin/
-obj/
+﻿Debug/
+Release/
 packages/
 paket-files/
+.vs/

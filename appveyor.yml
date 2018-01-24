@@ -13,7 +13,7 @@ after_build:
       $project = $Env:APPVEYOR_PROJECT_NAME
       $name = "$project-$Env:APPVEYOR_BUILD_VERSION.zip"
       $dir = ".\$project\bin\$Env:CONFIGURATION"
-      7z a $name "$dir\$project.exe" "$dir\$project.exe.config" "$dir\CommandLine.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
+      7z a $name "$dir\$project.exe" "$dir\$project.exe.config" "$dir\CommandLine.dll" "$dir\LxssEa.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
       if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash
           $version = $Env:APPVEYOR_REPO_TAG_NAME.Substring(1)

@@ -67,17 +67,21 @@ extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR path, bool director
 	return res == STATUS_SUCCESS ? hFile : INVALID_HANDLE_VALUE;
 }
 
+const char *LxssEaName = "LXATTRB";
+const int LxssEaNameLength = 7;
+
 extern "C" __declspec(dllexport) bool CopyLxssEa(HANDLE hFrom, HANDLE hTo) {
-	const char *lxssEaName = "LXATTRB";
-	const int getEaInfoSize = (int)(sizeof(FILE_GET_EA_INFORMATION) + strlen(lxssEaName));
-	const int eaInfoSize = getEaInfoSize + USHRT_MAX;
+	const int getEaInfoSize = (int)(sizeof(FILE_GET_EA_INFORMATION) + LxssEaNameLength);
+	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + USHRT_MAX);
 
-	auto getEaInfo = (FILE_GET_EA_INFORMATION *)new char[getEaInfoSize];
+	char getEaBuf[getEaInfoSize];
+	auto getEaInfo = (FILE_GET_EA_INFORMATION *)getEaBuf;
 	getEaInfo->NextEntryOffset = 0;
-	getEaInfo->EaNameLength = (int)strlen(lxssEaName);
-	strcpy(getEaInfo->EaName, lxssEaName);
+	getEaInfo->EaNameLength = LxssEaNameLength;
+	strcpy(getEaInfo->EaName, LxssEaName);
 
-	auto eaInfo = (FILE_FULL_EA_INFORMATION *)new char[eaInfoSize];
+	char eaBuf[eaInfoSize];
+	auto eaInfo = (FILE_FULL_EA_INFORMATION *)eaBuf;
 	IO_STATUS_BLOCK status;
 	auto res = NtQueryEaFile(hFrom, &status, eaInfo, eaInfoSize, true, getEaInfo, getEaInfoSize, nullptr, true);
 	if (res != STATUS_SUCCESS) return false;

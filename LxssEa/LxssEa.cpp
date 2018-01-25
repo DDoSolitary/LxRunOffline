@@ -91,3 +91,21 @@ extern "C" __declspec(dllexport) bool CopyLxssEa(HANDLE hFrom, HANDLE hTo) {
 
 	return true;
 }
+
+extern "C" __declspec(dllexport) bool SetLxssEa(HANDLE hFile, char *data, int dataLength) {
+	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + dataLength);
+	auto eaInfo = (FILE_FULL_EA_INFORMATION *)new char[eaInfoSize];
+	eaInfo->NextEntryOffset = 0;
+	eaInfo->Flags = 0;
+	eaInfo->EaNameLength = LxssEaNameLength;
+	eaInfo->EaValueLength = dataLength;
+	strcpy(eaInfo->EaName, LxssEaName);
+	memcpy(eaInfo->EaName + LxssEaNameLength + 1, data, dataLength);
+
+	IO_STATUS_BLOCK status;
+	auto res = NtSetEaFile(hFile, &status, eaInfo, eaInfoSize);
+	if (res != STATUS_SUCCESS) return false;
+
+	delete eaInfo;
+	return true;
+}

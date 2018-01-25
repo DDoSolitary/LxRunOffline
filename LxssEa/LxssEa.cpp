@@ -64,6 +64,7 @@ extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR path, bool director
 		nullptr, 0
 	);
 
+	RtlFreeUnicodeString(&ntPath);
 	return res == STATUS_SUCCESS ? hFile : INVALID_HANDLE_VALUE;
 }
 

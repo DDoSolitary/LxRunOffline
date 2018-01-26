@@ -13,7 +13,7 @@ echo 'Please restart your system to let registry changes take effect.'
 
 $packageName = 'lxrunoffline'
 $url = 'https://github.com/DDoSolitary/LxRunOffline/releases/download/v{VERSION}/LxRunOffline-v{VERSION}.zip'
-$unzipLocation = Join-Path $Env:ChocolateyToolsLocation $packageName
+$unzipLocation = Join-Path (Get-ToolsLocation) $packageName
 if (Test-Path $unzipLocation) {
 	rm -Recurse $unzipLocation
 }

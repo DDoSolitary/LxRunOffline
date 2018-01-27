@@ -1,2 +1,2 @@
 source https://nuget.org/api/v2
-nuget CommandLineParser prerelease
+nuget CommandLineParser prerelease framework: net47

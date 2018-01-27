@@ -39,20 +39,12 @@ extern "C" NTSYSAPI NTSTATUS NTAPI NtSetEaFile(
 	_In_ ULONG EaBufferSize
 );
 
-extern "C" NTSYSAPI BOOLEAN NTAPI RtlDosPathNameToNtPathName_U(
-	_In_ PWSTR DosFileName,
-	_Out_ PUNICODE_STRING NtFileName,
-	_Out_opt_ PWSTR* FilePart,
-	_Out_opt_ PVOID RelativeName
-);
-
-extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR path, bool directory, bool create, bool write) {
-	UNICODE_STRING ntPath;
-	if (!RtlDosPathNameToNtPathName_U(path, &ntPath, nullptr, nullptr))
-		return INVALID_HANDLE_VALUE;
+extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR ntPath, bool directory, bool create, bool write) {
+	UNICODE_STRING uniStr;
+	RtlInitUnicodeString(&uniStr, ntPath);
 
 	OBJECT_ATTRIBUTES objAttrs;
-	InitializeObjectAttributes(&objAttrs, &ntPath, 0, 0, nullptr);
+	InitializeObjectAttributes(&objAttrs, &uniStr, 0, 0, nullptr);
 
 	HANDLE hFile;
 	IO_STATUS_BLOCK status;
@@ -64,7 +56,6 @@ extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR path, bool director
 		nullptr, 0
 	);
 
-	RtlFreeUnicodeString(&ntPath);
 	return res == STATUS_SUCCESS ? hFile : INVALID_HANDLE_VALUE;
 }
 

@@ -32,7 +32,7 @@ namespace LxRunOffline {
 
 		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
 		public static extern SafeFileHandle GetFileHandle(
-			[MarshalAs(UnmanagedType.LPWStr)]string path,
+			[MarshalAs(UnmanagedType.LPWStr)]string ntPath,
 			bool directory,
 			bool create,
 			bool write

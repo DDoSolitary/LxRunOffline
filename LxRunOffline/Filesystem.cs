@@ -68,10 +68,5 @@ namespace LxRunOffline {
 				}
 			}
 		}
-
-		public static void MoveDirectory(string oldPath, string newPath) {
-			CopyDirectory(oldPath, newPath);
-			DeleteDirectory(oldPath);
-		}
 	}
 }

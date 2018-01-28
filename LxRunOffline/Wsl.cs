@@ -136,10 +136,12 @@ namespace LxRunOffline {
 			Utils.Log($"Calling Win32 API {nameof(PInvoke.WslRegisterDistribution)}.");
 			CheckWinApiResult(PInvoke.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
 
-			Utils.Log($"Creating the directory \"{targetPath}\".");
-			Directory.CreateDirectory(targetPath);
+			var targetRootPath = Path.Combine(targetPath, "rootfs");
+			Utils.Log($"Creating the directory \"{targetRootPath}\".");
+			Directory.CreateDirectory(targetRootPath);
 
-			FileSystem.MoveDirectory(tmpRootPath, Path.Combine(targetPath, "rootfs"));
+			FileSystem.CopyDirectory(tmpRootPath, targetRootPath);
+			FileSystem.DeleteDirectory(tmpRootPath);
 
 			SetInstallationDirectory(distroName, targetPath);
 		}
@@ -186,8 +188,14 @@ namespace LxRunOffline {
 		public static void MoveDistro(string distroName, string newPath) {
 			if (Directory.Exists(newPath)) ErrorDirectoryExists(newPath);
 
+			var newRootPath = Path.Combine(newPath, "rootfs");
+			Utils.Log($"Creating the directory \"{newRootPath}\".");
+			Directory.CreateDirectory(newRootPath);
+
 			var oldPath = GetInstallationDirectory(distroName);
-			FileSystem.MoveDirectory(oldPath, newPath);
+			FileSystem.CopyDirectory(Path.Combine(oldPath, "rootfs"), newRootPath);
+			FileSystem.DeleteDirectory(oldPath);
+
 			SetInstallationDirectory(distroName, newPath);
 		}
 

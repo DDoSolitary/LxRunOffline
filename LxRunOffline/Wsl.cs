@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using Microsoft.Win32;
@@ -16,8 +15,6 @@ namespace LxRunOffline {
 	static class Wsl {
 
 		const string LxssKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Lxss";
-		const string RobocopyArguments = "/E /COPYALL /NFL /NDL /IS /IT";
-		const int DeletionRetryCount = 3;
 
 		#region Helpers
 
@@ -81,64 +78,6 @@ namespace LxRunOffline {
 			}
 		}
 
-		static void DeleteDirectory(string path) {
-			Utils.Log($"Deleting the directory \"{path}\".");
-			var retryCount = DeletionRetryCount;
-			while (true) {
-				retryCount--;
-				try {
-					Directory.Delete(path, true);
-					return;
-				} catch (Exception e) {
-					Utils.Warning($"Couldn't delete the directory \"{path}\": {e.Message}");
-					if (retryCount == 0) {
-						Utils.Warning($"You may have to delete it manually.");
-					} else {
-						Utils.Warning($"Retrying.");
-					}
-				}
-			}
-		}
-
-		static bool MoveDirectory(string oldPath, string newPath) {
-			Utils.Log($"Moving the directory \"{oldPath}\" to \"{newPath}\".");
-			try {
-				Directory.Move(oldPath, newPath);
-				return true;
-			} catch (Exception e) {
-				Utils.Warning($"Couldn't move the directory \"{oldPath}\" to \"{newPath}\": {e.Message}");
-				Utils.Warning("It is still possible to move the directory using \"robocopy\", but it will cause problems including loss of directory permission and some files. You may have to fix them manually later.");
-				if (!Utils.Prompt()) return false;
-			}
-
-			var startInfo = new ProcessStartInfo {
-				FileName = "robocopy",
-				Arguments = $"{RobocopyArguments} \"{Path.GetFullPath(oldPath)}\" \"{Path.GetFullPath(newPath)}\"",
-				Verb = "runas"
-			};
-			Utils.Log($"Starting the process: {startInfo.FileName} {startInfo.Arguments}");
-
-			Process process = null;
-			int exitCode;
-			try {
-				process = Process.Start(startInfo);
-				process.WaitForExit();
-				exitCode = process.ExitCode;
-			} catch (Exception e) {
-				Utils.Warning($"Could not start the process: {e.Message}");
-				return false;
-			} finally {
-				process?.Dispose();
-			}
-
-			if (exitCode > 1) {
-				Utils.Warning($"robocopy exited with a non-successful code: {exitCode}.");
-				return false;
-			}
-			DeleteDirectory(oldPath);
-			return true;
-		}
-
 		#endregion
 
 		#region Global operations
@@ -200,13 +139,7 @@ namespace LxRunOffline {
 			Utils.Log($"Creating the directory \"{targetPath}\".");
 			Directory.CreateDirectory(targetPath);
 
-			if (!MoveDirectory(tmpRootPath, Path.Combine(targetPath, "rootfs"))) {
-				Utils.Warning("Directory moving failed, cleaning up.");
-				UnregisterDistro(distroName);
-				DeleteDirectory(targetPath);
-				DeleteDirectory(tmpRootPath);
-				Utils.Error("Installation failed.");
-			}
+			FileSystem.MoveDirectory(tmpRootPath, Path.Combine(targetPath, "rootfs"));
 
 			SetInstallationDirectory(distroName, targetPath);
 		}
@@ -233,7 +166,7 @@ namespace LxRunOffline {
 			if (!Directory.Exists(installPath)) ErrorDirectoryExists(installPath);
 
 			UnregisterDistro(distroName);
-			DeleteDirectory(installPath);
+			FileSystem.DeleteDirectory(installPath);
 		}
 
 		public static void UnregisterDistro(string distroName) {
@@ -254,9 +187,7 @@ namespace LxRunOffline {
 			if (Directory.Exists(newPath)) ErrorDirectoryExists(newPath);
 
 			var oldPath = GetInstallationDirectory(distroName);
-			if (!MoveDirectory(oldPath, newPath)) {
-				Utils.Error("Directory moving failed.");
-			}
+			FileSystem.MoveDirectory(oldPath, newPath);
 			SetInstallationDirectory(distroName, newPath);
 		}
 

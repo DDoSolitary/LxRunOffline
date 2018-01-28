@@ -31,6 +31,13 @@ namespace LxRunOffline {
 		public static extern uint WslRegisterDistribution(string distributionName, string tarGzFilename);
 
 		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		public static extern bool EnumerateDirectory(
+			SafeFileHandle hFile,
+			[MarshalAs(UnmanagedType.LPWStr)]out string fileName,
+			out bool directory
+		);
+
+		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
 		public static extern SafeFileHandle GetFileHandle(
 			[MarshalAs(UnmanagedType.LPWStr)]string ntPath,
 			bool directory,

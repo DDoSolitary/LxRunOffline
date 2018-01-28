@@ -4,7 +4,22 @@
 #undef WIN32_NO_STATUS
 #include <winternl.h>
 #include <ntstatus.h>
+#include <objbase.h>
 #include <climits>
+
+struct FILE_DIRECTORY_INFORMATION {
+	ULONG NextEntryOffset;
+	ULONG FileIndex;
+	LARGE_INTEGER CreationTime;
+	LARGE_INTEGER LastAccessTime;
+	LARGE_INTEGER LastWriteTime;
+	LARGE_INTEGER ChangeTime;
+	LARGE_INTEGER EndOfFile;
+	LARGE_INTEGER AllocationSize;
+	ULONG FileAttributes;
+	ULONG FileNameLength;
+	WCHAR FileName[1];
+};
 
 struct FILE_GET_EA_INFORMATION {
 	ULONG NextEntryOffset;
@@ -19,6 +34,20 @@ struct FILE_FULL_EA_INFORMATION {
 	USHORT EaValueLength;
 	CHAR EaName[1];
 };
+
+extern "C" NTSYSAPI NTSTATUS NTAPI NtQueryDirectoryFile(
+	_In_ HANDLE FileHandle,
+	_In_opt_ HANDLE Event,
+	_In_opt_ PIO_APC_ROUTINE ApcRoutine,
+	_In_opt_ PVOID ApcContext,
+	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
+	_Out_ PVOID FileInformation,
+	_In_ ULONG Length,
+	_In_ FILE_INFORMATION_CLASS FileInformationClass,
+	_In_ BOOLEAN ReturnSingleEntry,
+	_In_opt_ PUNICODE_STRING FileName,
+	_In_ BOOLEAN RestartScan
+);
 
 extern "C" NTSYSAPI NTSTATUS NTAPI NtQueryEaFile(
 	_In_ HANDLE FileHandle,
@@ -57,6 +86,25 @@ extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR ntPath, bool direct
 	);
 
 	return res == STATUS_SUCCESS ? hFile : INVALID_HANDLE_VALUE;
+}
+
+extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *fileName, bool *directory) {
+	const int fileInfoSize = (int)(sizeof(FILE_DIRECTORY_INFORMATION) + UCHAR_MAX * sizeof(wchar_t));
+	char fileInfoBuf[fileInfoSize] = { 0 };
+	auto fileInfo = (FILE_DIRECTORY_INFORMATION *)fileInfoBuf;
+
+	IO_STATUS_BLOCK status;
+	auto res = NtQueryDirectoryFile(hFile, nullptr, nullptr, nullptr, &status, fileInfo, fileInfoSize, FileDirectoryInformation, true, nullptr, false);
+	if (res == STATUS_NO_MORE_FILES) return true;
+	if (res != STATUS_SUCCESS) {
+		*fileName = nullptr;
+		return false;
+	}
+
+	*fileName = (LPWSTR)CoTaskMemAlloc(fileInfo->FileNameLength * sizeof(wchar_t));
+	wcscpy(*fileName, fileInfo->FileName);
+	*directory = (fileInfo->FileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;
+	return true;
 }
 
 const char *LxssEaName = "LXATTRB";

@@ -36,7 +36,6 @@
     <Compile Include="FileSystem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Wsl.cs" />
-    <Compile Include="PInvoke.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <None Include="App.config" />

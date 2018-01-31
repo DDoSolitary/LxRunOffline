@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
 namespace LxRunOffline {
@@ -15,6 +16,21 @@ namespace LxRunOffline {
 	static class Wsl {
 
 		const string LxssKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Lxss";
+
+		#region P/Invoke
+
+		[DllImport("wslapi.dll", CharSet = CharSet.Unicode)]
+		public static extern uint WslLaunchInteractive(
+			string distributionName,
+			string command,
+			bool useCurrentWorkingDirectory,
+			out uint exitCode
+		);
+
+		[DllImport("wslapi.dll", CharSet = CharSet.Unicode)]
+		public static extern uint WslRegisterDistribution(string distributionName, string tarGzFilename);
+
+		#endregion
 
 		#region Helpers
 
@@ -133,8 +149,8 @@ namespace LxRunOffline {
 			if (Directory.Exists(tmpRootPath))
 				Utils.Error($"The \"rootfs\" directory already exists in the directory containing the program: {tmpRootPath}. It may be caused by a crash of this program. Please delete it manually.");
 
-			Utils.Log($"Calling Win32 API {nameof(PInvoke.WslRegisterDistribution)}.");
-			CheckWinApiResult(PInvoke.WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
+			Utils.Log($"Calling Win32 API {nameof(WslRegisterDistribution)}.");
+			CheckWinApiResult(WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
 
 			var targetRootPath = Path.Combine(targetPath, "rootfs");
 			Utils.Log($"Creating the directory \"{targetRootPath}\".");
@@ -204,8 +220,8 @@ namespace LxRunOffline {
 				if (distroKey == null) ErrorNameNotFound(distroName);
 			}
 
-			Utils.Log($"Calling Win32 API {nameof(PInvoke.WslLaunchInteractive)}.");
-			CheckWinApiResult(PInvoke.WslLaunchInteractive(distroName, command, useCwd, out var exitCode));
+			Utils.Log($"Calling Win32 API {nameof(WslLaunchInteractive)}.");
+			CheckWinApiResult(WslLaunchInteractive(distroName, command, useCwd, out var exitCode));
 			Utils.Log($"Exit code is {exitCode}.");
 			return exitCode;
 		}

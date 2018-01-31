@@ -7,7 +7,44 @@ using System.Runtime.InteropServices;
 
 namespace LxRunOffline {
 	static class FileSystem {
+		[StructLayout(LayoutKind.Sequential)]
+		public class LxssEaData {
+			public short Reserved1;
+			public short Version = 1;
+			public int Mode;
+			public int Uid;
+			public int Gid;
+			public int Reserved2;
+			public int AtimeNsec;
+			public int MtimeNsec;
+			public int CtimeNsec;
+			public long Atime;
+			public long Mtime;
+			public long Ctime;
+		}
+
 		const int DeletionRetryCount = 3;
+
+		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		static extern bool EnumerateDirectory(
+			SafeFileHandle hFile,
+			[MarshalAs(UnmanagedType.LPWStr)]out string fileName,
+			out bool directory
+		);
+
+		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		static extern SafeFileHandle GetFileHandle(
+			[MarshalAs(UnmanagedType.LPWStr)]string ntPath,
+			bool directory,
+			bool create,
+			bool write
+		);
+
+		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		static extern bool CopyLxssEa(SafeFileHandle hFrom, SafeFileHandle hTo);
+
+		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		static extern bool SetLxssEa(SafeFileHandle hFile, LxssEaData data, int dataLength);
 
 		static string ToNtPath(this string path) => $@"\??\{Path.GetFullPath(path)}";
 
@@ -49,11 +86,11 @@ namespace LxRunOffline {
 		}
 
 		public static void CopyDirectory(string oldPath, string newPath) {
-			using (var hDir = PInvoke.GetFileHandle(oldPath.ToNtPath(), true, false, false)) {
+			using (var hDir = GetFileHandle(oldPath.ToNtPath(), true, false, false)) {
 				CheckFileHandle(hDir, oldPath);
 
 				while (true) {
-					if (!PInvoke.EnumerateDirectory(hDir, out var fileName, out var isDir)) {
+					if (!EnumerateDirectory(hDir, out var fileName, out var isDir)) {
 						Utils.Error($"Couldn't get the contents of the directory \"{oldPath}\".");
 					}
 					if (fileName == null) break;
@@ -62,12 +99,12 @@ namespace LxRunOffline {
 					var oldFilePath = Path.Combine(oldPath, fileName);
 					var newFilePath = Path.Combine(newPath, fileName);
 
-					using (var hOld = PInvoke.GetFileHandle(oldFilePath.ToNtPath(), isDir, false, false))
-					using (var hNew = PInvoke.GetFileHandle(newFilePath.ToNtPath(), isDir, true, true)) {
+					using (var hOld = GetFileHandle(oldFilePath.ToNtPath(), isDir, false, false))
+					using (var hNew = GetFileHandle(newFilePath.ToNtPath(), isDir, true, true)) {
 						CheckFileHandle(hOld, oldFilePath);
 						CheckFileHandle(hNew, newFilePath);
 
-						if (!PInvoke.CopyLxssEa(hOld, hNew)) {
+						if (!CopyLxssEa(hOld, hNew)) {
 							Utils.Error($"Couldn't copy extended attributes from \"{oldFilePath}\" to \"{newFilePath}\".");
 						}
 
@@ -96,10 +133,10 @@ namespace LxRunOffline {
 					if (type == TarHeader.LF_LINK) {
 						// TODO: Create hard links.
 					} else {
-						using (var hNew = PInvoke.GetFileHandle(newFilePath.ToNtPath(), type == TarHeader.LF_DIR, true, true)) {
+						using (var hNew = GetFileHandle(newFilePath.ToNtPath(), type == TarHeader.LF_DIR, true, true)) {
 							CheckFileHandle(hNew, newFilePath);
 
-							var eaData = new PInvoke.LxssEaData {
+							var eaData = new LxssEaData {
 								Mode = entry.TarHeader.Mode,
 								Uid = entry.UserId,
 								Gid = entry.GroupId
@@ -125,7 +162,7 @@ namespace LxRunOffline {
 								continue;
 							}
 
-							PInvoke.SetLxssEa(hNew, eaData, Marshal.SizeOf(typeof(PInvoke.LxssEaData)));
+							SetLxssEa(hNew, eaData, Marshal.SizeOf(typeof(LxssEaData)));
 
 							if (type == TarHeader.LF_DIR) continue;
 							using (var fsNew = new FileStream(hNew, FileAccess.ReadWrite)) {

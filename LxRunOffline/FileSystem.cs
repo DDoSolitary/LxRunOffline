@@ -55,6 +55,8 @@ namespace LxRunOffline {
 				else if (c >= 1 && c <= 31 || c == '<' || c == '>' || c == ':' || c == '"' || c == '\\' || c == '|' || c == '*' || c == '#') {
 					sb.Append('#');
 					sb.Append(((int)c).ToString("X4"));
+				} else {
+					sb.Append(c);
 				}
 			}
 			return sb.ToString();

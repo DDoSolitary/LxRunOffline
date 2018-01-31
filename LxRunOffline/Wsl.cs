@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using ICSharpCode.SharpZipLib.GZip;
 using Microsoft.Win32;
 
 namespace LxRunOffline {
@@ -26,9 +27,6 @@ namespace LxRunOffline {
 			bool useCurrentWorkingDirectory,
 			out uint exitCode
 		);
-
-		[DllImport("wslapi.dll", CharSet = CharSet.Unicode)]
-		public static extern uint WslRegisterDistribution(string distributionName, string tarGzFilename);
 
 		#endregion
 
@@ -138,28 +136,29 @@ namespace LxRunOffline {
 
 		#region Distro operations
 
-		public static void InstallDistro(string distroName, string tarGzPath, string targetPath) {
+		public static void InstallDistro(string distroName, string tarPath, string targetPath) {
 			using (var distroKey = FindDistroKey(distroName)) {
 				if (distroKey != null) ErrorNameExists(distroName);
 			}
-			if (!File.Exists(tarGzPath)) Utils.Error($"File not found: {tarGzPath}.");
+			if (!File.Exists(tarPath)) Utils.Error($"File not found: {tarPath}.");
 			if (Directory.Exists(targetPath)) Utils.Error($"Target directory already exists: {targetPath}.");
 
-			string tmpRootPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "rootfs");
-			if (Directory.Exists(tmpRootPath))
-				Utils.Error($"The \"rootfs\" directory already exists in the directory containing the program: {tmpRootPath}. It may be caused by a crash of this program. Please delete it manually.");
-
-			Utils.Log($"Calling Win32 API {nameof(WslRegisterDistribution)}.");
-			CheckWinApiResult(WslRegisterDistribution(distroName, Path.GetFullPath(tarGzPath)));
+			Func<Stream, Stream> getTarStream = null;
+			if (tarPath.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) {
+				getTarStream = s => new GZipInputStream(s);
+			} else if (tarPath.EndsWith(".tar.xz", StringComparison.OrdinalIgnoreCase)) {
+				// TODO: xz support.
+				getTarStream = s => throw new NotImplementedException();
+			} else {
+				Utils.Error($"Unknown compression format \"{tarPath.Substring(tarPath.LastIndexOf('.'))}\".");
+			}
 
 			var targetRootPath = Path.Combine(targetPath, "rootfs");
 			Utils.Log($"Creating the directory \"{targetRootPath}\".");
 			Directory.CreateDirectory(targetRootPath);
 
-			FileSystem.CopyDirectory(tmpRootPath, targetRootPath);
-			FileSystem.DeleteDirectory(tmpRootPath);
-
-			SetInstallationDirectory(distroName, targetPath);
+			FileSystem.ExtractTar(getTarStream(File.OpenRead(tarPath)), targetRootPath);
+			RegisterDistro(distroName, targetPath);
 		}
 
 		public static void RegisterDistro(string distroName, string installPath) {

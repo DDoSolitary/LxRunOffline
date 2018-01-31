@@ -164,7 +164,9 @@ namespace LxRunOffline {
 								continue;
 							}
 
-							SetLxssEa(hNew, eaData, Marshal.SizeOf(typeof(LxssEaData)));
+							if (!SetLxssEa(hNew, eaData, Marshal.SizeOf(typeof(LxssEaData)))) {
+								Utils.Error($"Couldn't set extended attributes of \"{newFilePath}\".");
+							}
 
 							if (type == TarHeader.LF_DIR) continue;
 							using (var fsNew = new FileStream(hNew, FileAccess.ReadWrite)) {

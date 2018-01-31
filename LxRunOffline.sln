@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LxRunOffline", "LxRunOfflin
 		{CDE70DEB-1755-4926-8BC5-31BF57776C5E} = {CDE70DEB-1755-4926-8BC5-31BF57776C5E}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LxssEa", "LxssEa\LxssEa.vcxproj", "{CDE70DEB-1755-4926-8BC5-31BF57776C5E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LxssFileSystem", "LxssFileSystem\LxssFileSystem.vcxproj", "{CDE70DEB-1755-4926-8BC5-31BF57776C5E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

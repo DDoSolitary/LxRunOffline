@@ -14,7 +14,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{CDE70DEB-1755-4926-8BC5-31BF57776C5E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>LxssEa</RootNamespace>
+    <RootNamespace>LxssFileSystem</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -77,10 +77,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="LxssEa.cpp" />
+    <ClCompile Include="LxssFileSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Target Name="CopyDll" AfterTargets="Build">
-    <Copy SourceFiles="$(OutDir)\LxssEa.dll" DestinationFolder="$(SolutionDir)\LxRunOffline\bin\$(ConfigurationName)" />
+    <Copy SourceFiles="$(OutDir)\LxssFileSystem.dll" DestinationFolder="$(SolutionDir)\LxRunOffline\bin\$(ConfigurationName)" />
   </Target>
 </Project>

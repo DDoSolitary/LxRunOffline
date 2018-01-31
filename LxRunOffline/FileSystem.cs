@@ -25,14 +25,14 @@ namespace LxRunOffline {
 
 		const int DeletionRetryCount = 3;
 
-		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool EnumerateDirectory(
 			SafeFileHandle hFile,
 			[MarshalAs(UnmanagedType.LPWStr)]out string fileName,
 			out bool directory
 		);
 
-		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern SafeFileHandle GetFileHandle(
 			[MarshalAs(UnmanagedType.LPWStr)]string ntPath,
 			bool directory,
@@ -40,10 +40,10 @@ namespace LxRunOffline {
 			bool write
 		);
 
-		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool CopyLxssEa(SafeFileHandle hFrom, SafeFileHandle hTo);
 
-		[DllImport("LxssEa.dll", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool SetLxssEa(SafeFileHandle hFile, LxssEaData data, int dataLength);
 
 		static string ToNtPath(this string path) => $@"\??\{Path.GetFullPath(path)}";

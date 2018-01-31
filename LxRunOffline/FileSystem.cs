@@ -114,7 +114,7 @@ namespace LxRunOffline {
 
 						if (!isDir) {
 							using (var fsOld = new FileStream(hOld, FileAccess.Read))
-							using (var fsNew = new FileStream(hNew, FileAccess.ReadWrite)) {
+							using (var fsNew = new FileStream(hNew, FileAccess.Write)) {
 								fsOld.CopyTo(fsNew);
 							}
 						}
@@ -173,7 +173,7 @@ namespace LxRunOffline {
 							}
 
 							if (type == TarHeader.LF_DIR) continue;
-							using (var fsNew = new FileStream(hNew, FileAccess.ReadWrite)) {
+							using (var fsNew = new FileStream(hNew, FileAccess.Write)) {
 								if (entry.TarHeader.TypeFlag == TarHeader.LF_SYMLINK) {
 									var linkData = Encoding.UTF8.GetBytes(entry.TarHeader.LinkName);
 									fsNew.Write(linkData, 0, linkData.Length);

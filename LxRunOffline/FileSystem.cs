@@ -88,8 +88,6 @@ namespace LxRunOffline {
 		}
 
 		public static void CopyDirectory(string oldPath, string newPath) {
-			Utils.Log($"Copying the directory \"{oldPath}\" to \"{newPath}\".");
-
 			using (var hDir = GetFileHandle(oldPath.ToNtPath(), true, false, false)) {
 				CheckFileHandle(hDir, oldPath);
 

@@ -208,7 +208,11 @@ namespace LxRunOffline {
 			Directory.CreateDirectory(newRootPath);
 
 			var oldPath = GetInstallationDirectory(distroName);
-			FileSystem.CopyDirectory(Path.Combine(oldPath, "rootfs"), newRootPath);
+			var oldRootPath = Path.Combine(oldPath, "rootfs");
+
+			Utils.Log($"Copying the directory \"{oldRootPath}\" to \"{newRootPath}\".");
+			FileSystem.CopyDirectory(oldRootPath, newRootPath);
+
 			FileSystem.DeleteDirectory(oldPath);
 
 			SetInstallationDirectory(distroName, newPath);

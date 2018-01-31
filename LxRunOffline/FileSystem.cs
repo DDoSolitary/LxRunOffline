@@ -160,7 +160,7 @@ namespace LxRunOffline {
 								eaData.Mode |= 0x8000;
 								break;
 							default:
-								Utils.Warning($"Ignoring unsupported file type {(char)type}.");
+								Utils.Warning($"Ignoring the file \"{entry.Name}\" of unsupported file type '{(char)type}'.");
 								continue;
 							}
 

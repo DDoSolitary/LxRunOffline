@@ -5,18 +5,18 @@ namespace LxRunOffline {
 	static class PInvoke {
 		[StructLayout(LayoutKind.Sequential)]
 		public class LxssEaData {
-			public ushort Reserved1;
-			public ushort Version = 1;
-			public uint Mode;
-			public uint Uid;
-			public uint Gid;
-			public uint Reserved2;
-			public uint AtimeNsec;
-			public uint MtimeNsec;
-			public uint CtimeNsec;
-			public ulong Atime;
-			public ulong Mtime;
-			public ulong Ctime;
+			public short Reserved1;
+			public short Version = 1;
+			public int Mode;
+			public int Uid;
+			public int Gid;
+			public int Reserved2;
+			public int AtimeNsec;
+			public int MtimeNsec;
+			public int CtimeNsec;
+			public long Atime;
+			public long Mtime;
+			public long Ctime;
 		}
 
 		[DllImport("wslapi.dll", CharSet = CharSet.Unicode)]

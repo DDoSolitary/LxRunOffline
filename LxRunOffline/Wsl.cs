@@ -148,6 +148,8 @@ namespace LxRunOffline {
 				getTarStream = s => new GZipInputStream(s);
 			} else if (tarPath.EndsWith(".tar.xz", StringComparison.OrdinalIgnoreCase)) {
 				getTarStream = s => new XZStream(s);
+			} else if (tarPath.EndsWith(".tar", StringComparison.OrdinalIgnoreCase)) {
+				getTarStream = s => s;
 			} else {
 				Utils.Error($"Unknown compression format \"{tarPath.Substring(tarPath.LastIndexOf('.'))}\".");
 			}

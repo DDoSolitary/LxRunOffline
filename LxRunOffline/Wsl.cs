@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using ICSharpCode.SharpZipLib.GZip;
 using Microsoft.Win32;
+using SharpCompress.Compressors.Xz;
 
 namespace LxRunOffline {
 	enum DistroFlags : int {
@@ -147,8 +147,7 @@ namespace LxRunOffline {
 			if (tarPath.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) {
 				getTarStream = s => new GZipInputStream(s);
 			} else if (tarPath.EndsWith(".tar.xz", StringComparison.OrdinalIgnoreCase)) {
-				// TODO: xz support.
-				getTarStream = s => throw new NotImplementedException();
+				getTarStream = s => new XZStream(s);
 			} else {
 				Utils.Error($"Unknown compression format \"{tarPath.Substring(tarPath.LastIndexOf('.'))}\".");
 			}

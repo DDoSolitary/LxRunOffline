@@ -46,7 +46,7 @@ namespace LxRunOffline {
 		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool SetLxssEa(SafeFileHandle hFile, LxssEaData data, int dataLength);
 
-		static string ToNtPath(this string path) => $@"\??\{Path.GetFullPath(path)}";
+		static string ToNtPath(this string path) => $@"\??\{path}";
 
 		static string ToWslPath(this string path) {
 			var sb = new StringBuilder();
@@ -62,32 +62,22 @@ namespace LxRunOffline {
 			return sb.ToString();
 		}
 
+		static string ToExactPath(this string path) {
+			var dir = new DirectoryInfo(path);
+			if (dir.Parent != null) {
+				return Path.Combine(dir.Parent.FullName.ToExactPath(), dir.Parent.GetFileSystemInfos(dir.Name)[0].Name);
+			} else {
+				return dir.Name.ToUpper();
+			}
+		}
+
 		static void CheckFileHandle(SafeFileHandle hFile, string path) {
 			if (hFile.IsInvalid) {
 				Utils.Error($"Couldn't open the file or directory \"{path}\".");
 			}
 		}
 
-		public static void DeleteDirectory(string path) {
-			Utils.Log($"Deleting the directory \"{path}\".");
-			var retryCount = DeletionRetryCount;
-			while (true) {
-				retryCount--;
-				try {
-					Directory.Delete(path, true);
-					return;
-				} catch (Exception e) {
-					Utils.Warning($"Couldn't delete the directory \"{path}\": {e.Message}");
-					if (retryCount == 0) {
-						Utils.Warning($"You may have to delete it manually.");
-					} else {
-						Utils.Warning($"Retrying.");
-					}
-				}
-			}
-		}
-
-		public static void CopyDirectory(string oldPath, string newPath) {
+		static void CopyDirectoryRecursive(string oldPath, string newPath) {
 			using (var hDir = GetFileHandle(oldPath.ToNtPath(), true, false, false)) {
 				CheckFileHandle(hDir, oldPath);
 
@@ -118,12 +108,40 @@ namespace LxRunOffline {
 						}
 					}
 
-					if (isDir) CopyDirectory(oldFilePath, newFilePath);
+					if (isDir) CopyDirectoryRecursive(oldFilePath, newFilePath);
+				}
+			}
+		}
+
+		public static void CopyDirectory(string oldPath, string newPath) {
+			oldPath = oldPath.ToExactPath();
+			newPath = newPath.ToExactPath();
+			Utils.Log($"Copying the directory \"{oldPath}\" to \"{newPath}\".");
+			CopyDirectoryRecursive(oldPath, newPath);
+		}
+
+		public static void DeleteDirectory(string path) {
+			Utils.Log($"Deleting the directory \"{path}\".");
+			var retryCount = DeletionRetryCount;
+			while (true) {
+				retryCount--;
+				try {
+					Directory.Delete(path, true);
+					return;
+				} catch (Exception e) {
+					Utils.Warning($"Couldn't delete the directory \"{path}\": {e.Message}");
+					if (retryCount == 0) {
+						Utils.Warning($"You may have to delete it manually.");
+					} else {
+						Utils.Warning($"Retrying.");
+					}
 				}
 			}
 		}
 
 		public static void ExtractTar(Stream stream, string targetPath) {
+			targetPath = targetPath.ToExactPath();
+
 			Utils.Log($"Extracting the tar file to \"{targetPath}\".");
 
 			using (var tar = new TarInputStream(stream)) {
@@ -147,7 +165,6 @@ namespace LxRunOffline {
 							};
 							DateTimeOffset modTime = DateTime.SpecifyKind(entry.ModTime, DateTimeKind.Utc);
 							eaData.Atime = eaData.Mtime = eaData.Ctime = modTime.ToUnixTimeSeconds();
-
 
 							switch (type) {
 							case TarHeader.LF_DIR:

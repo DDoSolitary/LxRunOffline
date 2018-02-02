@@ -9,7 +9,7 @@ if ($Env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
 }
 
 New-ItemProperty -Force -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\Kernel' -Name 'obcaseinsensitive' -Value 0 -PropertyType Dword
-echo 'Please restart your system to let registry changes take effect.'
+Write-Warning 'Please restart your system to let registry changes take effect.'
 
 $packageName = 'lxrunoffline'
 $url = 'https://github.com/DDoSolitary/LxRunOffline/releases/download/v{VERSION}/LxRunOffline-v{VERSION}.zip'

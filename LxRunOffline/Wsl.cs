@@ -235,7 +235,7 @@ namespace LxRunOffline {
 		}
 
 		static void SetInstallationDirectory(string distroName, string installPath) {
-			SetRegistryValue(distroName, "BasePath", Path.GetFullPath(installPath).TrimEnd('\\'));
+			SetRegistryValue(distroName, "BasePath", Path.GetFullPath(installPath));
 		}
 
 		public static string[] GetDefaultEnvironment(string distroName) {

@@ -181,7 +181,7 @@ namespace LxRunOffline {
 
 		public static void UninstallDistro(string distroName) {
 			var installPath = GetInstallationDirectory(distroName);
-			if (!Directory.Exists(installPath)) ErrorDirectoryExists(installPath);
+			if (!Directory.Exists(installPath)) Utils.Error($"Directory not found: {installPath}.");
 
 			UnregisterDistro(distroName);
 			FileSystem.DeleteDirectory(installPath);

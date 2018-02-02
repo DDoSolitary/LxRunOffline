@@ -17,8 +17,8 @@ namespace LxRunOffline {
 		[Option('n', HelpText = "Name used to register the distribution.", Required = true)]
 		public string Name { get; set; }
 
-		[Option('f', HelpText = "A file containing the root filesystem of the distribution to be installed. See project's Wiki on GitHub for how to create it.", Required = true)]
-		public string TarGzFile { get; set; }
+		[Option('f', HelpText = "The tar file containing the root filesystem of the distribution to be installed. Supported formats are .tar, .tar.gz and .tar.xz. See project's Wiki on GitHub for where to download it.", Required = true)]
+		public string TarFile { get; set; }
 
 		[Option('d', HelpText = "The directory to install the distribution into. It should not exist and will be created automatically.", Required = true)]
 		public string TargetDirectory { get; set; }
@@ -149,7 +149,7 @@ namespace LxRunOffline {
 				(InstallOptions opts) => {
 					if (!Utils.CheckCaseInsensitive()) return 0;
 
-					Wsl.InstallDistro(opts.Name, opts.TarGzFile, opts.TarRootDirectory, opts.TargetDirectory);
+					Wsl.InstallDistro(opts.Name, opts.TarFile, opts.TarRootDirectory, opts.TargetDirectory);
 					return 0;
 				},
 				(RegisterOptions opts) => {

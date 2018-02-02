@@ -145,6 +145,6 @@ extern "C" __declspec(dllexport) bool SetLxssEa(HANDLE hFile, char *data, int da
 	auto res = NtSetEaFile(hFile, &status, eaInfo, eaInfoSize);
 	if (res != STATUS_SUCCESS) return false;
 
-	delete eaInfo;
+	delete[] eaInfo;
 	return true;
 }

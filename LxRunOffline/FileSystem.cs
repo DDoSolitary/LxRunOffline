@@ -77,6 +77,12 @@ namespace LxRunOffline {
 			}
 		}
 
+		static string StripRootPath(this string path, string rootPath) {
+			if (rootPath == null) return path;
+			if (!rootPath.EndsWith("/")) rootPath += '/';
+			return path != rootPath && path.StartsWith(rootPath) ? path.Substring(rootPath.Length) : null;
+		}
+
 		static void CheckFileHandle(SafeFileHandle hFile, string path) {
 			if (hFile.IsInvalid) {
 				Utils.Error($"Couldn't open the file or directory \"{path}\".");
@@ -145,7 +151,7 @@ namespace LxRunOffline {
 			}
 		}
 
-		public static void ExtractTar(Stream stream, string targetPath) {
+		public static void ExtractTar(Stream stream, string tarRootPath, string targetPath) {
 			targetPath = targetPath.ToExactPath();
 
 			Utils.Log($"Extracting the tar file to \"{targetPath}\".");
@@ -156,10 +162,18 @@ namespace LxRunOffline {
 					if (entry == null) break;
 
 					var type = entry.TarHeader.TypeFlag;
-					var newFilePath = Path.Combine(targetPath, entry.Name.ToWslPath());
+					var newFilePath = entry.Name.StripRootPath(tarRootPath);
+					if (newFilePath == null) continue;
+					newFilePath = Path.Combine(targetPath, newFilePath.ToWslPath());
 
 					if (type == TarHeader.LF_LINK) {
-						var linkTargetPath = Path.Combine(targetPath, entry.TarHeader.LinkName.ToWslPath());
+						var linkTargetPath = entry.TarHeader.LinkName.StripRootPath(tarRootPath);
+						if (linkTargetPath == null) {
+							Utils.Warning($"Igoring the hard link \"{newFilePath}\" to \"{entry.TarHeader.LinkName}\", which points to a location out of the specified root directory.");
+							continue;
+						}
+						linkTargetPath = Path.Combine(targetPath, linkTargetPath.ToWslPath());
+
 						using (var hTarget = GetFileHandle(linkTargetPath.ToNtPath(), false, false, false)) {
 							CheckFileHandle(hTarget, linkTargetPath);
 							if (!MakeHardLink(hTarget, newFilePath.ToNtPath())) {

@@ -136,7 +136,7 @@ namespace LxRunOffline {
 
 		#region Distro operations
 
-		public static void InstallDistro(string distroName, string tarPath, string targetPath) {
+		public static void InstallDistro(string distroName, string tarPath, string tarRootPath, string targetPath) {
 			using (var distroKey = FindDistroKey(distroName)) {
 				if (distroKey != null) ErrorNameExists(distroName);
 			}
@@ -158,7 +158,7 @@ namespace LxRunOffline {
 			Utils.Log($"Creating the directory \"{targetRootPath}\".");
 			Directory.CreateDirectory(targetRootPath);
 
-			FileSystem.ExtractTar(getTarStream(File.OpenRead(tarPath)), targetRootPath);
+			FileSystem.ExtractTar(getTarStream(File.OpenRead(tarPath)), tarRootPath, targetRootPath);
 			RegisterDistro(distroName, targetPath);
 		}
 

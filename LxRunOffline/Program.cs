@@ -22,6 +22,9 @@ namespace LxRunOffline {
 
 		[Option('d', HelpText = "The directory to install the distribution into. It should not exist and will be created automatically.", Required = true)]
 		public string TargetDirectory { get; set; }
+
+		[Option('r', HelpText = "The root directory in the tar file to extract. The default is to extract the whole tar file.")]
+		public string TarRootDirectory { get; set; }
 	}
 
 	[Verb("register", HelpText = "Register an existing installation directory.")]
@@ -134,7 +137,7 @@ namespace LxRunOffline {
 				(InstallOptions opts) => {
 					if (!Utils.CheckCaseInsensitive()) return 0;
 
-					Wsl.InstallDistro(opts.Name, opts.TarGzFile, opts.TargetDirectory);
+					Wsl.InstallDistro(opts.Name, opts.TarGzFile, opts.TarRootDirectory, opts.TargetDirectory);
 					return 0;
 				},
 				(RegisterOptions opts) => {

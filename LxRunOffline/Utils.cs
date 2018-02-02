@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Security.Principal;
 using Microsoft.Win32;
 
@@ -41,8 +42,7 @@ namespace LxRunOffline {
 			}
 		}
 
-		public static bool CheckAdministrator()
-		{
+		public static bool CheckAdministrator() {
 			var identity = WindowsIdentity.GetCurrent();
 			var principal = new WindowsPrincipal(identity);
 
@@ -52,15 +52,31 @@ namespace LxRunOffline {
 			return Prompt();
 		}
 
-		public static bool CheckCaseInsensitive() {
+		public static void CheckCaseInsensitive() {
 			const string regKey = @"HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Kernel";
 			const string regValueName = "obcaseinsensitive";
 
 			var value = Registry.GetValue(regKey, regValueName, 1);
-			if (value is int intValue && intValue == 0) return true;
+			if (value is int intValue && intValue == 0) return;
 
-			Warning($"The registry value \"{regKey}\\{regValueName}\" is NOT set to \"0\", which will cause problems. Please set it to \"0\" and restart your system.");
-			return Prompt();
+			var startInfo = new ProcessStartInfo {
+				FileName = "REG",
+				Arguments = $"ADD \"{regKey}\" /v {regValueName} /t REG_DWORD /d 0 /f",
+				Verb = "runas"
+			};
+			var errorMsg = $"Couldn't change the registry value: {regKey}\\{regValueName}.";
+			try {
+				using (var process = Process.Start(startInfo)) {
+					process.WaitForExit();
+					if (process.ExitCode != 0) Error($"{errorMsg} Exit code of reg.exe is {process.ExitCode}.");
+				}
+			} catch (Exception e) {
+				Error($"{errorMsg} {e.Message}");
+			}
+
+			Error($"The registry value \"{regKey}\\{regValueName}\" has been set to \"1\"" +
+				" to make sure this operation works properly." +
+				" Please restart your system and then rerun the command.");
 		}
 	}
 }

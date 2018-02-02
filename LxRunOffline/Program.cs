@@ -147,7 +147,7 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(InstallOptions opts) => {
-					if (!Utils.CheckCaseInsensitive()) return 0;
+					Utils.CheckCaseInsensitive();
 
 					Wsl.InstallDistro(opts.Name, opts.TarFile, opts.TarRootDirectory, opts.TargetDirectory);
 					return 0;
@@ -165,14 +165,12 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(MoveOptions opts) => {
-					if (!Utils.CheckCaseInsensitive()) return 0;
-
+					Utils.CheckCaseInsensitive();
 					Wsl.MoveDistro(opts.Name, opts.TargetDirectory);
 					return 0;
 				},
 				(DuplicateOptions opts) => {
-					if (!Utils.CheckCaseInsensitive()) return 0;
-
+					Utils.CheckCaseInsensitive();
 					Wsl.DuplicateDistro(opts.OldName, opts.NewName, opts.TargetDirectory);
 					return 0;
 				},

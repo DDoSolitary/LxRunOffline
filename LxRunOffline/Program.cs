@@ -148,7 +148,6 @@ namespace LxRunOffline {
 				},
 				(InstallOptions opts) => {
 					Utils.CheckCaseInsensitive();
-
 					Wsl.InstallDistro(opts.Name, opts.TarFile, opts.TarRootDirectory, opts.TargetDirectory);
 					return 0;
 				},

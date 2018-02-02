@@ -215,6 +215,34 @@ namespace LxRunOffline {
 			SetInstallationDirectory(distroName, newPath);
 		}
 
+		public static void DuplicateDistro(string oldName, string newName, string newPath) {
+			using (var distroKey = FindDistroKey(newName)) {
+				if (distroKey != null) ErrorNameExists(newName);
+			}
+			if (Directory.Exists(newPath)) ErrorDirectoryExists(newPath);
+
+			var newRootPath = Path.Combine(newPath, "rootfs");
+			Utils.Log($"Creating the directory \"{newRootPath}\".");
+			Directory.CreateDirectory(newRootPath);
+
+			var oldPath = GetInstallationDirectory(oldName);
+			FileSystem.CopyDirectory(Path.Combine(oldPath, "rootfs"), newRootPath);
+
+			var id = Guid.NewGuid().ToString("B");
+			Utils.Log($"Copying registry values to the new registry key {id}.");
+			using (var oldKey = FindDistroKey(oldName))
+			using (var lxssKey = GetLxssKey(true))
+			using (var newKey = lxssKey.CreateSubKey(id)) {
+				newKey.SetValue("DistributionName", newName);
+				newKey.SetValue("BasePath", Path.GetFullPath(newPath));
+				foreach (var name in oldKey.GetValueNames()) {
+					if (name != "DistributionName" && name != "BasePath") {
+						newKey.SetValue(name, oldKey.GetValue(name));
+					}
+				}
+			}
+		}
+
 		public static uint LaunchDistro(string distroName, string command, bool useCwd) {
 			using (var distroKey = FindDistroKey(distroName)) {
 				if (distroKey == null) ErrorNameNotFound(distroName);

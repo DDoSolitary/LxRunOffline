@@ -57,6 +57,18 @@ namespace LxRunOffline {
 		public string TargetDirectory { get; set; }
 	}
 
+	[Verb("duplicate", HelpText = "Duplicate an existing distribution in a new directory.")]
+	class DuplicateOptions {
+		[Option('n', HelpText = "Name of the distribution to duplicate.", Required = true)]
+		public string OldName { get; set; }
+
+		[Option('N', HelpText = "Name of the new distribution.", Required = true)]
+		public string NewName { get; set; }
+
+		[Option('d', HelpText = "The directory to copy the distribution to. It should not exist and will be created automatically.", Required = true)]
+		public string TargetDirectory { get; set; }
+	}
+
 	[Verb("run", HelpText = "Run a command in a distribution.")]
 	class RunOptions {
 		[Option('n', HelpText = "Name of the distribution.", Required = true)]
@@ -121,7 +133,7 @@ namespace LxRunOffline {
 		static int Main(string[] args) {
 			if (!Utils.CheckAdministrator()) return 0;
 
-			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(
+			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, DuplicateOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(
 				(ListOptions opts) => {
 					Console.WriteLine(string.Join("\n", Wsl.ListDistros().ToArray()));
 					return 0;
@@ -156,6 +168,12 @@ namespace LxRunOffline {
 					if (!Utils.CheckCaseInsensitive()) return 0;
 
 					Wsl.MoveDistro(opts.Name, opts.TargetDirectory);
+					return 0;
+				},
+				(DuplicateOptions opts) => {
+					if (!Utils.CheckCaseInsensitive()) return 0;
+
+					Wsl.DuplicateDistro(opts.OldName, opts.NewName, opts.TargetDirectory);
 					return 0;
 				},
 				(RunOptions opts) => {

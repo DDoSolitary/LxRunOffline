@@ -21,6 +21,13 @@ struct FILE_DIRECTORY_INFORMATION {
 	WCHAR FileName[1];
 };
 
+struct FILE_LINK_INFORMATION {
+	BOOLEAN ReplaceIfExists;
+	HANDLE RootDirectory;
+	ULONG FileNameLength;
+	WCHAR FileName[1];
+};
+
 struct FILE_GET_EA_INFORMATION {
 	ULONG NextEntryOffset;
 	UCHAR EaNameLength;
@@ -47,6 +54,14 @@ extern "C" NTSYSAPI NTSTATUS NTAPI NtQueryDirectoryFile(
 	_In_ BOOLEAN ReturnSingleEntry,
 	_In_opt_ PUNICODE_STRING FileName,
 	_In_ BOOLEAN RestartScan
+);
+
+extern "C" NTSYSAPI NTSTATUS NTAPI NtSetInformationFile(
+	_In_ HANDLE FileHandle,
+	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
+	_In_ PVOID FileInformation,
+	_In_ ULONG Length,
+	_In_ FILE_INFORMATION_CLASS FileInformationClass
 );
 
 extern "C" NTSYSAPI NTSTATUS NTAPI NtQueryEaFile(
@@ -105,6 +120,22 @@ extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *f
 	wcscpy(*fileName, fileInfo->FileName);
 	*directory = (fileInfo->FileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;
 	return true;
+}
+
+extern "C" __declspec(dllexport) bool MakeHardLink(HANDLE hTarget, LPWSTR linkName) {
+	const int linkNameLength = (int)wcslen(linkName);
+	const int linkInfoSize = (int)(sizeof(FILE_LINK_INFORMATION) + linkNameLength * sizeof(wchar_t));
+	auto linkInfo = (FILE_LINK_INFORMATION *)new char[linkInfoSize];
+	linkInfo->ReplaceIfExists = false;
+	linkInfo->RootDirectory = nullptr;
+	linkInfo->FileNameLength = linkNameLength * sizeof(wchar_t);
+	wcscpy(linkInfo->FileName, linkName);
+
+	IO_STATUS_BLOCK status;
+	auto res = NtSetInformationFile(hTarget, &status, linkInfo, linkInfoSize, (FILE_INFORMATION_CLASS)11 /* FileLinkInformation */);
+
+	delete[] linkInfo;
+	return res == STATUS_SUCCESS;
 }
 
 const char *LxssEaName = "LXATTRB";

@@ -33,6 +33,12 @@ namespace LxRunOffline {
 		);
 
 		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
+		static extern bool MakeHardLink(
+			SafeFileHandle hTarget,
+			[MarshalAs(UnmanagedType.LPWStr)]string linkName
+		);
+
+		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern SafeFileHandle GetFileHandle(
 			[MarshalAs(UnmanagedType.LPWStr)]string ntPath,
 			bool directory,
@@ -153,7 +159,13 @@ namespace LxRunOffline {
 					var newFilePath = Path.Combine(targetPath, entry.Name.ToWslPath());
 
 					if (type == TarHeader.LF_LINK) {
-						// TODO: Create hard links.
+						var linkTargetPath = Path.Combine(targetPath, entry.TarHeader.LinkName.ToWslPath());
+						using (var hTarget = GetFileHandle(linkTargetPath.ToNtPath(), false, false, false)) {
+							CheckFileHandle(hTarget, linkTargetPath);
+							if (!MakeHardLink(hTarget, newFilePath.ToNtPath())) {
+								Utils.Error($"Couldn't create the hard link from \"{newFilePath}\" to \"{linkTargetPath}\".");
+							}
+						}
 					} else {
 						using (var hNew = GetFileHandle(newFilePath.ToNtPath(), type == TarHeader.LF_DIR, true, true)) {
 							CheckFileHandle(hNew, newFilePath);

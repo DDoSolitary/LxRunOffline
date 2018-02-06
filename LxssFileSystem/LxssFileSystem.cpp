@@ -92,15 +92,13 @@ extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR ntPath, bool direct
 
 	HANDLE hFile;
 	IO_STATUS_BLOCK status;
-	auto res = NtCreateFile(&hFile,
+	return NtCreateFile(&hFile,
 		write ? FILE_GENERIC_WRITE : FILE_GENERIC_READ,
 		&objAttrs, &status, nullptr, 0, 0,
 		create ? FILE_CREATE : FILE_OPEN,
 		FILE_SYNCHRONOUS_IO_ALERT | (directory ? FILE_DIRECTORY_FILE : FILE_NON_DIRECTORY_FILE),
 		nullptr, 0
-	);
-
-	return res == STATUS_SUCCESS ? hFile : INVALID_HANDLE_VALUE;
+	) == STATUS_SUCCESS ? hFile : INVALID_HANDLE_VALUE;
 }
 
 extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *fileName, bool *directory) {
@@ -110,9 +108,9 @@ extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *f
 	auto fileInfo = (FILE_DIRECTORY_INFORMATION *)fileInfoBuf;
 
 	IO_STATUS_BLOCK status;
-	auto res = NtQueryDirectoryFile(hFile, nullptr, nullptr, nullptr, &status, fileInfo, fileInfoSize, FileDirectoryInformation, true, nullptr, false);
-	if (res == STATUS_NO_MORE_FILES) return true;
-	if (res != STATUS_SUCCESS) {
+	switch (NtQueryDirectoryFile(hFile, nullptr, nullptr, nullptr, &status, fileInfo, fileInfoSize, FileDirectoryInformation, true, nullptr, false)) {
+	case STATUS_NO_MORE_FILES: return true;
+	case STATUS_SUCCESS:
 		*fileName = nullptr;
 		return false;
 	}
@@ -146,19 +144,17 @@ extern "C" __declspec(dllexport) bool CopyLxssEa(HANDLE hFrom, HANDLE hTo) {
 	const int getEaInfoSize = (int)(sizeof(FILE_GET_EA_INFORMATION) + LxssEaNameLength);
 	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + USHRT_MAX);
 	static char getEaBuf[getEaInfoSize];
+	static char eaBuf[eaInfoSize];
 
 	auto getEaInfo = (FILE_GET_EA_INFORMATION *)getEaBuf;
 	getEaInfo->NextEntryOffset = 0;
 	getEaInfo->EaNameLength = LxssEaNameLength;
 	strcpy(getEaInfo->EaName, LxssEaName);
 
-	char eaBuf[eaInfoSize];
 	auto eaInfo = (FILE_FULL_EA_INFORMATION *)eaBuf;
 	IO_STATUS_BLOCK status;
-	auto res = NtQueryEaFile(hFrom, &status, eaInfo, eaInfoSize, true, getEaInfo, getEaInfoSize, nullptr, true);
-	if (res != STATUS_SUCCESS) return false;
-	res = NtSetEaFile(hTo, &status, eaInfo, eaInfoSize);
-	if (res != STATUS_SUCCESS) return false;
+	if (NtQueryEaFile(hFrom, &status, eaInfo, eaInfoSize, true, getEaInfo, getEaInfoSize, nullptr, true) != STATUS_SUCCESS) return false;
+	if (NtSetEaFile(hTo, &status, eaInfo, eaInfoSize) != STATUS_SUCCESS) return false;
 
 	return true;
 }

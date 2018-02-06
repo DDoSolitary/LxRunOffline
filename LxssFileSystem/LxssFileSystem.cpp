@@ -109,14 +109,16 @@ extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *f
 
 	IO_STATUS_BLOCK status;
 	switch (NtQueryDirectoryFile(hFile, nullptr, nullptr, nullptr, &status, fileInfo, fileInfoSize, FileDirectoryInformation, true, nullptr, false)) {
-	case STATUS_NO_MORE_FILES: return true;
-	case STATUS_SUCCESS:
+	case STATUS_NO_MORE_FILES:
 		*fileName = nullptr;
-		return false;
+		return true;
+	case STATUS_SUCCESS: break;
+	default: return false;
 	}
 
-	*fileName = (LPWSTR)CoTaskMemAlloc(fileInfo->FileNameLength * sizeof(wchar_t));
-	wcscpy(*fileName, fileInfo->FileName);
+	*fileName = (LPWSTR)CoTaskMemAlloc(fileInfo->FileNameLength + sizeof(wchar_t));
+	memcpy(*fileName, fileInfo->FileName, fileInfo->FileNameLength);
+	(*fileName)[fileInfo->FileNameLength / sizeof(wchar_t)] = 0;
 	*directory = (fileInfo->FileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;
 	return true;
 }

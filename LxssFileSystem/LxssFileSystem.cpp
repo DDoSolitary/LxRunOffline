@@ -117,6 +117,8 @@ extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *f
 	}
 
 	*fileName = (LPWSTR)CoTaskMemAlloc(fileInfo->FileNameLength + sizeof(wchar_t));
+	if (*fileName == nullptr) return false;
+
 	memcpy(*fileName, fileInfo->FileName, fileInfo->FileNameLength);
 	(*fileName)[fileInfo->FileNameLength / sizeof(wchar_t)] = 0;
 	*directory = (fileInfo->FileAttributes & FILE_ATTRIBUTE_DIRECTORY) > 0;

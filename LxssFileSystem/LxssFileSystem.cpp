@@ -139,12 +139,12 @@ extern "C" __declspec(dllexport) bool MakeHardLink(HANDLE hTarget, LPWSTR linkNa
 
 const char *LxssEaName = "LXATTRB";
 const int LxssEaNameLength = 7;
+const int EaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + USHRT_MAX);
 
 extern "C" __declspec(dllexport) bool CopyLxssEa(HANDLE hFrom, HANDLE hTo) {
 	const int getEaInfoSize = (int)(sizeof(FILE_GET_EA_INFORMATION) + LxssEaNameLength);
-	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + USHRT_MAX);
 	static char getEaBuf[getEaInfoSize];
-	static char eaBuf[eaInfoSize];
+	static char eaBuf[EaInfoSize];
 
 	auto getEaInfo = (FILE_GET_EA_INFORMATION *)getEaBuf;
 	getEaInfo->NextEntryOffset = 0;
@@ -153,15 +153,14 @@ extern "C" __declspec(dllexport) bool CopyLxssEa(HANDLE hFrom, HANDLE hTo) {
 
 	auto eaInfo = (FILE_FULL_EA_INFORMATION *)eaBuf;
 	IO_STATUS_BLOCK status;
-	if (NtQueryEaFile(hFrom, &status, eaInfo, eaInfoSize, true, getEaInfo, getEaInfoSize, nullptr, true) != STATUS_SUCCESS) return false;
-	if (NtSetEaFile(hTo, &status, eaInfo, eaInfoSize) != STATUS_SUCCESS) return false;
+	if (NtQueryEaFile(hFrom, &status, eaInfo, EaInfoSize, true, getEaInfo, getEaInfoSize, nullptr, true) != STATUS_SUCCESS) return false;
+	if (NtSetEaFile(hTo, &status, eaInfo, EaInfoSize) != STATUS_SUCCESS) return false;
 
 	return true;
 }
 
 extern "C" __declspec(dllexport) bool SetLxssEa(HANDLE hFile, char *data, int dataLength) {
-	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + USHRT_MAX);
-	static char eaInfoBuf[eaInfoSize];
+	static char eaInfoBuf[EaInfoSize];
 
 	auto eaInfo = (FILE_FULL_EA_INFORMATION *)eaInfoBuf;
 	eaInfo->NextEntryOffset = 0;
@@ -172,5 +171,5 @@ extern "C" __declspec(dllexport) bool SetLxssEa(HANDLE hFile, char *data, int da
 	memcpy(eaInfo->EaName + LxssEaNameLength + 1, data, dataLength);
 
 	IO_STATUS_BLOCK status;
-	return NtSetEaFile(hFile, &status, eaInfo, eaInfoSize) == STATUS_SUCCESS;
+	return NtSetEaFile(hFile, &status, eaInfo, EaInfoSize) == STATUS_SUCCESS;
 }

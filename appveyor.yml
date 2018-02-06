@@ -31,11 +31,10 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Fix the problem that `robocopy` doesn't work when using relative paths.
-      - Fix the problem that the program crashes if user disallow starting `robocopy` using UAC.
-      - Fix the `config-env` command.
-      - Support running a distribution without propagating current working directory. (`run -w`)
-      - Improve error output, add logging.
+      - Rewrite tar extraction and directory copying. Support `.tar` and `.tar.xz` files.
+      - Add the `install -r` option to support tar files with preceding directories.
+      - Add the `duplicate` option.
+      - Fix an error message in `UninstallDistro`.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

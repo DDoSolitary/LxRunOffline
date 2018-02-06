@@ -94,7 +94,8 @@ extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR ntPath, bool direct
 	IO_STATUS_BLOCK status;
 	return NtCreateFile(&hFile,
 		write ? FILE_GENERIC_WRITE : FILE_GENERIC_READ,
-		&objAttrs, &status, nullptr, 0, 0,
+		&objAttrs, &status, nullptr, 0,
+		FILE_SHARE_READ,
 		create ? FILE_CREATE : FILE_OPEN,
 		FILE_SYNCHRONOUS_IO_ALERT | (directory ? FILE_DIRECTORY_FILE : FILE_NON_DIRECTORY_FILE),
 		nullptr, 0

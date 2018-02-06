@@ -64,7 +64,7 @@ namespace LxRunOffline {
 			using (var lxssKey = GetLxssKey()) {
 				foreach (var keyName in lxssKey.GetSubKeyNames()) {
 					using (var distroKey = lxssKey.OpenSubKey(keyName)) {
-						if ((string)distroKey.GetValue("DistributionName") == distroName) {
+						if (distroName.Equals((string)distroKey.GetValue("DistributionName"), StringComparison.OrdinalIgnoreCase)) {
 							LogDistributionFound(keyName);
 							return lxssKey.OpenSubKey(keyName, write);
 						}

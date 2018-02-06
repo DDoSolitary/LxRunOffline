@@ -105,7 +105,8 @@ extern "C" __declspec(dllexport) HANDLE GetFileHandle(LPWSTR ntPath, bool direct
 
 extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *fileName, bool *directory) {
 	const int fileInfoSize = (int)(sizeof(FILE_DIRECTORY_INFORMATION) + UCHAR_MAX * sizeof(wchar_t));
-	char fileInfoBuf[fileInfoSize] = { 0 };
+	static char fileInfoBuf[fileInfoSize];
+
 	auto fileInfo = (FILE_DIRECTORY_INFORMATION *)fileInfoBuf;
 
 	IO_STATUS_BLOCK status;
@@ -123,12 +124,12 @@ extern "C" __declspec(dllexport) bool EnumerateDirectory(HANDLE hFile, LPWSTR *f
 }
 
 extern "C" __declspec(dllexport) bool MakeHardLink(HANDLE hTarget, LPWSTR linkName) {
-	const int linkNameLength = (int)wcslen(linkName);
-	const int linkInfoSize = (int)(sizeof(FILE_LINK_INFORMATION) + linkNameLength * sizeof(wchar_t));
+	const int linkNameLength = (int)(wcslen(linkName) * sizeof(wchar_t));
+	const int linkInfoSize = (int)(sizeof(FILE_LINK_INFORMATION) + linkNameLength);
 	auto linkInfo = (FILE_LINK_INFORMATION *)new char[linkInfoSize];
 	linkInfo->ReplaceIfExists = false;
 	linkInfo->RootDirectory = nullptr;
-	linkInfo->FileNameLength = linkNameLength * sizeof(wchar_t);
+	linkInfo->FileNameLength = linkNameLength;
 	wcscpy(linkInfo->FileName, linkName);
 
 	IO_STATUS_BLOCK status;
@@ -144,8 +145,8 @@ const int LxssEaNameLength = 7;
 extern "C" __declspec(dllexport) bool CopyLxssEa(HANDLE hFrom, HANDLE hTo) {
 	const int getEaInfoSize = (int)(sizeof(FILE_GET_EA_INFORMATION) + LxssEaNameLength);
 	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + USHRT_MAX);
+	static char getEaBuf[getEaInfoSize];
 
-	char getEaBuf[getEaInfoSize];
 	auto getEaInfo = (FILE_GET_EA_INFORMATION *)getEaBuf;
 	getEaInfo->NextEntryOffset = 0;
 	getEaInfo->EaNameLength = LxssEaNameLength;
@@ -163,8 +164,10 @@ extern "C" __declspec(dllexport) bool CopyLxssEa(HANDLE hFrom, HANDLE hTo) {
 }
 
 extern "C" __declspec(dllexport) bool SetLxssEa(HANDLE hFile, char *data, int dataLength) {
-	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + dataLength);
-	auto eaInfo = (FILE_FULL_EA_INFORMATION *)new char[eaInfoSize];
+	const int eaInfoSize = (int)(sizeof(FILE_FULL_EA_INFORMATION) + LxssEaNameLength + USHRT_MAX);
+	static char eaInfoBuf[eaInfoSize];
+
+	auto eaInfo = (FILE_FULL_EA_INFORMATION *)eaInfoBuf;
 	eaInfo->NextEntryOffset = 0;
 	eaInfo->Flags = 0;
 	eaInfo->EaNameLength = LxssEaNameLength;
@@ -173,9 +176,5 @@ extern "C" __declspec(dllexport) bool SetLxssEa(HANDLE hFile, char *data, int da
 	memcpy(eaInfo->EaName + LxssEaNameLength + 1, data, dataLength);
 
 	IO_STATUS_BLOCK status;
-	auto res = NtSetEaFile(hFile, &status, eaInfo, eaInfoSize);
-	if (res != STATUS_SUCCESS) return false;
-
-	delete[] eaInfo;
-	return true;
+	return NtSetEaFile(hFile, &status, eaInfo, eaInfoSize) == STATUS_SUCCESS;
 }

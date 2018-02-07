@@ -31,10 +31,7 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Rewrite tar extraction and directory copying. Support `.tar` and `.tar.xz` files.
-      - Add the `install -r` option to support tar files with preceding directories.
-      - Add the `duplicate` option.
-      - Fix an error message in `UninstallDistro`.
+      - Update .NET Framework version to 4.7.1 to fix dependencies to .NET Standard.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

@@ -6,6 +6,8 @@ init:
 configuration: Release
 build:
   parallel: true
+before_build:
+  - ps: nuget restore
 after_build:
   - ps: |
       $project = $Env:APPVEYOR_PROJECT_NAME

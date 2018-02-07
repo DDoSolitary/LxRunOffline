@@ -1,4 +1,4 @@
 source https://nuget.org/api/v2
-nuget CommandLineParser prerelease framework: net47
-nuget SharpZipLib prerelease framework: net47
-nuget sharpcompress prerelease framework: net47
+nuget CommandLineParser prerelease framework: net471
+nuget SharpZipLib prerelease framework: net471
+nuget sharpcompress prerelease framework: net471

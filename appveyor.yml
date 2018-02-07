@@ -1,7 +1,4 @@
-﻿branches:
-  except:
-    - web
-image: Visual Studio 2017
+﻿image: Visual Studio 2017
 init:
   - ps: |
       if ($Env:APPVEYOR_REPO_TAG -eq 'true') { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }

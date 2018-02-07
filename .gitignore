@@ -1,0 +1,5 @@
+﻿Debug/
+Release/
+packages/
+paket-files/
+.vs/

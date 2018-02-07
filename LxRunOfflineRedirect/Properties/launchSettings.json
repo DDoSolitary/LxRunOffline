@@ -1,0 +1,11 @@
+{
+	"profiles": {
+		"LxRunOfflineRedirect": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"ASPNETCORE_ENVIRONMENT": "Development"
+			},
+			"applicationUrl": "http://localhost:63956/"
+		}
+	}
+}

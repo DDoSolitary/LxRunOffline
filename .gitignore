@@ -1,4 +1,6 @@
-﻿Debug/
+﻿bin/
+obj/
+Debug/
 Release/
 packages/
 paket-files/

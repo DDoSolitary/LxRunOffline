@@ -61,5 +61,8 @@ namespace LxRunOfflineRedirect {
 
 		public IActionResult openSUSETumbleweed(string version)
 			=> Redirect("https://github.com/openSUSE/docker-containers-build/raw/openSUSE-Tumbleweed/x86_64/openSUSE-Tumbleweed.base.x86_64.tar.xz");
+
+		[Route("/")]
+		public string Home() => "This is the download redirection site for the LxRunOffline project.";
 	}
 }

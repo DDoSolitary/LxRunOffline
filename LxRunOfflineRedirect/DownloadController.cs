@@ -42,25 +42,23 @@ namespace LxRunOfflineRedirect {
 			return Redirect(url + fileList.Split('\n')[1].Split(' ', StringSplitOptions.RemoveEmptyEntries)[1]);
 		}
 
-		public async Task<IActionResult> Alpine(string version) {
-			var url = $"http://dl-cdn.alpinelinux.org/alpine/v{version}/releases/x86_64/";
+		public async Task<IActionResult> Alpine(string version = "edge") {
+			var url = $"http://dl-cdn.alpinelinux.org/alpine/{version}/releases/x86_64/";
 			var releaseList = await DownloadStringAsync(url + "latest-releases.yaml");
 			if (releaseList == null) return NotFound();
 			return Redirect(url + Regex.Match(releaseList, @"\balpine-minirootfs-.*\.tar\.gz\b").Value);
 		}
 
-		public async Task<IActionResult> Fedora(string version) {
+		public async Task<IActionResult> Fedora(string version = "rawhide") {
 			var url = $"https://github.com/fedora-cloud/docker-brew-fedora/raw/{version}/x86_64/";
 			var dockerFile = await DownloadStringAsync(url + "Dockerfile");
 			if (dockerFile == null) return NotFound();
 			return Redirect(url + Regex.Match(dockerFile, @"\bfedora-.*\.tar\.xz\b").Value);
 		}
 
-		public IActionResult openSUSE(string version)
-			=> Redirect($"https://github.com/openSUSE/docker-containers-build/raw/openSUSE-Leap-{version}/x86_64/openSUSE-Leap-{version}.base.x86_64.tar.xz");
-
-		public IActionResult openSUSETumbleweed(string version)
-			=> Redirect("https://github.com/openSUSE/docker-containers-build/raw/openSUSE-Tumbleweed/x86_64/openSUSE-Tumbleweed.base.x86_64.tar.xz");
+		public IActionResult openSUSE(string version = "Tumbleweed") {
+			return Redirect($"https://github.com/openSUSE/docker-containers-build/raw/openSUSE-{version}/x86_64/openSUSE-{version}.base.x86_64.tar.xz");
+		}
 
 		[Route("/")]
 		public string Home() => "This is the download redirection site for the LxRunOffline project.";

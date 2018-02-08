@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace LxRunOffline {
 	static class FileSystem {
 		[StructLayout(LayoutKind.Sequential)]
-		public class LxssEaData {
+		class LxssEaData {
 			public short Reserved1;
 			public short Version = 1;
 			public int Mode;

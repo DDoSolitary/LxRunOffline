@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <Prefer32Bit>false</Prefer32Bit>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>

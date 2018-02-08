@@ -4,6 +4,7 @@ using Microsoft.Win32.SafeHandles;
 using ICSharpCode.SharpZipLib.Tar;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace LxRunOffline {
 	static class FileSystem {
@@ -162,6 +163,7 @@ namespace LxRunOffline {
 					if (entry == null) break;
 
 					var type = entry.TarHeader.TypeFlag;
+					if (type == TarHeader.LF_DIR && Regex.IsMatch(entry.Name, @"(^|/)\.\.?/?$")) continue;
 					var newFilePath = entry.Name.StripRootPath(tarRootPath);
 					if (newFilePath == null) continue;
 					newFilePath = Path.Combine(targetPath, newFilePath.ToWslPath());

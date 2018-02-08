@@ -39,7 +39,6 @@
     <Compile Include="Utils.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <None Include="App.config" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

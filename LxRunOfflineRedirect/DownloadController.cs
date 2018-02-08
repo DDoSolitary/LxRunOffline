@@ -56,9 +56,11 @@ namespace LxRunOfflineRedirect {
 			return Redirect(url + Regex.Match(dockerFile, @"\bfedora-.*\.tar\.xz\b").Value);
 		}
 
-		public IActionResult openSUSE(string version = "Tumbleweed") {
-			return Redirect($"https://github.com/openSUSE/docker-containers-build/raw/openSUSE-{version}/x86_64/openSUSE-{version}.base.x86_64.tar.xz");
-		}
+		public IActionResult openSUSE(string version = "Tumbleweed")
+			=> Redirect($"https://github.com/openSUSE/docker-containers-build/raw/openSUSE-{version}/x86_64/openSUSE-{version}.base.x86_64.tar.xz");
+
+		public IActionResult Debian(string version = "sid")
+			=> Redirect($"https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-amd64/{version}/rootfs.tar.xz");
 
 		[Route("/")]
 		public string Home() => "This is the download redirection site for the LxRunOffline project.";

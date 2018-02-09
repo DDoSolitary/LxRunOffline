@@ -144,7 +144,7 @@ namespace LxRunOffline {
 				} catch (Exception e) {
 					Utils.Warning($"Couldn't delete the directory \"{path}\": {e.Message}");
 					if (retryCount == 0) {
-						Utils.Warning($"You may have to delete it manually.");
+						Utils.Error($"You may have to delete it manually.");
 					} else {
 						Utils.Warning($"Retrying.");
 					}

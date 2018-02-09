@@ -89,6 +89,12 @@ namespace LxRunOffline {
 			}
 		}
 
+		static void CheckFileSystem(string path) {
+			if (new DriveInfo(path[0].ToString()).DriveFormat != "NTFS") {
+				Utils.Error("Only NTFS filesystems are suppoprted.");
+			}
+		}
+
 		static void CopyDirectoryRecursive(string oldPath, string newPath) {
 			using (var hDir = GetFileHandle(oldPath.ToNtPath(), true, false, false)) {
 				CheckFileHandle(hDir, oldPath);
@@ -129,6 +135,8 @@ namespace LxRunOffline {
 			oldPath = oldPath.ToExactPath();
 			newPath = newPath.ToExactPath();
 			Utils.Log($"Copying the directory \"{oldPath}\" to \"{newPath}\".");
+			CheckFileSystem(oldPath);
+			CheckFileSystem(newPath);
 			CopyDirectoryRecursive(oldPath, newPath);
 		}
 
@@ -154,8 +162,8 @@ namespace LxRunOffline {
 
 		public static void ExtractTar(Stream stream, string tarRootPath, string targetPath) {
 			targetPath = targetPath.ToExactPath();
-
 			Utils.Log($"Extracting the tar file to \"{targetPath}\".");
+			CheckFileSystem(targetPath);
 
 			using (var tar = new TarInputStream(stream)) {
 				while (true) {

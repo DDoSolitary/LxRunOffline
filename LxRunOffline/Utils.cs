@@ -74,7 +74,7 @@ namespace LxRunOffline {
 				Error($"{errorMsg} {e.Message}");
 			}
 
-			Error($"The registry value \"{regKey}\\{regValueName}\" has been set to \"1\"" +
+			Error($"The registry value \"{regKey}\\{regValueName}\" has been set to \"0\"" +
 				" to make sure this operation works properly." +
 				" Please restart your system and then rerun the command.");
 		}

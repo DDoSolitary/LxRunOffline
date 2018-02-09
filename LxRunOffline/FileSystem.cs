@@ -5,6 +5,7 @@ using ICSharpCode.SharpZipLib.Tar;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace LxRunOffline {
 	static class FileSystem {
@@ -23,8 +24,6 @@ namespace LxRunOffline {
 			public long Mtime;
 			public long Ctime;
 		}
-
-		const int DeletionRetryCount = 3;
 
 		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool EnumerateDirectory(
@@ -135,7 +134,7 @@ namespace LxRunOffline {
 
 		public static void DeleteDirectory(string path) {
 			Utils.Log($"Deleting the directory \"{path}\".");
-			var retryCount = DeletionRetryCount;
+			var retryCount = 3;
 			while (true) {
 				retryCount--;
 				try {
@@ -147,6 +146,7 @@ namespace LxRunOffline {
 						Utils.Error($"You may have to delete it manually.");
 					} else {
 						Utils.Warning($"Retrying.");
+						Thread.Sleep(500);
 					}
 				}
 			}

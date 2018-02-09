@@ -32,8 +32,10 @@ namespace LxRunOfflineRedirect {
 			}
 		}
 
-		public IActionResult Ubuntu(string version)
-			=> Redirect($"https://github.com/tianon/docker-brew-ubuntu-core/raw/dist-amd64/{version}/ubuntu-{version}-core-cloudimg-amd64-root.tar.gz");
+		public IActionResult Ubuntu(string version) {
+			version = version.ToLower();
+			return Redirect($"https://github.com/tianon/docker-brew-ubuntu-core/raw/dist-amd64/{version}/ubuntu-{version}-core-cloudimg-amd64-root.tar.gz");
+		}
 
 		public async Task<IActionResult> ArchLinux() {
 			var url = "https://mirrors.kernel.org/archlinux/iso/latest/";
@@ -43,24 +45,26 @@ namespace LxRunOfflineRedirect {
 		}
 
 		public async Task<IActionResult> Alpine(string version = "edge") {
-			var url = $"http://dl-cdn.alpinelinux.org/alpine/{version}/releases/x86_64/";
+			var url = $"http://dl-cdn.alpinelinux.org/alpine/{version.ToLower()}/releases/x86_64/";
 			var releaseList = await DownloadStringAsync(url + "latest-releases.yaml");
 			if (releaseList == null) return NotFound();
 			return Redirect(url + Regex.Match(releaseList, @"\balpine-minirootfs-.*\.tar\.gz\b").Value);
 		}
 
 		public async Task<IActionResult> Fedora(string version = "rawhide") {
-			var url = $"https://github.com/fedora-cloud/docker-brew-fedora/raw/{version}/x86_64/";
+			var url = $"https://github.com/fedora-cloud/docker-brew-fedora/raw/{version.ToLower()}/x86_64/";
 			var dockerFile = await DownloadStringAsync(url + "Dockerfile");
 			if (dockerFile == null) return NotFound();
 			return Redirect(url + Regex.Match(dockerFile, @"\bfedora-.*\.tar\.xz\b").Value);
 		}
 
-		public IActionResult openSUSE(string version = "Tumbleweed")
-			=> Redirect($"https://github.com/openSUSE/docker-containers-build/raw/openSUSE-{version}/x86_64/openSUSE-{version}.base.x86_64.tar.xz");
+		public IActionResult openSUSE(string version = "Tumbleweed") {
+			version = char.ToUpper(version[0]) + version.Substring(1).ToLower();
+			return Redirect($"https://github.com/openSUSE/docker-containers-build/raw/openSUSE-{version}/x86_64/openSUSE-{version}.base.x86_64.tar.xz");
+		}
 
 		public IActionResult Debian(string version = "sid")
-			=> Redirect($"https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-amd64/{version}/rootfs.tar.xz");
+			=> Redirect($"https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-amd64/{version.ToLower()}/rootfs.tar.xz");
 
 		[Route("/")]
 		public string Home() => "This is the download redirection site for the LxRunOffline project.";

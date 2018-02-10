@@ -1,6 +1,6 @@
 # LxRunOffline
 
-[![Build status](https://ci.appveyor.com/api/projects/status/wnqrsjk1rdc1cmpn?svg=true)](https://ci.appveyor.com/project/ddosolitary/lxrunoffline)
+[![Build status](https://img.shields.io/appveyor/ci/ddosolitary/lxrunoffline/master.svg)](https://ci.appveyor.com/project/ddosolitary/lxrunoffline)
 
 A full-featured utility for *Windows Subsystem for Linux (WSL)*.
 

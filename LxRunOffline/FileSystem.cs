@@ -6,6 +6,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace LxRunOffline {
 	static class FileSystem {
@@ -26,6 +27,14 @@ namespace LxRunOffline {
 		}
 
 		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
+		static extern SafeFileHandle GetFileHandle(
+			[MarshalAs(UnmanagedType.LPWStr)]string ntPath,
+			bool directory,
+			bool create,
+			bool write
+		);
+
+		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool EnumerateDirectory(
 			SafeFileHandle hFile,
 			[MarshalAs(UnmanagedType.LPWStr)]out string fileName,
@@ -39,12 +48,10 @@ namespace LxRunOffline {
 		);
 
 		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
-		static extern SafeFileHandle GetFileHandle(
-			[MarshalAs(UnmanagedType.LPWStr)]string ntPath,
-			bool directory,
-			bool create,
-			bool write
-		);
+		static extern bool GetFileId(SafeFileHandle hFile, out long id);
+
+		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
+		static extern int GetHardLinkCount(SafeFileHandle hFile);
 
 		[DllImport("LxssFileSystem.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool CopyLxssEa(SafeFileHandle hFrom, SafeFileHandle hTo);
@@ -95,41 +102,7 @@ namespace LxRunOffline {
 			}
 		}
 
-		static void CopyDirectoryRecursive(string oldPath, string newPath) {
-			using (var hDir = GetFileHandle(oldPath.ToNtPath(), true, false, false)) {
-				CheckFileHandle(hDir, oldPath);
-
-				while (true) {
-					if (!EnumerateDirectory(hDir, out var fileName, out var isDir)) {
-						Utils.Error($"Couldn't get the contents of the directory \"{oldPath}\".");
-					}
-					if (fileName == null) break;
-					if (fileName == "." || fileName == "..") continue;
-
-					var oldFilePath = Path.Combine(oldPath, fileName);
-					var newFilePath = Path.Combine(newPath, fileName);
-
-					using (var hOld = GetFileHandle(oldFilePath.ToNtPath(), isDir, false, false))
-					using (var hNew = GetFileHandle(newFilePath.ToNtPath(), isDir, true, true)) {
-						CheckFileHandle(hOld, oldFilePath);
-						CheckFileHandle(hNew, newFilePath);
-
-						if (!CopyLxssEa(hOld, hNew)) {
-							Utils.Error($"Couldn't copy extended attributes from \"{oldFilePath}\" to \"{newFilePath}\".");
-						}
-
-						if (!isDir) {
-							using (var fsOld = new FileStream(hOld, FileAccess.Read))
-							using (var fsNew = new FileStream(hNew, FileAccess.Write)) {
-								fsOld.CopyTo(fsNew);
-							}
-						}
-					}
-
-					if (isDir) CopyDirectoryRecursive(oldFilePath, newFilePath);
-				}
-			}
-		}
+		
 
 		public static void CopyDirectory(string oldPath, string newPath) {
 			oldPath = oldPath.ToExactPath();
@@ -137,7 +110,65 @@ namespace LxRunOffline {
 			Utils.Log($"Copying the directory \"{oldPath}\" to \"{newPath}\".");
 			CheckFileSystem(oldPath);
 			CheckFileSystem(newPath);
-			CopyDirectoryRecursive(oldPath, newPath);
+			var idDict = new Dictionary<long, string>();
+
+			void copyDirectory(string oldDirPath, string newDirPath) {
+				using (var hDir = GetFileHandle(oldDirPath.ToNtPath(), true, false, false)) {
+					CheckFileHandle(hDir, oldDirPath);
+
+					while (true) {
+						if (!EnumerateDirectory(hDir, out var fileName, out var isDir)) {
+							Utils.Error($"Couldn't get the contents of the directory \"{oldDirPath}\".");
+						}
+						if (fileName == null) break;
+						if (fileName == "." || fileName == "..") continue;
+
+						var oldFilePath = Path.Combine(oldDirPath, fileName);
+						var newFilePath = Path.Combine(newDirPath, fileName);
+
+						using (var hOld = GetFileHandle(oldFilePath.ToNtPath(), isDir, false, false)) {
+							CheckFileHandle(hOld, oldFilePath);
+
+							var count = GetHardLinkCount(hOld);
+							if (count == 0) Utils.Error($"Couldn't get count of hard links of the file \"{oldFilePath}\".");
+							if (!GetFileId(hOld, out var id)) {
+								Utils.Error($"Couldn't get the index number of the file \"{oldFilePath}\".");
+							}
+
+							if (count == 1 || !idDict.ContainsKey(id)) {
+								using (var hNew = GetFileHandle(newFilePath.ToNtPath(), isDir, true, true)) {
+									CheckFileHandle(hNew, newFilePath);
+
+									if (!CopyLxssEa(hOld, hNew)) {
+										Utils.Error($"Couldn't copy extended attributes from \"{oldFilePath}\" to \"{newFilePath}\".");
+									}
+
+									if (!isDir) {
+										using (var fsOld = new FileStream(hOld, FileAccess.Read))
+										using (var fsNew = new FileStream(hNew, FileAccess.Write)) {
+											fsOld.CopyTo(fsNew);
+										}
+									}
+								}
+
+								if (count > 1) idDict.Add(id, newFilePath);
+							} else {
+								var linkTargetPath = idDict[id];
+								using (var hTarget = GetFileHandle(linkTargetPath.ToNtPath(), false, false, false)) {
+									CheckFileHandle(hTarget, linkTargetPath);
+									if (!MakeHardLink(hTarget, newFilePath.ToNtPath())) {
+										Utils.Error($"Couldn't create the hard link from \"{newFilePath}\" to \"{linkTargetPath}\".");
+									}
+								}
+							}
+						}
+
+						if (isDir) copyDirectory(oldFilePath, newFilePath);
+					}
+				}
+			}
+
+			copyDirectory(oldPath, newPath);
 		}
 
 		public static void DeleteDirectory(string path) {

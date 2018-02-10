@@ -21,6 +21,10 @@ struct FILE_DIRECTORY_INFORMATION {
 	WCHAR FileName[1];
 };
 
+struct FILE_INTERNAL_INFORMATION {
+	LARGE_INTEGER IndexNumber;
+};
+
 struct FILE_LINK_INFORMATION {
 	BOOLEAN ReplaceIfExists;
 	HANDLE RootDirectory;
@@ -54,6 +58,14 @@ extern "C" NTSYSAPI NTSTATUS NTAPI NtQueryDirectoryFile(
 	_In_ BOOLEAN ReturnSingleEntry,
 	_In_opt_ PUNICODE_STRING FileName,
 	_In_ BOOLEAN RestartScan
+);
+
+extern "C" NTSYSAPI NTSTATUS NtQueryInformationFile(
+	_In_ HANDLE FileHandle,
+	_Out_ PIO_STATUS_BLOCK IoStatusBlock,
+	_Out_ PVOID FileInformation,
+	_In_ ULONG Length,
+	_In_ FILE_INFORMATION_CLASS FileInformationClass
 );
 
 extern "C" NTSYSAPI NTSTATUS NTAPI NtSetInformationFile(
@@ -140,6 +152,21 @@ extern "C" __declspec(dllexport) bool MakeHardLink(HANDLE hTarget, LPWSTR linkNa
 
 	delete[] linkInfo;
 	return res == STATUS_SUCCESS;
+}
+
+extern "C" __declspec(dllexport) bool GetFileId(HANDLE hFile, PLARGE_INTEGER id) {
+	IO_STATUS_BLOCK status;
+	FILE_INTERNAL_INFORMATION info;
+	if (NtQueryInformationFile(hFile, &status, &info, sizeof(FILE_INTERNAL_INFORMATION), (FILE_INFORMATION_CLASS)6 /* FileInternalInformation */) != STATUS_SUCCESS) return false;
+	*id = info.IndexNumber;
+	return true;
+}
+
+extern "C" __declspec(dllexport) int GetHardLinkCount(HANDLE hFile) {
+	IO_STATUS_BLOCK status;
+	FILE_STANDARD_INFO info;
+	if (NtQueryInformationFile(hFile, &status, &info, sizeof(FILE_STANDARD_INFO), (FILE_INFORMATION_CLASS)5 /* FileStandardInformation */) != STATUS_SUCCESS) return 0;
+	return info.NumberOfLinks;
 }
 
 const char *LxssEaName = "LXATTRB";

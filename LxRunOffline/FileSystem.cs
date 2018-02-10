@@ -173,7 +173,7 @@ namespace LxRunOffline {
 					var type = entry.TarHeader.TypeFlag;
 					if (type == TarHeader.LF_DIR && Regex.IsMatch(entry.Name, @"(^|/)\.\.?/?$")) continue;
 					var newFilePath = entry.Name.StripRootPath(tarRootPath);
-					if (newFilePath == null) continue;
+					if (newFilePath == null || newFilePath == "etc/resolv.conf") continue;
 					newFilePath = Path.Combine(targetPath, newFilePath.ToWslPath());
 
 					if (type == TarHeader.LF_LINK) {
@@ -234,6 +234,21 @@ namespace LxRunOffline {
 							}
 						}
 					}
+				}
+			}
+
+			var resolvPath = Path.Combine(targetPath, @"etc\resolv.conf");
+			using (var hFile = GetFileHandle(resolvPath.ToNtPath(), false, true, true)) {
+				CheckFileHandle(hFile, resolvPath);
+
+				var eaData = new LxssEaData { Mode = 0b1010000111111111 };
+				eaData.Atime = eaData.Mtime = eaData.Ctime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+				if (!SetLxssEa(hFile, eaData, Marshal.SizeOf(typeof(LxssEaData)))) {
+					Utils.Error($"Couldn't set extended attributes of \"{resolvPath}\".");
+				}
+
+				using (var writer = new StreamWriter(new FileStream(hFile, FileAccess.Write))) {
+					writer.Write("../run/resolvconf/resolv.conf");
 				}
 			}
 		}

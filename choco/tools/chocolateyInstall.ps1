@@ -8,6 +8,8 @@ if ($Env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
 	throw "This package requires a 64-bit Windows."
 }
 
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+
 New-ItemProperty -Force -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\Kernel' -Name 'obcaseinsensitive' -Value 0 -PropertyType Dword
 Write-Warning 'Please restart your system to let registry changes take effect.'
 

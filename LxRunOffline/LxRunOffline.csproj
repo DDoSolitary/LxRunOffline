@@ -13,6 +13,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -40,6 +41,7 @@
     <Compile Include="Utils.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <None Include="App.config" />
+    <None Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

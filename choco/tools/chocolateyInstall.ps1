@@ -1,10 +1,9 @@
-$osVersion = [Environment]::OSVersion.Version.Major
-$osRelId = (gp 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').ReleaseId
-if ($osVersion -ne 10 -or $osRelId -lt 1703) {
-	throw "This package requires Windows 10 Fall Creators Update or later."
+$version = [Environment]::OSVersion.Version
+if ($version.Major -ne 10 -or $version.Build -lt 16299) {
+	throw "This package requires Windows 10 v1709 or later."
 }
 
-if ($Env:PROCESSOR_ARCHITECTURE -ne 'AMD64') {
+if (-not [Environment]::Is64BitOperatingSystem) {
 	throw "This package requires a 64-bit Windows."
 }
 

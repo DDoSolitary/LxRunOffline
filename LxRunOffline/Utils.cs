@@ -42,14 +42,14 @@ namespace LxRunOffline {
 			}
 		}
 
-		public static bool CheckAdministrator() {
+		public static void CheckAdministrator() {
 			var identity = WindowsIdentity.GetCurrent();
 			var principal = new WindowsPrincipal(identity);
 
-			if (!principal.IsInRole(WindowsBuiltInRole.Administrator)) return true;
+			if (!principal.IsInRole(WindowsBuiltInRole.Administrator)) return;
 
 			Warning("You are running LxRunOffline with administrator privileges. It may cause problems.");
-			return Prompt();
+			if (!Prompt()) Error("User canceled the operation.");
 		}
 
 		public static void CheckCaseInsensitive() {
@@ -77,6 +77,26 @@ namespace LxRunOffline {
 			Error($"The registry value \"{regKey}\\{regValueName}\" has been set to \"0\"" +
 				" to make sure this operation works properly." +
 				" Please restart your system and then rerun the command.");
+		}
+
+		public static void CheckWslApi() {
+			if (!Environment.Is64BitProcess) {
+				Error("Please run this program as a 64-bit process.");
+			}
+			if (!File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wslapi.dll"))) {
+				Error("wslapip.dll not found. Please enable \"Windows Subsystem for Linux\" in \"Control Panel > Turn Windows features on or off\".");
+			}
+		}
+
+		public static void CheckWindowsVersion() {
+			var version = Environment.OSVersion.Version;
+			if (version.Major != 10 || version.Build < 16299) {
+				Error("Windows 10 v1709 or later is required. Please update your system.");
+			}
+
+			if (!Environment.Is64BitOperatingSystem) {
+				Error("A 64-bit Windows is required.");
+			}
 		}
 	}
 }

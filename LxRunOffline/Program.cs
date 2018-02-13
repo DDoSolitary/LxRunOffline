@@ -131,7 +131,8 @@ namespace LxRunOffline {
 
 	class Program {
 		static int Main(string[] args) {
-			if (!Utils.CheckAdministrator()) return 0;
+			Utils.CheckWindowsVersion();
+			Utils.CheckAdministrator();
 
 			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, DuplicateOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(
 				(ListOptions opts) => {
@@ -174,6 +175,7 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(RunOptions opts) => {
+					Utils.CheckWslApi();
 					return (int)Wsl.LaunchDistro(opts.Name, opts.Command, !opts.NoCwd);
 				},
 				(DirOptions opts) => {

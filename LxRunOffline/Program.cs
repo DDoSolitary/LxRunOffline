@@ -139,7 +139,7 @@ namespace LxRunOffline {
 
 			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, DuplicateOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(
 				(ListOptions opts) => {
-					Console.WriteLine(string.Join("\n", Wsl.ListDistros().ToArray()));
+					Console.WriteLine(string.Join(Environment.NewLine, Wsl.ListDistros().ToArray()));
 					return 0;
 				},
 				(DefaultOptions opts) => {
@@ -207,7 +207,7 @@ namespace LxRunOffline {
 					} else if (opts.VariableToGet != null) {
 						checkVarName(opts.VariableToGet);
 						Console.WriteLine(envVars[opts.VariableToGet]);
-					} else Console.Write(string.Join("\n", envVars.Values));
+					} else Console.WriteLine(string.Join(Environment.NewLine, envVars.Values));
 					return 0;
 				},
 				(ConfigUidOptions opts) => {

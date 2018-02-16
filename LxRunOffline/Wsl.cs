@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using ICSharpCode.SharpZipLib.GZip;
 using Microsoft.Win32;
@@ -266,7 +267,7 @@ namespace LxRunOffline {
 			SetRegistryValue(distroName, "BasePath", Path.GetFullPath(installPath));
 		}
 
-		public static string[] GetDefaultEnvironment(string distroName) {
+		public static IEnumerable<string> GetDefaultEnvironment(string distroName) {
 			return (string[])(GetRegistryValue(distroName, "DefaultEnvironment")
 				?? new string[] {
 					"HOSTTYPE=x86_64",
@@ -276,8 +277,8 @@ namespace LxRunOffline {
 				});
 		}
 
-		public static void SetDefaultEnvironment(string distroName, string[] environmentVariables) {
-			SetRegistryValue(distroName, "DefaultEnvironment", environmentVariables);
+		public static void SetDefaultEnvironment(string distroName, IEnumerable<string> environmentVariables) {
+			SetRegistryValue(distroName, "DefaultEnvironment", environmentVariables.ToArray());
 		}
 
 		public static int GetDefaultUid(string distroName) {

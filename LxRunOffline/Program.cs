@@ -92,11 +92,14 @@ namespace LxRunOffline {
 		[Option('n', HelpText = "Name of the distribution.", Required = true)]
 		public string Name { get; set; }
 
-		[Option('a', HelpText = "Environment variable to add. (NAME=value)", SetName = "add")]
+		[Option('a', HelpText = "Environment variable to add or update. (NAME=value)", SetName = "add")]
 		public string VariableToAdd { get; set; }
 
 		[Option('r', HelpText = "Name of the environment variable to remove.", SetName = "remove")]
 		public string VariableToRemove { get; set; }
+
+		[Option('g', HelpText = "Name of the environment variable to get.", SetName = "get")]
+		public string VariableToGet { get; set; }
 	}
 
 	[Verb("config-uid", HelpText = "Get or set the UID of the default user of a distribution.")]
@@ -183,25 +186,28 @@ namespace LxRunOffline {
 					return 0;
 				},
 				(ConfigEnvOptions opts) => {
-					var envVars = Wsl.GetDefaultEnvironment(opts.Name).ToList();
-					if (opts.VariableToAdd != null) {
-						if (!opts.VariableToAdd.Contains('=')) {
-							Utils.Error($"Environment variable must contain \"=\": \"{opts.VariableToAdd}\".");
-						}
-						envVars.Add(opts.VariableToAdd);
-						Wsl.SetDefaultEnvironment(opts.Name, envVars.ToArray());
-					} else if (opts.VariableToRemove != null) {
-						if (opts.VariableToRemove.Contains('=')) {
-							Utils.Error($"Environment variable name should not contain \"=\": \"{opts.VariableToRemove}\".");
-						}
-						var newEnvVars = envVars.Where(s => !s.StartsWith($"{opts.VariableToRemove}="));
-						if (envVars.Count == newEnvVars.Count()) {
-							Utils.Error($"Environment variable not found: {opts.VariableToRemove}.");
-						}
-						Wsl.SetDefaultEnvironment(opts.Name, newEnvVars.ToArray());
-					} else {
-						Console.Write(string.Join("\n", envVars));
+					string getVarName(string envVar) {
+						var id = envVar.IndexOf('=');
+						if (id <= 0) Utils.Error($"Invalid environment variable: \"{envVar}\".");
+						return envVar.Substring(0, id);
 					}
+					var envVars = Wsl.GetDefaultEnvironment(opts.Name).ToDictionary(getVarName);
+					void checkVarName(string varName) {
+						if (!envVars.ContainsKey(varName)) {
+							Utils.Error($"Environment variable not found: \"{varName}\".");
+						}
+					}
+					if (opts.VariableToAdd != null || opts.VariableToRemove != null) {
+						if (opts.VariableToAdd != null) envVars[getVarName(opts.VariableToAdd)] = opts.VariableToAdd;
+						else {
+							checkVarName(opts.VariableToRemove);
+							envVars.Remove(opts.VariableToRemove);
+						}
+						Wsl.SetDefaultEnvironment(opts.Name, envVars.Values);
+					} else if (opts.VariableToGet != null) {
+						checkVarName(opts.VariableToGet);
+						Console.WriteLine(envVars[opts.VariableToGet]);
+					} else Console.Write(string.Join("\n", envVars.Values));
 					return 0;
 				},
 				(ConfigUidOptions opts) => {

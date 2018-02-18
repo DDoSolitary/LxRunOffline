@@ -81,15 +81,12 @@ namespace LxRunOffline {
 		}
 
 		public static void CheckWslApi() {
-			if (!Environment.Is64BitProcess) {
-				Error("Please run this program as a 64-bit process.");
-			}
 			if (!File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "wslapi.dll"))) {
 				Error("wslapip.dll not found. Please enable \"Windows Subsystem for Linux\" in \"Control Panel > Turn Windows features on or off\".");
 			}
 		}
 
-		public static void CheckWindowsVersion() {
+		public static void CheckCompatibility() {
 			var version = Environment.OSVersion.Version;
 			if (version.Major != 10 || version.Build < 16299) {
 				Error("Windows 10 v1709 or later is required. Please update your system.");
@@ -97,6 +94,9 @@ namespace LxRunOffline {
 
 			if (!Environment.Is64BitOperatingSystem) {
 				Error("A 64-bit Windows is required.");
+			}
+			if (!Environment.Is64BitProcess) {
+				Error("Please run this program as a 64-bit process.");
 			}
 		}
 	}

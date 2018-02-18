@@ -134,7 +134,7 @@ namespace LxRunOffline {
 
 	class Program {
 		static int Main(string[] args) {
-			Utils.CheckWindowsVersion();
+			Utils.CheckCompatibility();
 			Utils.CheckAdministrator();
 
 			return Parser.Default.ParseArguments<ListOptions, DefaultOptions, InstallOptions, RegisterOptions, UninstallOptions, UnregisterOptions, MoveOptions, DuplicateOptions, RunOptions, DirOptions, ConfigEnvOptions, ConfigUidOptions, ConfigKernelCmdOptions, ConfigFlagOptions>(args).MapResult(

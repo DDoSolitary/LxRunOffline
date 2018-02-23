@@ -31,7 +31,14 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Update .NET Framework version to 4.7.1 to fix dependencies to .NET Standard.
+      - Ignore `.` directories in tar files. (For Debian.)
+      - Fix a typo in an error message.
+      - Improve directory deletion logic.
+      - Create proper `resolv.conf` after installation.
+      - Copy hard links correctly.
+      - Improve the `config-env` command.
+      - Add some compatibility checks.
+      - Use correct new line characters (CRLF) for multi-line output.
     auth_token:
       secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
     on:

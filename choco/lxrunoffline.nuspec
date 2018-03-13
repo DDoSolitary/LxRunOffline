@@ -15,5 +15,8 @@
     <releaseNotes>https://github.com/DDoSolitary/LxRunOffline/releases/tag/v{VERSION}</releaseNotes>
     <copyright>2016-2018 LxRunOffline DDoSolitary</copyright>
     <tags>lxrunoffline wsl bash bash-on-windows windows-subsystem-linux</tags>
+    <dependencies>
+      <dependency id="vcredist140" version="14.10" />
+    </dependencies>
   </metadata>
 </package>

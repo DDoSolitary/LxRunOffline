@@ -6,6 +6,7 @@
 #include <ntstatus.h>
 #include <objbase.h>
 #include <climits>
+#pragma comment(lib, "ntdll.lib")
 
 struct FILE_DIRECTORY_INFORMATION {
 	ULONG NextEntryOffset;

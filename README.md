@@ -21,8 +21,6 @@ You can install via Chocolatey `choco install lxrunoffline`, or download the bin
 - Latest releases: https://github.com/DDoSolitary/LxRunOffline/releases
 - Development builds: https://ci.appveyor.com/project/DDoSolitary/lxrunoffline/build/artifacts
 
-Note that if you don't install via Chocolatey, you'll have to install [Visual C++ Redistribution 2017](https://go.microsoft.com/fwlink/?LinkId=746572) manually.
-
 # Usage
 
 See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) for where to download tar files for different distros, which is required by the `LxRunOffline install` command.

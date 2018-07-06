@@ -35,7 +35,7 @@ int wmain(int argc, wchar_t **argv) {
  	};
 
 	try {
-		//check_compatibility();
+		check_compatibility();
 		if (argc < 2) {
 			throw error_other(err_no_action, {});
 #ifdef LXRUNOFFLINE_VERSION

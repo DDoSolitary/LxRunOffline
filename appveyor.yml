@@ -40,7 +40,7 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - See https://github.com/DDoSolitary/LxRunOffline/issues/36.
+      - Bug fixes.
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

@@ -249,8 +249,10 @@ void set_distro_flags(crwstr name, uint32_t value) {
 }
 
 void duplicate_distro(crwstr name, crwstr new_name, crwstr new_dir) {
-	auto p = reg_base_path + new_guid();
-	auto code = RegCopyTree(HKEY_CURRENT_USER, get_distro_key(name).c_str(), create_key(p, true).val);
-	set_value(p, value_distro_name, new_name);
-	set_value(p, value_dir, get_full_path(new_dir));
+	auto sp = get_distro_key(name);
+	auto tp = reg_base_path + new_guid();
+	auto code = RegCopyTree(HKEY_CURRENT_USER, sp.c_str(), create_key(tp, true).val);
+	if (code) throw error_code(err_copy_key, { sp,tp }, code);
+	set_value(tp, value_distro_name, new_name);
+	set_value(tp, value_dir, get_full_path(new_dir));
 }

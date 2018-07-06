@@ -163,6 +163,9 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    set-kernelcmd  Set the default kernel command line of a distribution." << std::endl
 				<< L"    get-flags      Get some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl
 				<< L"    set-flags      Set some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl;
+#ifdef LXRUNOFFLINE_VERSION
+			std::wcerr << L"    version        Get version information about this LxRunOffline.exe." << std::endl;
+#endif
 		}
 		return 1;
 	} catch (const po::error &e) {

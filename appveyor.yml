@@ -5,24 +5,27 @@ cache:
   - C:\tools\vcpkg\installed
 configuration: Release
 before_build:
-  - ps: Update-AppveyorBuild -Version (git describe --tags)
+  - ps: $Env:VERSION=(git describe --tags)
+  - ps: Update-AppveyorBuild -Version $Env:VERSION
   - ps: |
       pushd C:\tools\vcpkg
-      git pull
+      git pull -q
       .\bootstrap-vcpkg.bat
+      popd
       vcpkg integrate install
       vcpkg install libarchive boost-program-options boost-format
       vcpkg upgrade --no-dry-run
-      popd
+build_script:
+  - ps: msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"$Env:VERSION\`"
 after_build:
   - ps: |
       $project = $Env:APPVEYOR_PROJECT_NAME
-      $name = "$project-$(git describe --tags).zip"
-      $dir = "x64\$Env:CONFIGURATION"
-      7z a $name "$dir\$project.exe" "$dir\*.dll" "$project\LICENSE" "$project\LICENSE-3RD-PARTY"
+      $name = "$project-$Env:VERSION.zip"
+      $dir = ".\x64\$Env:CONFIGURATION"
+      7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
       if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash
-          $version = (git describe --tags).Substring(1)
+          $version = $Env:VERSION.Substring(1)
           cd choco
           (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
           (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii

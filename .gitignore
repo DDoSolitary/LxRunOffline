@@ -1,8 +1,4 @@
-﻿bin/
-obj/
-Debug/
+﻿Debug/
 Release/
-packages/
-paket-files/
 .vs/
 *.user

@@ -1,0 +1,1 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\Preview\Community\Common7\IDE\VC\VCTargets\Microsoft.Cpp.Redirect.props(27,3): error MSB4019: The imported project "C:\Microsoft.Cpp.Redirect.14.props" was not found. Confirm that the path in the <Import> declaration is correct, and that the file exists on disk.

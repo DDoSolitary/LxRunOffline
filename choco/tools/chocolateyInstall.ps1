@@ -1,6 +1,6 @@
 $version = [Environment]::OSVersion.Version
-if ($version.Major -ne 10 -or $version.Build -lt 16299) {
-	throw "This package requires Windows 10 v1709 or later."
+if ($version.Major -ne 10 -or $version.Build -lt 17134) {
+	throw "This package requires Windows 10 v1803 or later."
 }
 
 if (-not [Environment]::Is64BitOperatingSystem) {
@@ -8,9 +8,6 @@ if (-not [Environment]::Is64BitOperatingSystem) {
 }
 
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
-
-New-ItemProperty -Force -Path 'HKLM:\System\CurrentControlSet\Control\Session Manager\Kernel' -Name 'obcaseinsensitive' -Value 0 -PropertyType Dword
-Write-Warning 'Please restart your system to let registry changes take effect.'
 
 $packageName = 'lxrunoffline'
 $url = 'https://github.com/DDoSolitary/LxRunOffline/releases/download/v{VERSION}/LxRunOffline-v{VERSION}.zip'

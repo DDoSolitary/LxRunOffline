@@ -1,22 +1,28 @@
-﻿image: Visual Studio 2017
-init:
-  - ps: |
-      if ($Env:APPVEYOR_REPO_TAG -eq 'true') { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }
-      else { Update-AppveyorBuild -Version "dev-$($Env:APPVEYOR_REPO_COMMIT.Substring(0, 7))" }
+﻿image: Visual Studio 2017 Preview
+environment:
+  VCPKG_DEFAULT_TRIPLET: x64-windows
+cache:
+  - C:\tools\vcpkg\installed
 configuration: Release
-build:
-  parallel: true
 before_build:
-  - ps: nuget restore
+  - ps: Update-AppveyorBuild -Version (git describe --tags)
+  - ps: |
+      pushd C:\tools\vcpkg
+      git pull
+      .\bootstrap-vcpkg.bat
+      vcpkg integrate install
+      vcpkg install libarchive boost-program-options boost-format
+      vcpkg upgrade --no-dry-run
+      popd
 after_build:
   - ps: |
       $project = $Env:APPVEYOR_PROJECT_NAME
-      $name = "$project-$Env:APPVEYOR_BUILD_VERSION.zip"
-      $dir = ".\$project\bin\$Env:CONFIGURATION"
-      7z a $name "$dir\$project.exe" "$dir\$project.exe.config" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
+      $name = "$project-$(git describe --tags).zip"
+      $dir = "x64\$Env:CONFIGURATION"
+      7z a $name "$dir\$project.exe" "$dir\*.dll" "$project\LICENSE" "$project\LICENSE-3RD-PARTY"
       if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash
-          $version = $Env:APPVEYOR_REPO_TAG_NAME.Substring(1)
+          $version = (git describe --tags).Substring(1)
           cd choco
           (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
           (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii
@@ -31,16 +37,9 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Ignore `.` directories in tar files. (For Debian.)
-      - Fix a typo in an error message.
-      - Improve directory deletion logic.
-      - Create proper `resolv.conf` after installation.
-      - Copy hard links correctly.
-      - Improve the `config-env` command.
-      - Add some compatibility checks.
-      - Use correct new line characters (CRLF) for multi-line output.
+      - See https://github.com/DDoSolitary/LxRunOffline/issues/36.
     auth_token:
-      secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
+      secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:
       appveyor_repo_tag: true
 
@@ -48,6 +47,6 @@ deploy:
     artifact: /.*\.nupkg/
     server: https://push.chocolatey.org/
     api_key:
-      secure: Vo2L43MTVd1m6V60iP3G2B1MiAzLjnriIjlkD/B9SUJCRM/6HH5E1jbxyg7MmtB0
+      secure: O5vJKMFYeafCP5lAd3ABYUhYE0qhnL7b0dDphDYHiabv2DovKSyb67fm5PX6aUMg
     on:
       appveyor_repo_tag: true

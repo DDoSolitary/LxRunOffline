@@ -25,13 +25,12 @@ You can install via Chocolatey `choco install lxrunoffline`, or download the bin
 
 See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) for where to download tar files for different distros, which is required by the `LxRunOffline install` command.
 
-Run `LxRunOffline help` for the command line interface.
-
-Set the environment variable `LXRUNOFFLINE_PROMPT_ANSWER` to `y` or `n` to answer confirmations automatically. Set `LXRUNOFFLINE_VERBOSE` to `1` to enable verbose output.
+Run `LxRunOffline` for the command line interface.
 
 # Compatibility
 
 - **v1.x**: All Windows 10 versions with the Linux subsystem support.
-- **v2.x**: Only Windows 10 Fall Creators Update or later.
+- **v2.x**: Only Windows 10 Fall Creators Update (v1709) or later.
+- **v3.x**: Only Windows 10 April 2018 Update (v1803) or later.
 
-It is strongly recommended to install the Creators Update and use v2.x releases.
+It is strongly recommended to install the April 2018 Update and use v3.x releases.

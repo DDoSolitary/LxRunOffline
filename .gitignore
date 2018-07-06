@@ -2,3 +2,4 @@
 Release/
 .vs/
 *.user
+*.log

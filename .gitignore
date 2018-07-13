@@ -3,3 +3,5 @@ Release/
 .vs/
 *.user
 *.log
+*.o
+*.exe

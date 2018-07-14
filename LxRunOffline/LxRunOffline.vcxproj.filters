@@ -53,4 +53,7 @@
   <ItemGroup>
     <Manifest Include="app.manifest" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="manifest.rc" />
+  </ItemGroup>
 </Project>

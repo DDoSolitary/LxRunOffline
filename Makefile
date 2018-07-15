@@ -5,7 +5,7 @@ LDLIBS := -lntdll -lole32 -larchive -lboost_program_options-mt
 
 PROJ := LxRunOffline
 SRCS := $(wildcard $(PROJ)/*.cpp)
-OBJS := $(patsubst $(PROJ)/%.cpp, $(PROJ)/%.o, $(SRCS)) $(PROJ)/manifest.o
+OBJS := $(patsubst $(PROJ)/%.cpp, $(PROJ)/%.o, $(SRCS)) $(PROJ)/resources.o
 TARGET := $(PROJ).exe
 
 $(TARGET): $(OBJS)
@@ -14,8 +14,8 @@ $(TARGET): $(OBJS)
 $(PROJ)/%.o: $(PROJ)/%.cpp
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
-$(PROJ)/manifest.o: $(PROJ)/manifest.rc $(PROJ)/app.manifest
-	windres $(PROJ)/manifest.rc $(PROJ)/manifest.o
+$(PROJ)/resources.o: $(PROJ)/resources.rc $(PROJ)/app.manifest
+	windres $(PROJ)/resources.rc $(PROJ)/resources.o
 
 clean:
 	rm -rf $(OBJS) $(TARGET)

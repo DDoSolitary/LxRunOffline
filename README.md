@@ -27,6 +27,30 @@ See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) for where to do
 
 Run `LxRunOffline` for the command line interface.
 
+# Build
+
+### Visual Studio
+
+Visual Studio 2017 and Windows SDK 10.0.17134 are required.
+
+Install vcpkg and its VS integration (if you haven't) and install dependencies.
+
+```
+vcpkg install --triplet x64-windows libarchive boost-program-options
+```
+
+Then build with Visual Studio or MSBuild.
+
+### MSYS2
+
+Open the "MSYS2 MinGW 64-bit" shell, and install necessary packages.
+
+```
+pacman -Sy --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost
+```
+
+Then run `make`.
+
 # Compatibility
 
 - **v1.x**: All Windows 10 versions with the Linux subsystem support.

@@ -33,7 +33,7 @@ Run `LxRunOffline` for the command line interface.
 
 Visual Studio 2017 and Windows SDK 10.0.17134 are required.
 
-Install vcpkg and its VS integration (if you haven't) and install dependencies.
+Install [vcpkg and its VS integration](https://github.com/Microsoft/vcpkg) (if you haven't) and install dependencies.
 
 ```
 vcpkg install --triplet x64-windows libarchive boost-program-options

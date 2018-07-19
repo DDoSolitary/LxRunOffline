@@ -313,7 +313,7 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 		auto nsp = sp + p;
 		auto ntp = tp + p;
 		auto hs = open_file(nsp, f, false, true);
-		if (f) set_cs_info(fs);
+		if (f) set_cs_info(hs.val);
 
 		BY_HANDLE_FILE_INFORMATION info;
 		if (!GetFileInformationByHandle(hs.val, &info)) {

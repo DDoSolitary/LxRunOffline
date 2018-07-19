@@ -25,7 +25,7 @@ const wstr msg_table[] = {
 	L"Couldn't open or create the registry key \"%1%\".",
 	L"Couldn't delete the registry key \"%1%\".",
 	L"Couldn't get subkeys of the registry key \"%1%\".",
-	L"Couldn't copy the registry key \"%1%\" to \"%2%\"."
+	L"Couldn't copy the registry key \"%1%\" to \"%2%\".",
 	L"Couldn't get the value \"%2%\" of the registry key \"%1%\".",
 	L"Couldn't set the value \"%2%\" of the registry key \"%1%\".",
 	L"Couldn't create a GUID.",

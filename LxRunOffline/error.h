@@ -33,19 +33,21 @@ enum err_msg {
 	err_distro_exists,
 	err_no_action,
 	err_invalid_action,
-	err_no_wslapi
+	err_no_wslapi,
+	err_launch_distro
 };
 
 class err {
 public:
 	err_msg msg_code;
 	std::vector<wstr> msg_args;
-	uint32_t err_code;
-	wstr mod;
+	HRESULT err_code;
 	wstr format() const;
 	void push_if_empty(crwstr arg);
 };
 
-err error_last(err_msg msg_code, const std::vector<wstr> &msg_args);
-err error_code(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code, bool from_nt = false);
+err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code);
+err error_win32(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code);
+err error_win32_last(err_msg msg_code, const std::vector<wstr> &msg_args);
+err error_nt(err_msg msg_code, const std::vector<wstr> &msg_args, NTSTATUS err_code);
 err error_other(err_msg msg_code, const std::vector<wstr> &msg_args);

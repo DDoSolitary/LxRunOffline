@@ -30,11 +30,11 @@ const auto guid_len = 38;
 
 wstr new_guid() {
 	GUID guid;
-	auto code = CoCreateGuid(&guid);
-	if (code) error_code(err_create_guid, {}, code);
+	auto hr = CoCreateGuid(&guid);
+	if (FAILED(hr)) throw error_hresult(err_create_guid, {}, hr);
 	auto buf = std::make_unique<wchar_t[]>(guid_len + 1);
 	if (!StringFromGUID2(guid, buf.get(), guid_len + 1)) {
-		error_other(err_convert_guid, {});
+		throw error_other(err_convert_guid, {});
 	}
 	return buf.get();
 }
@@ -45,7 +45,7 @@ std::unique_ptr<char[]> get_dynamic(crwstr path, crwstr value_name, uint32_t typ
 			HKEY_CURRENT_USER, path.c_str(),
 			value_name.c_str(), type, nullptr, buf, &len
 		);
-		if (code) throw error_code(err_get_key_value, { path,value_name }, code);
+		if (code) throw error_win32(err_get_key_value, { path,value_name }, code);
 		return len;
 	}).first;
 }
@@ -55,7 +55,7 @@ void set_dynamic(crwstr path, crwstr value_name, uint32_t type, const void *valu
 		HKEY_CURRENT_USER, path.c_str(),
 		value_name.c_str(), type, value, len
 	);
-	if (code) throw error_code(err_set_key_value, { path,value_name }, code);
+	if (code) throw error_win32(err_set_key_value, { path,value_name }, code);
 }
 
 template<typename T> T get_value(crwstr, crwstr) { assert(false); }
@@ -84,7 +84,7 @@ uint32_t get_value<uint32_t>(crwstr path, crwstr value_name) {
 		HKEY_CURRENT_USER, path.c_str(),
 		value_name.c_str(), RRF_RT_REG_DWORD, nullptr, &res, &rlen
 	);
-	if (code) throw error_code(err_get_key_value, { path,value_name }, code);
+	if (code) throw error_win32(err_get_key_value, { path,value_name }, code);
 	return res;
 }
 
@@ -124,7 +124,7 @@ unique_val<HKEY> create_key(crwstr path, bool write) {
 		HKEY_CURRENT_USER, path.c_str(),
 		0, nullptr, 0, write ? KEY_ALL_ACCESS : KEY_READ, nullptr, &hk.val, nullptr
 	);
-	if (code) throw error_code(err_open_key, { path }, code);
+	if (code) throw error_win32(err_open_key, { path }, code);
 	hk.deleter = &RegCloseKey;
 	hk.empty = false;
 	return hk;
@@ -138,7 +138,7 @@ std::vector<wstr> list_distro_id() {
 		DWORD bs = guid_len + 1;
 		auto code = RegEnumKeyEx(hk.val, i, ib.get(), &bs, 0, nullptr, nullptr, nullptr);
 		if (code == ERROR_NO_MORE_ITEMS) break;
-		else if (code) throw error_code(err_enum_key, { reg_base_path }, code);
+		else if (code) throw error_win32(err_enum_key, { reg_base_path }, code);
 		res.push_back(ib.get());
 	}
 	return res;
@@ -191,7 +191,7 @@ void register_distro(crwstr name, crwstr path) {
 void unregister_distro(crwstr name) {
 	auto p = get_distro_key(name);
 	auto code = RegDeleteTree(HKEY_CURRENT_USER, p.c_str());
-	if (code) error_code(err_delete_key, { p }, code);
+	if (code) throw error_win32(err_delete_key, { p }, code);
 }
 
 wstr get_distro_dir(crwstr name) {
@@ -257,7 +257,7 @@ void duplicate_distro(crwstr name, crwstr new_name, crwstr new_dir) {
 	auto sp = get_distro_key(name);
 	auto tp = reg_base_path + new_guid();
 	auto code = RegCopyTree(HKEY_CURRENT_USER, sp.c_str(), create_key(tp, true).val);
-	if (code) throw error_code(err_copy_key, { sp,tp }, code);
+	if (code) throw error_win32(err_copy_key, { sp,tp }, code);
 	set_value(tp, value_distro_name, new_name);
 	set_value(tp, value_dir, get_full_path(new_dir));
 }

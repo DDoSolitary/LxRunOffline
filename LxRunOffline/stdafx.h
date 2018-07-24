@@ -1,16 +1,19 @@
 ﻿#pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
+
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+
 #define WIN32_NO_STATUS
 #include <Windows.h>
 #undef WIN32_NO_STATUS
-#undef _CRT_SECURE_NO_WARNINGS
 #include <winternl.h>
 #include <ntstatus.h>
-#include <io.h>
+#include <comdef.h>
 
-#include <cstdlib>
-#include <cstdint>
+#undef _CRT_SECURE_NO_WARNINGS
 
 #include <algorithm>
 #include <functional>

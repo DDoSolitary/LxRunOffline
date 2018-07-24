@@ -35,18 +35,27 @@ const wstr msg_table[] = {
 	L"No action is speicified.",
 	L"The action \"%1%\" is not recognized.",
 	L"Couldn't load wslapi.dll. Please make sure that WSL has been installed.",
+	L"Error occurred when trying to launch the distro \"%1%\"."
 };
 
-err error_last(err_msg msg_code, const std::vector<wstr> &msg_args) {
-	return err{ msg_code,msg_args,GetLastError(),L"" };
+err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {
+	return err{ msg_code,msg_args,err_code };
 }
 
-err error_code(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code, bool from_nt) {
-	return err{ msg_code,msg_args,err_code,from_nt ? L"ntdll.dll" : L"" };
+err error_win32(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code) {
+	return error_hresult(msg_code,msg_args,HRESULT_FROM_WIN32(err_code));
+}
+
+err error_win32_last(err_msg msg_code, const std::vector<wstr> &msg_args) {
+	return error_win32(msg_code, msg_args, GetLastError());
+}
+
+err error_nt(err_msg msg_code, const std::vector<wstr> &msg_args, NTSTATUS err_code) {
+	return error_hresult(msg_code, msg_args, HRESULT_FROM_NT(err_code));
 }
 
 err error_other(err_msg msg_code, const std::vector<wstr> &msg_args) {
-	return err{ msg_code,msg_args,0,L"" };
+	return error_hresult(msg_code, msg_args, S_OK);
 }
 
 wstr err::format() const {
@@ -57,20 +66,22 @@ wstr err::format() const {
 	ss << fmt << std::endl;
 
 	if (err_code) {
-		wchar_t *buf = nullptr;
-		auto f = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-		HMODULE hm = 0;
-		if (!mod.empty()) {
-			hm = LoadLibrary(mod.c_str());
-			f |= FORMAT_MESSAGE_FROM_HMODULE;
-		}
-		auto ok = (mod.empty() || hm) && FormatMessage(f, hm, err_code, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (wchar_t *)&buf, 0, nullptr);
-		if (hm) FreeLibrary(hm);
-		if (ok) {
-			ss << L"Reason: " << buf;
-			LocalFree(buf);
+		ss << L"Reason: ";
+		if (err_code & FACILITY_NT_BIT) {
+			wchar_t *buf = nullptr;
+			auto f = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS;
+			auto hm = LoadLibrary(L"ntdll.dll");
+			auto ok = hm && FormatMessage(f, hm, err_code, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (wchar_t *)&buf, 0, nullptr);
+			if (hm) FreeLibrary(hm);
+			if (ok) {
+				ss << buf;
+				LocalFree(buf);
+			} else {
+				ss << L"Unknown NTSTATUS code: " << L"0x" << std::setfill(L'0') << std::setw(8) << std::hex << err_code;
+			}
 		} else {
-			ss << L"Unknown error code: " << L"0x" << std::setfill(L'0') << std::setw(8) << std::hex << err_code;
+			_com_error ce(err_code);
+			ss << ce.ErrorMessage();
 		}
 	}
 

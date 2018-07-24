@@ -43,7 +43,7 @@ void set_cs_info(HANDLE dir) {
 #ifndef LXRUNOFFLINE_NO_WIN10
 	static FILE_CASE_SENSITIVE_INFORMATION csinfo = { FILE_CS_FLAG_CASE_SENSITIVE_DIR };
 	auto stat = NtSetInformationFile(dir, &iostat, &csinfo, sizeof(csinfo), FileCaseSensitiveInformation);
-	if (stat != STATUS_SUCCESS) { auto e = error_code(err_set_cs, {}, stat, true); throw e; }
+	if (stat) throw error_nt(err_set_cs, {}, stat);
 #endif
 }
 
@@ -57,7 +57,7 @@ void set_lx_ea(HANDLE file, const lxattrb &data) {
 	strcpy(info->EaName, lx_ea_name);
 	memcpy(info->EaName + ea_value_offset, &data, sizeof(lxattrb));
 	auto stat = NtSetEaFile(file, &iostat, info, ea_info_len);
-	if (stat != STATUS_SUCCESS) throw error_code(err_set_ea, {}, stat, true);
+	if (stat) throw error_nt(err_set_ea, {}, stat);
 }
 
 void copy_lx_ea(HANDLE from_file, HANDLE to_file) {
@@ -73,17 +73,17 @@ void copy_lx_ea(HANDLE from_file, HANDLE to_file) {
 		info, ea_info_len, true,
 		ginfo, get_ea_info_len, nullptr, true
 	);
-	if (stat != STATUS_SUCCESS) throw error_code(err_get_ea, {}, stat, true);
+	if (stat) throw error_nt(err_get_ea, {}, stat);
 	if (info->EaValueLength == sizeof(lxattrb)) {
 		stat = NtSetEaFile(to_file, &iostat, info, ea_info_len);
-		if (stat != STATUS_SUCCESS) throw error_code(err_set_ea, {}, stat, true);
+		if (stat) throw error_nt(err_set_ea, {}, stat);
 	}
 }
 
 unique_val<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) {
 	if (is_dir && create && !CreateDirectory(path.c_str(), nullptr)) {
 		if (GetLastError() != ERROR_ALREADY_EXISTS) {
-			throw error_last(err_create_dir, { path });
+			throw error_win32_last(err_create_dir, { path });
 		}
 		log_warning((boost::wformat(L"The directory \"%1%\" already exists.") % path).str());
 	}
@@ -95,8 +95,8 @@ unique_val<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) 
 		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
 	);
 	if (hf == INVALID_HANDLE_VALUE) {
-		if (is_dir) throw error_last(err_open_dir, { path });
-		throw error_last(create ? err_create_file : err_open_file, { path });
+		if (is_dir) throw error_win32_last(err_open_dir, { path });
+		throw error_win32_last(create ? err_create_file : err_open_file, { path });
 	}
 	return unique_val<HANDLE>(hf, &CloseHandle);
 }
@@ -141,7 +141,7 @@ wstr get_full_path(crwstr path) {
 		return GetFullPathName(path.c_str(), len, buf, nullptr);
 	});
 	if (!fp.second) {
-		throw error_last(err_transform_path, { path });
+		throw error_win32_last(err_transform_path, { path });
 	}
 	return fp.first.get();
 }
@@ -156,7 +156,7 @@ wstr from_utf8(const char *s) {
 	auto res = probe_and_call<wchar_t, int>([&](wchar_t *buf, int len) {
 		return MultiByteToWideChar(CP_UTF8, 0, s, -1, buf, len);
 	});
-	if (!res.second) throw error_last(err_from_utf8, {});
+	if (!res.second) throw error_win32_last(err_from_utf8, {});
 	return res.first.get();
 }
 
@@ -164,7 +164,7 @@ void create_directory(crwstr path) {
 	for (auto i = path.find(L'\\', 7); i != path.size() - 1; i = path.find(L'\\', i + 1)) {
 		auto p = path.substr(0, i);
 		if (!CreateDirectory(p.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
-			throw error_last(err_create_dir, { p });
+			throw error_win32_last(err_create_dir, { p });
 		}
 	}
 }
@@ -205,7 +205,7 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 			if (lrp.empty()) continue;
 			auto lp = tp + lrp;
 			if (!CreateHardLink(fp.c_str(), lp.c_str(), nullptr)) {
-				throw error_last(err_hard_link, { fp,lp });
+				throw error_win32_last(err_hard_link, { fp,lp });
 			}
 			continue;
 		}
@@ -237,14 +237,14 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 				DWORD wc;
 				while (check_archive(pa.val, archive_read_data_block(pa.val, &buf, &cnt, &off))) {
 					if (!WriteFile(hf.val, buf, (uint32_t)cnt, &wc, nullptr)) {
-						throw error_last(err_write_file, {});	
+						throw error_win32_last(err_write_file, {});	
 					}
 				}
 			} else if (type == AE_IFLNK) {
 				auto lp = archive_entry_symlink(pe);
 				DWORD wc;
 				if (!WriteFile(hf.val, lp, (uint32_t)strlen(lp), &wc, nullptr)) {
-					throw error_last(err_write_file, {});
+					throw error_win32_last(err_write_file, {});
 				}
 			} else { // AE_IFDIR
 				set_cs_info(hf.val);
@@ -264,7 +264,7 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
 		auto ap = root_path + p;
 		auto hs = FindFirstFile((ap + L'*').c_str(), &data);
 		if (hs == INVALID_HANDLE_VALUE) {
-			throw error_last(err_enum_dir, { ap });
+			throw error_win32_last(err_enum_dir, { ap });
 		}
 		auto hsu = unique_val<HANDLE>(hs, &FindClose);
 
@@ -282,7 +282,7 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
 					action(p, 2);
 					return;
 				}
-				throw error_last(err_enum_dir, { ap });
+				throw error_win32_last(err_enum_dir, { ap });
 			}
 		}
 	};
@@ -296,7 +296,7 @@ void delete_directory(crwstr path) {
 		auto del = f ? RemoveDirectory : DeleteFile;
 		auto ap = dp + p;
 		if (!del((ap.c_str()))) {
-			throw error_last(f ? err_delete_dir : err_delete_file, { ap });
+			throw error_win32_last(f ? err_delete_dir : err_delete_file, { ap });
 		}
 	});
 }
@@ -317,13 +317,13 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 
 		BY_HANDLE_FILE_INFORMATION info;
 		if (!GetFileInformationByHandle(hs.val, &info)) {
-			throw error_last(err_file_info, { nsp });
+			throw error_win32_last(err_file_info, { nsp });
 		}
 
 		auto id = info.nFileSizeLow + ((uint64_t)info.nFileSizeHigh << 32);
 		if (info.nNumberOfLinks > 1 && id_map.count(id)) {
 			if (!CreateHardLink(ntp.c_str(), id_map[id].c_str(), nullptr)) {
-				throw error_last(err_hard_link, { ntp,nsp });
+				throw error_win32_last(err_hard_link, { ntp,nsp });
 			}
 		} else {
 			if (info.nNumberOfLinks > 1) id_map[id] = ntp;
@@ -345,11 +345,11 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 				DWORD rc, wc;
 				while (true) {
 					if (!ReadFile(hs.val, buf.get(), BUFSIZ, &rc, nullptr)) {
-						throw error_last(err_read_file, { nsp });
+						throw error_win32_last(err_read_file, { nsp });
 					}
 					if (rc == 0) break;
 					if (!WriteFile(ht.val, buf.get(), rc, &wc, nullptr)) {
-						throw error_last(err_write_file, { ntp });
+						throw error_win32_last(err_write_file, { ntp });
 					}
 				}
 			}

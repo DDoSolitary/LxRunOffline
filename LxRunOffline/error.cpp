@@ -44,7 +44,7 @@ err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT e
 }
 
 err error_win32(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code) {
-	return error_hresult(msg_code,msg_args,HRESULT_FROM_WIN32(err_code));
+	return error_hresult(msg_code, msg_args, HRESULT_FROM_WIN32(err_code));
 }
 
 err error_win32_last(err_msg msg_code, const std::vector<wstr> &msg_args) {
@@ -69,16 +69,17 @@ wstr err::format() const {
 	if (err_code) {
 		ss << L"Reason: ";
 		if (err_code & FACILITY_NT_BIT) {
+			auto stat = err_code & ~FACILITY_NT_BIT;
 			wchar_t *buf = nullptr;
 			auto f = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS;
 			auto hm = LoadLibrary(L"ntdll.dll");
-			auto ok = hm && FormatMessage(f, hm, err_code, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (wchar_t *)&buf, 0, nullptr);
+			auto ok = hm && FormatMessage(f, hm, stat, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (wchar_t *)&buf, 0, nullptr);
 			if (hm) FreeLibrary(hm);
 			if (ok) {
 				ss << buf;
 				LocalFree(buf);
 			} else {
-				ss << L"Unknown NTSTATUS code: " << L"0x" << std::setfill(L'0') << std::setw(8) << std::hex << err_code;
+				ss << L"Unknown NTSTATUS: " << L"0x" << std::setfill(L'0') << std::setw(8) << std::hex << stat;
 			}
 		} else {
 			_com_error ce(err_code);

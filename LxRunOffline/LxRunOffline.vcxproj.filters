@@ -29,6 +29,9 @@
     <ClInclude Include="reg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="shortcut.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -47,6 +50,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="reg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="shortcut.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

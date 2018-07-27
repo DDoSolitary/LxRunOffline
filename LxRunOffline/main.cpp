@@ -2,6 +2,7 @@
 #include "error.h"
 #include "fs.h"
 #include "reg.h"
+#include "shortcut.h"
 #include "utils.h"
 
 namespace po = boost::program_options;
@@ -53,13 +54,20 @@ int wmain(int argc, wchar_t **argv) {
 			set_default_distro(name);
 		} else if (!wcscmp(argv[1], L"install")) {
 			wstr dir, file, root;
+			bool shortcut;
 			desc.add_options()
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to install the distribution into.")
 				(",f", po::wvalue<wstr>(&file)->required(), "The tar file containing the root filesystem of the distribution to be installed.")
-				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional");
+				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional.")
+				(",s", po::bool_switch(&shortcut), "Create a shortcut for this distribution on Desktop.");
 			parse_args();
 			register_distro(name, dir);
 			extract_archive(file, root, dir);
+			wchar_t *dp;
+			auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &dp);
+			if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
+			auto dpu = unique_val<wchar_t *>(dp, &CoTaskMemFree);
+			if (shortcut) create_shortcut(name, dp + (L'\\' + name + L".lnk"), L"");
 		} else if (!wcscmp(argv[1], L"uninstall")) {
 			parse_args();
 			auto dir = get_distro_dir(name);
@@ -137,6 +145,12 @@ int wmain(int argc, wchar_t **argv) {
 			desc.add_options()(",v", po::wvalue<uint32_t>(&flags)->required(), "Flags to be set.");
 			parse_args();
 			set_distro_flags(name, flags);
+		} else if (!wcscmp(argv[1], L"shortcut")) {
+			wstr fp, ip;
+			desc.add_options()(",f", po::wvalue<wstr>(&fp)->required(), "Path to the shortcut to be created, including the \".lnk\" suffix.");
+			desc.add_options()(",i", po::wvalue<wstr>(&ip), "Path to the icon file for the shortcut. This argument is optional.");
+			parse_args();
+			create_shortcut(name, fp, ip);
 		} else {
 			throw error_other(err_invalid_action, { argv[1] });
 		}
@@ -165,7 +179,8 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    get-kernelcmd  Get the default kernel command line of a distribution." << std::endl
 				<< L"    set-kernelcmd  Set the default kernel command line of a distribution." << std::endl
 				<< L"    get-flags      Get some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl
-				<< L"    set-flags      Set some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl;
+				<< L"    set-flags      Set some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl
+				<< L"    shortcut       Create a shortcut to launch a distro." << std::endl;
 #ifdef LXRUNOFFLINE_VERSION
 			std::wcerr << L"    version        Get version information about this LxRunOffline.exe." << std::endl;
 #endif

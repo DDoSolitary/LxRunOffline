@@ -94,6 +94,7 @@
     <ClInclude Include="fs.h" />
     <ClInclude Include="ntdll.h" />
     <ClInclude Include="reg.h" />
+    <ClInclude Include="shortcut.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
@@ -102,6 +103,7 @@
     <ClCompile Include="fs.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="reg.cpp" />
+    <ClCompile Include="shortcut.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

@@ -12,6 +12,7 @@
 #include <winternl.h>
 #include <ntstatus.h>
 #include <comdef.h>
+#include <ShlObj.h>
 
 #undef _CRT_SECURE_NO_WARNINGS
 

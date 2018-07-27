@@ -34,7 +34,8 @@ enum err_msg {
 	err_no_action,
 	err_invalid_action,
 	err_no_wslapi,
-	err_launch_distro
+	err_launch_distro,
+	err_create_shortcut
 };
 
 class err {

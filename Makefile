@@ -1,7 +1,7 @@
 ﻿CC := g++
 CPPFLAGS := -std=c++17 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
 LDFLAGS := -municode
-LDLIBS := -lntdll -lole32 -larchive -lboost_program_options-mt
+LDLIBS := -lntdll -lole32 -luuid -larchive -lboost_program_options-mt
 
 PROJ := LxRunOffline
 SRCS := $(wildcard $(PROJ)/*.cpp)

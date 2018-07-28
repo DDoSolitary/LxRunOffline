@@ -1,6 +1,10 @@
 ﻿image: Visual Studio 2017
 environment:
-  VCPKG_DEFAULT_TRIPLET: x64-windows
+  matrix:
+    - USE_MSYS: false
+      VCPKG_DEFAULT_TRIPLET: x64-windows
+    - USE_MSYS: true
+      MSYSTEM: MINGW64
 cache:
   - C:\tools\vcpkg\installed
 configuration: Release
@@ -8,35 +12,45 @@ before_build:
   - ps: $Env:VERSION=(git describe --tags)
   - ps: Update-AppveyorBuild -Version $Env:VERSION
   - ps: |
-      pushd C:\tools\vcpkg
-      git pull -q
-      .\bootstrap-vcpkg.bat
-      popd
-      vcpkg integrate install
-      vcpkg install libarchive boost-program-options boost-format
-      vcpkg upgrade --no-dry-run
+      if ($Env:USE_MSYS -ne 'true') {
+          pushd C:\tools\vcpkg
+          git pull -q
+          .\bootstrap-vcpkg.bat
+          popd
+          vcpkg integrate install
+          vcpkg install libarchive boost-program-options boost-format
+          vcpkg upgrade --no-dry-run
+      } else {
+          C:\msys64\usr\bin\bash -l -c "pacman -Sy --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost 2>&1"
+      }
 build_script:
   - ps: |
-        $fileVersion = $Env:VERSION
-        $fileVersionStr = $Env:VERSION.Substring(1)
-        if ($Env:APPVEYOR_REPO_TAG -ne 'true') {
-            $fileVersion = $fileVersion.Substring(1, $fileVersion.LastIndexOf('-') - 1).Replace('.', ',').Replace('-', ',')
-        }
-        msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"$Env:VERSION\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$fileVersionStr\\\`"`"
+      if ($Env:USE_MSYS -ne 'true') {
+          $fileVersion = $Env:VERSION
+          $fileVersionStr = $Env:VERSION.Substring(1)
+          if ($Env:APPVEYOR_REPO_TAG -ne 'true') {
+              $fileVersion = $fileVersion.Substring(1, $fileVersion.LastIndexOf('-') - 1).Replace('.', ',').Replace('-', ',')
+          }
+          msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"$Env:VERSION\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$fileVersionStr\\\`"`"
+      } else {
+          C:\msys64\usr\bin\bash -l -c "cd /c/projects/lxrunoffline && make"
+      }
 after_build:
   - ps: |
-      $project = $Env:APPVEYOR_PROJECT_NAME
-      $name = "$project-$Env:VERSION.zip"
-      $dir = ".\x64\$Env:CONFIGURATION"
-      7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
-      if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
-          $hash = (Get-FileHash $name -Algorithm SHA256).Hash
-          $version = $Env:VERSION.Substring(1)
-          cd choco
-          (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
-          (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii
-          (cat tools\chocolateyInstall.ps1) -replace '{CHECKSUM}', $hash | sc tools\chocolateyInstall.ps1 -Encoding Ascii
-          choco pack
+      if ($Env:USE_MSYS -ne 'true') {
+          $project = $Env:APPVEYOR_PROJECT_NAME
+          $name = "$project-$Env:VERSION.zip"
+          $dir = ".\x64\$Env:CONFIGURATION"
+          7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
+          if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
+              $hash = (Get-FileHash $name -Algorithm SHA256).Hash
+              $version = $Env:VERSION.Substring(1)
+              cd choco
+              (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
+              (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii
+              (cat tools\chocolateyInstall.ps1) -replace '{CHECKSUM}', $hash | sc tools\chocolateyInstall.ps1 -Encoding Ascii
+              choco pack
+          }
       }
 artifacts:
   - path: '*.zip'

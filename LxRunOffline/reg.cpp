@@ -4,17 +4,17 @@
 #include "utils.h"
 
 const wstr
-reg_base_path = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\",
-value_default_distro = L"DefaultDistribution",
-value_distro_name = L"DistributionName",
-value_dir = L"BasePath",
-value_state = L"State",
-value_version = L"Version",
-value_env = L"DefaultEnvironment",
-value_uid = L"DefaultUid",
-value_kernel_cmd = L"KernelCommandLine",
-value_flags = L"Flags",
-default_kernel_cmd = L"BOOT_IMAGE=/kernel init=/init ro";
+	reg_base_path = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\",
+	value_default_distro = L"DefaultDistribution",
+	value_distro_name = L"DistributionName",
+	value_dir = L"BasePath",
+	value_state = L"State",
+	value_version = L"Version",
+	value_env = L"DefaultEnvironment",
+	value_uid = L"DefaultUid",
+	value_kernel_cmd = L"KernelCommandLine",
+	value_flags = L"Flags",
+	default_kernel_cmd = L"BOOT_IMAGE=/kernel init=/init ro";
 const std::vector<wstr> default_env = {
 	L"HOSTTYPE=x86_64",
 	L"LANG=en_US.UTF-8",

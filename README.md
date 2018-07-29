@@ -19,7 +19,7 @@ A full-featured utility for *Windows Subsystem for Linux (WSL)*.
 
 You can install via Chocolatey `choco install lxrunoffline`, or download the binaries directly:
 - Latest releases: https://github.com/DDoSolitary/LxRunOffline/releases
-- Development builds: https://ci.appveyor.com/project/DDoSolitary/lxrunoffline/build/artifacts
+- Development builds: https://ci.appveyor.com/project/DDoSolitary/lxrunoffline > choose the first job > ARTIFACTS
 
 # Usage
 

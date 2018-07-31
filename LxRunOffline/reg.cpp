@@ -92,7 +92,7 @@ template<typename T> void set_value(crwstr, crwstr, const T &) { assert(false); 
 
 template<>
 void set_value<wstr>(crwstr path, crwstr value_name, crwstr value) {
-	set_dynamic(path, value_name, REG_SZ, value.c_str(), (uint32_t)(value.size() + 1) * sizeof(wchar_t *));
+	set_dynamic(path, value_name, REG_SZ, value.c_str(), (uint32_t)(value.size() + 1) * sizeof(wchar_t));
 }
 
 template<>

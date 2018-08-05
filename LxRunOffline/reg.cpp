@@ -14,7 +14,7 @@ const wstr
 	value_uid = L"DefaultUid",
 	value_kernel_cmd = L"KernelCommandLine",
 	value_flags = L"Flags",
-	default_kernel_cmd = L"BOOT_IMAGE=/kernel init=/init ro";
+	default_kernel_cmd = L"BOOT_IMAGE=/kernel init=/init";
 const std::vector<wstr> default_env = {
 	L"HOSTTYPE=x86_64",
 	L"LANG=en_US.UTF-8",

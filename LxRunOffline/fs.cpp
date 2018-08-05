@@ -89,7 +89,7 @@ unique_val<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) 
 	}
 	auto hf = CreateFile(
 		path.c_str(),
-		write ? GENERIC_WRITE : GENERIC_READ,
+		GENERIC_READ | (write ? GENERIC_WRITE : 0),
 		FILE_SHARE_READ, nullptr,
 		create && !is_dir ? CREATE_NEW : OPEN_EXISTING,
 		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
@@ -115,7 +115,7 @@ wstr transform_linux_path(crwstr path, crwstr root) {
 	for (size_t i = 0; i < p.size(); i++) {
 		auto c = p[i];
 		if (i == 0 && c == '/') continue;
-		if (c == L'.' && (i == 0 || p[i - 1] == L'/') && (i == p.size() - 1 || p[i + 1] =='/')) {
+		if (c == L'.' && (i == 0 || p[i - 1] == L'/') && (i == p.size() - 1 || p[i + 1] == '/')) {
 			i++;
 			continue;
 		}
@@ -237,7 +237,7 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 				DWORD wc;
 				while (check_archive(pa.val, archive_read_data_block(pa.val, &buf, &cnt, &off))) {
 					if (!WriteFile(hf.val, buf, (uint32_t)cnt, &wc, nullptr)) {
-						throw error_win32_last(err_write_file, {});	
+						throw error_win32_last(err_write_file, {});
 					}
 				}
 			} else if (type == AE_IFLNK) {
@@ -328,6 +328,12 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 		} else {
 			if (info.nNumberOfLinks > 1) id_map[id] = ntp;
 			auto ht = open_file(ntp, f, true, true);
+			try {
+				copy_lx_ea(hs.val, ht.val);
+			} catch (err &e) {
+				e.push_if_empty(e.msg_code == err_get_ea ? nsp : ntp);
+				throw;
+			}
 			if (f) {
 				try {
 					set_cs_info(ht.val);
@@ -336,12 +342,6 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 					throw;
 				}
 			} else {
-				try {
-					copy_lx_ea(hs.val, ht.val);
-				} catch (err &e) {
-					e.push_if_empty(e.msg_code == err_get_ea ? nsp : ntp);
-					throw;
-				}
 				DWORD rc, wc;
 				while (true) {
 					if (!ReadFile(hs.val, buf.get(), BUFSIZ, &rc, nullptr)) {

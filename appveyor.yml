@@ -21,7 +21,8 @@ before_build:
           vcpkg install libarchive boost-program-options boost-format
           vcpkg upgrade --no-dry-run
       } else {
-          C:\msys64\usr\bin\bash -l -c "pacman -Sy --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost 2>&1"
+          C:\msys64\usr\bin\bash -l -c "pacman -Sy --needed --noconfirm pacman 2>&1"
+          C:\msys64\usr\bin\bash -l -c "pacman -S --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost 2>&1"
       }
 build_script:
   - ps: |

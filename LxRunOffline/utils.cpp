@@ -20,8 +20,20 @@ void log_error(crwstr msg) {
 }
 
 void print_progress_bar(double progress) {
-	static int lp;
-	auto p = (int)ceil(progress * 100);
-	if (p != lp) std::wcerr << p << L'%' << std::endl;
-	lp = p;
+	auto hout = GetStdHandle(STD_ERROR_HANDLE);
+	if (hout == INVALID_HANDLE_VALUE) return;
+	CONSOLE_SCREEN_BUFFER_INFO ci;
+	if (!GetConsoleScreenBufferInfo(hout, &ci)) return;
+	if (!SetConsoleCursorPosition(hout, { 0,ci.dwCursorPosition.Y })) return;
+	auto tot = ci.dwSize.X - 3;
+	auto cnt = (int)round(tot * progress);
+	static int lc;
+	if (cnt == lc) return;
+	lc = cnt;
+	std::wcerr << L'[';
+	for (int i = 0; i < tot; i++) {
+		if (i < cnt) std::wcerr << L'=';
+		else std::wcerr << L'-';
+	}
+	std::wcerr << L']';
 }

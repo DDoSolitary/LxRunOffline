@@ -3,6 +3,7 @@
 
 void log_warning(crwstr msg);
 void log_error(crwstr msg);
+void print_progress_bar(double progress);
 
 template<typename TEle, typename TLen>
 std::pair<std::unique_ptr<TEle[]>, TLen> probe_and_call(std::function<TLen(TEle *, TLen)> func) {

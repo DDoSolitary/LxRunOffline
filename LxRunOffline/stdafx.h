@@ -2,6 +2,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>

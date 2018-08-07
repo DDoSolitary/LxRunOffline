@@ -18,3 +18,10 @@ void log_warning(crwstr msg) {
 void log_error(crwstr msg) {
 	write(L"[ERROR] " + msg, FOREGROUND_INTENSITY | FOREGROUND_RED);
 }
+
+void print_progress_bar(double progress) {
+	static int lp;
+	auto p = (int)ceil(progress * 100);
+	if (p != lp) std::wcerr << p << L'%' << std::endl;
+	lp = p;
+}

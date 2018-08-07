@@ -186,6 +186,12 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 		}
 	}
 
+	LARGE_INTEGER as;
+	{
+		auto ha = open_file(archive_path, false, false, false);
+		if (!GetFileSizeEx(ha.val, &as)) as.QuadPart = 0;
+	}
+
 	auto pa = unique_val<archive *>(archive_read_new(), &archive_read_free);
 	check_archive(pa.val, archive_read_support_filter_all(pa.val));
 	check_archive(pa.val, archive_read_support_format_all(pa.val));
@@ -194,6 +200,8 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 
 	archive_entry *pe;
 	while (check_archive(pa.val, archive_read_next_header(pa.val, &pe))) {
+		if (as.QuadPart) print_progress_bar((double)archive_filter_bytes(pa.val, -1) / as.QuadPart);
+
 		auto up = from_utf8(archive_entry_pathname(pe));
 		auto frp = transform_linux_path(up, rp);
 		if (frp.empty()) continue;

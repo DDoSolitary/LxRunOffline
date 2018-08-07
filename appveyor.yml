@@ -61,7 +61,12 @@ deploy:
     artifact: /.*\.zip/
     description: |
       **Release Notes**
-      - Bug fixes.
+      - Support creating shortcuts to distros automatically.
+      - Fix the bug that distros can't be copied correctly.
+      - Fix the bug that some error messages can't be displayed correctly.
+      - Fix the bug that strings in the registry are set with wrong lengths.
+      - Display a progress bar during installation.
+      - Update the default value of distro's kernel command line.
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

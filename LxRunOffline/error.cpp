@@ -32,7 +32,7 @@ const wstr msg_table[] = {
 	L"Couldn't convert a GUID to a string.",
 	L"Couldn't find the distro named \"%1%\".",
 	L"A distro named \"%1%\" already exists.",
-	L"No action is speicified.",
+	L"No action is specified.",
 	L"The action \"%1%\" is not recognized.",
 	L"Couldn't load wslapi.dll. Please make sure that WSL has been installed.",
 	L"Error occurred when trying to launch the distro \"%1%\".",

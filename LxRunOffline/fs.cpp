@@ -200,7 +200,7 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 
 	archive_entry *pe;
 	while (check_archive(pa.val, archive_read_next_header(pa.val, &pe))) {
-		if (as.QuadPart) print_progress_bar((double)archive_filter_bytes(pa.val, -1) / as.QuadPart);
+		if (as.QuadPart) print_progress((double)archive_filter_bytes(pa.val, -1) / as.QuadPart);
 
 		auto up = from_utf8(archive_entry_pathname(pe));
 		auto frp = transform_linux_path(up, rp);

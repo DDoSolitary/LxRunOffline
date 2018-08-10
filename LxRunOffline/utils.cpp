@@ -1,14 +1,16 @@
 ﻿#include "stdafx.h"
 #include "error.h"
 
+auto hcon = GetStdHandle(STD_ERROR_HANDLE);
+bool progress_printed;
+
 void write(crwstr output, uint16_t color) {
-	auto hout = GetStdHandle(STD_ERROR_HANDLE);
-	if (hout == INVALID_HANDLE_VALUE) hout = 0;
-	CONSOLE_SCREEN_BUFFER_INFO info;
-	bool ok = hout ? GetConsoleScreenBufferInfo(hout, &info) : false;
-	if (hout) SetConsoleTextAttribute(hout, color);
+	CONSOLE_SCREEN_BUFFER_INFO ci;
+	bool ok = hcon != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hcon, &ci);
+	if (ok) SetConsoleTextAttribute(hcon, color);
 	std::wcerr << output << std::endl;
-	if (hout && ok) SetConsoleTextAttribute(hout, info.wAttributes);
+	if (ok) SetConsoleTextAttribute(hcon, ci.wAttributes);
+	progress_printed = false;
 }
 
 void log_warning(crwstr msg) {
@@ -19,21 +21,21 @@ void log_error(crwstr msg) {
 	write(L"[ERROR] " + msg, FOREGROUND_INTENSITY | FOREGROUND_RED);
 }
 
-void print_progress_bar(double progress) {
-	auto hout = GetStdHandle(STD_ERROR_HANDLE);
-	if (hout == INVALID_HANDLE_VALUE) return;
-	CONSOLE_SCREEN_BUFFER_INFO ci;
-	if (!GetConsoleScreenBufferInfo(hout, &ci)) return;
-	if (!SetConsoleCursorPosition(hout, { 0,ci.dwCursorPosition.Y })) return;
-	auto tot = ci.dwSize.X - 3;
-	auto cnt = (int)round(tot * progress);
+void print_progress(double progress) {
 	static int lc;
+	if (hcon == INVALID_HANDLE_VALUE) return;
+	CONSOLE_SCREEN_BUFFER_INFO ci;
+	if (!GetConsoleScreenBufferInfo(hcon, &ci)) return;
+	auto tot = ci.dwSize.X - 2;
+	auto cnt = (int)round(tot * progress);
 	if (cnt == lc) return;
 	lc = cnt;
+	if (progress_printed && !SetConsoleCursorPosition(hcon, { 0,ci.dwCursorPosition.Y - 1 })) return;
 	std::wcerr << L'[';
 	for (int i = 0; i < tot; i++) {
 		if (i < cnt) std::wcerr << L'=';
 		else std::wcerr << L'-';
 	}
-	std::wcerr << L']';
+	std::wcerr << L']' << std::endl;
+	progress_printed = true;
 }

@@ -3,7 +3,7 @@
 #include "utils.h"
 
 const wstr msg_table[] = {
-	L"Could't open the file \"%1%\".",
+	L"Couldn't open the file \"%1%\".",
 	L"Couldn't open the directory \"%1%\".",
 	L"Couldn't create the file \"%1%\".",
 	L"Couldn't create the directory \"%1%\".",

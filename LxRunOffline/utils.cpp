@@ -30,7 +30,7 @@ void print_progress(double progress) {
 	auto cnt = (int)round(tot * progress);
 	if (cnt == lc) return;
 	lc = cnt;
-	if (progress_printed && !SetConsoleCursorPosition(hcon, { 0,(SHORT)(ci.dwCursorPosition.Y - 1) })) return;
+	if (progress_printed && !SetConsoleCursorPosition(hcon, { 0,(int16_t)(ci.dwCursorPosition.Y - 1) })) return;
 	std::wcerr << L'[';
 	for (int i = 0; i < tot; i++) {
 		if (i < cnt) std::wcerr << L'=';

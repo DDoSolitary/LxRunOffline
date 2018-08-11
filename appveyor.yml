@@ -29,7 +29,7 @@ build_script:
       if ($Env:USE_MSYS -ne 'true') {
           $fileVersion = $fileVersionStr = $Env:VERSION.Substring(1)
           if ($Env:APPVEYOR_REPO_TAG -ne 'true') {
-              $fileVersion = $fileVersion.Substring(0, $fileVersion.LastIndexOf('-') - 1).Replace('.', ',').Replace('-', ',')
+              $fileVersion = $fileVersion.Substring(0, $fileVersion.LastIndexOf('-')).Replace('.', ',').Replace('-', ',')
           }
           msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"$Env:VERSION\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$fileVersionStr\\\`"`"
       } else {

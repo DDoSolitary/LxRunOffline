@@ -41,8 +41,11 @@ bool check_archive(archive *pa, int stat) {
 
 void set_cs_info(HANDLE dir) {
 #ifndef LXRUNOFFLINE_NO_WIN10
-	static FILE_CASE_SENSITIVE_INFORMATION csinfo = { FILE_CS_FLAG_CASE_SENSITIVE_DIR };
-	auto stat = NtSetInformationFile(dir, &iostat, &csinfo, sizeof(csinfo), FileCaseSensitiveInformation);
+	FILE_CASE_SENSITIVE_INFORMATION info;
+	auto stat = NtQueryInformationFile(dir, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
+	if (stat && (info.Flags & FILE_CS_FLAG_CASE_SENSITIVE_DIR)) return;
+	info.Flags = FILE_CS_FLAG_CASE_SENSITIVE_DIR;
+	stat = NtSetInformationFile(dir, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
 	if (stat) throw error_nt(err_set_cs, {}, stat);
 #endif
 }

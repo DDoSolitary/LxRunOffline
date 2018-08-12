@@ -46,6 +46,14 @@ extern "C" {
 		_In_ ULONG EaBufferSize
 	);
 
+	NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(
+		_In_ HANDLE FileHandle,
+		_Out_ PIO_STATUS_BLOCK IoStatusBlock,
+		_Out_ PVOID FileInformation,
+		_In_ ULONG Length,
+		_In_ FILE_INFORMATION_CLASS FileInformationClass
+	);
+
 	NTSYSAPI NTSTATUS NTAPI NtSetInformationFile(
 		_In_ HANDLE FileHandle,
 		_Out_ PIO_STATUS_BLOCK IoStatusBlock,

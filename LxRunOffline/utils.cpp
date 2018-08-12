@@ -26,7 +26,7 @@ void print_progress(double progress) {
 	if (hcon == INVALID_HANDLE_VALUE) return;
 	CONSOLE_SCREEN_BUFFER_INFO ci;
 	if (!GetConsoleScreenBufferInfo(hcon, &ci)) return;
-	auto tot = ci.dwSize.X - 2;
+	auto tot = ci.dwSize.X - 3;
 	auto cnt = (int)round(tot * progress);
 	if (cnt == lc) return;
 	lc = cnt;

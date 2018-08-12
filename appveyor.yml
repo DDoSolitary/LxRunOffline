@@ -41,7 +41,8 @@ after_build:
           $project = $Env:APPVEYOR_PROJECT_NAME
           $name = "$project-$Env:VERSION.zip"
           $dir = ".\x64\$Env:CONFIGURATION"
-          7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
+          $sys = "$Env:WINDIR\System32"
+          7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY' "$sys\msvcp140.dll" "$sys\vcruntime140.dll"
           if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
               $hash = (Get-FileHash $name -Algorithm SHA256).Hash
               $version = $Env:VERSION.Substring(1)

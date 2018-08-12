@@ -7,21 +7,6 @@
 
 namespace po = boost::program_options;
 
-void check_compatibility() {
-#ifndef LXRUNOFFLINE_NO_WIN10
-	OSVERSIONINFO ver;
-	ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-#pragma warning(disable:4996)
-	if (!GetVersionEx(&ver)) {
-#pragma warning(default:4996)
-		throw error_other(err_get_version, {});
-	}
-	if (ver.dwBuildNumber < 17134) {
-		throw error_other(err_version_old, { L"1803",L"17134" });
-	}
-#endif
-}
-
 #ifdef __MINGW32__
 extern "C"
 #endif
@@ -36,7 +21,11 @@ int wmain(int argc, wchar_t **argv) {
 	};
 
 	try {
-		check_compatibility();
+#ifndef LXRUNOFFLINE_NO_WIN10
+		if (win_build < 17134) {
+			throw error_other(err_version_old, { L"1803",L"17134" });
+		}
+#endif
 		if (argc < 2) {
 			throw error_other(err_no_action, {});
 #ifdef LXRUNOFFLINE_VERSION

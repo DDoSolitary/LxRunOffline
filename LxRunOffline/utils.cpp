@@ -1,6 +1,17 @@
 ﻿#include "stdafx.h"
 #include "error.h"
 
+uint32_t win_build = []() {
+	OSVERSIONINFO ver;
+	ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+#pragma warning(disable:4996)
+	if (!GetVersionEx(&ver)) {
+#pragma warning(default:4996)
+		throw error_other(err_get_version, {});
+	}
+	return ver.dwBuildNumber;
+}();
+
 auto hcon = GetStdHandle(STD_ERROR_HANDLE);
 bool progress_printed;
 

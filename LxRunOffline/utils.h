@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "stdafx.h"
 
+extern uint32_t win_build;
+
 void log_warning(crwstr msg);
 void log_error(crwstr msg);
 void print_progress(double progress);

@@ -12,7 +12,7 @@ uint32_t win_build = []() {
 	return ver.dwBuildNumber;
 }();
 
-auto hcon = GetStdHandle(STD_ERROR_HANDLE);
+const auto hcon = GetStdHandle(STD_ERROR_HANDLE);
 bool progress_printed;
 
 void write(crwstr output, uint16_t color) {

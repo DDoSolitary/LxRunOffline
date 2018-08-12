@@ -184,6 +184,10 @@ void register_distro(crwstr name, crwstr path) {
 	set_value(p, value_dir, get_full_path(path));
 	set_value(p, value_state, default_state);
 	set_value(p, value_version, default_version);
+	set_value(p, value_env, default_env);
+	set_value(p, value_uid, default_uid);
+	set_value(p, value_kernel_cmd, default_kernel_cmd);
+	set_value(p, value_flags, default_flags);
 }
 
 void unregister_distro(crwstr name) {

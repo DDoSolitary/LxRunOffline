@@ -271,9 +271,10 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
 	std::function<void(crwstr)> enum_rec;
 	enum_rec = [&](crwstr p) {
+		auto ap = root_path + p;
+		set_cs_info(open_file(ap, true, false, true).val);
 		action(p, 1);
 		WIN32_FIND_DATA data;
-		auto ap = root_path + p;
 		auto hs = unique_val<HANDLE>([&](HANDLE *ph) {
 			*ph = FindFirstFile((ap + L'*').c_str(), &data);
 			if (*ph == INVALID_HANDLE_VALUE) {
@@ -325,8 +326,7 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 		if (f == 2) return;
 		auto nsp = sp + p;
 		auto ntp = tp + p;
-		auto hs = open_file(nsp, f, false, f);
-		if (f) set_cs_info(hs.val);
+		auto hs = open_file(nsp, f, false, false);
 
 		BY_HANDLE_FILE_INFORMATION info;
 		if (!GetFileInformationByHandle(hs.val, &info)) {

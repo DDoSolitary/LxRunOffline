@@ -29,7 +29,11 @@ public:
 	std::function<void(T)> deleter;
 	bool empty;
 
-	unique_val() : empty(true) {}
+	unique_val(std::function<void(T *)> val_func, std::function<void(T)> deleter)
+		: deleter(deleter), empty(false) {
+		val_func(&val);
+	}
+
 
 	unique_val(T val, std::function<void(T)> deleter)
 		: val(val), deleter(deleter), empty(false) {}

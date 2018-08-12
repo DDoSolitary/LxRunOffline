@@ -63,11 +63,11 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			register_distro(name, dir);
 			extract_archive(file, root, dir);
-			wchar_t *dp;
-			auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &dp);
-			if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
-			auto dpu = unique_val<wchar_t *>(dp, &CoTaskMemFree);
-			if (shortcut) create_shortcut(name, dp + (L'\\' + name + L".lnk"), L"");
+			auto dp = unique_val<wchar_t *>([&](wchar_t **ps) {
+				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, ps);
+				if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
+			}, &CoTaskMemFree);
+			if (shortcut) create_shortcut(name, dp.val + (L'\\' + name + L".lnk"), L"");
 		} else if (!wcscmp(argv[1], L"uninstall")) {
 			parse_args();
 			auto dir = get_distro_dir(name);

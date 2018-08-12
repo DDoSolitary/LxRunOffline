@@ -87,18 +87,19 @@ unique_val<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) 
 		}
 		log_warning((boost::wformat(L"The directory \"%1%\" already exists.") % path).str());
 	}
-	auto hf = CreateFile(
-		path.c_str(),
-		GENERIC_READ | (write ? GENERIC_WRITE : 0),
-		FILE_SHARE_READ, nullptr,
-		create && !is_dir ? CREATE_NEW : OPEN_EXISTING,
-		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
-	);
-	if (hf == INVALID_HANDLE_VALUE) {
-		if (is_dir) throw error_win32_last(err_open_dir, { path });
-		throw error_win32_last(create ? err_create_file : err_open_file, { path });
-	}
-	return unique_val<HANDLE>(hf, &CloseHandle);
+	return unique_val<HANDLE>([&](HANDLE *ph) {
+		*ph = CreateFile(
+			path.c_str(),
+			GENERIC_READ | (write ? GENERIC_WRITE : 0),
+			FILE_SHARE_READ, nullptr,
+			create && !is_dir ? CREATE_NEW : OPEN_EXISTING,
+			is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
+		);
+		if (*ph == INVALID_HANDLE_VALUE) {
+			if (is_dir) throw error_win32_last(err_open_dir, { path });
+			throw error_win32_last(create ? err_create_file : err_open_file, { path });
+		}
+	}, &CloseHandle);
 }
 
 wstr transform_linux_path(crwstr path, crwstr root) {
@@ -270,11 +271,12 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
 		action(p, 1);
 		WIN32_FIND_DATA data;
 		auto ap = root_path + p;
-		auto hs = FindFirstFile((ap + L'*').c_str(), &data);
-		if (hs == INVALID_HANDLE_VALUE) {
-			throw error_win32_last(err_enum_dir, { ap });
-		}
-		auto hsu = unique_val<HANDLE>(hs, &FindClose);
+		auto hs = unique_val<HANDLE>([&](HANDLE *ph) {
+			*ph = FindFirstFile((ap + L'*').c_str(), &data);
+			if (*ph == INVALID_HANDLE_VALUE) {
+				throw error_win32_last(err_enum_dir, { ap });
+			}
+		}, &FindClose);
 
 		while (true) {
 			if (wcscmp(data.cFileName, L".") && wcscmp(data.cFileName, L"..")) {
@@ -285,7 +287,7 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
 					action(np, 0);
 				}
 			}
-			if (!FindNextFile(hsu.val, &data)) {
+			if (!FindNextFile(hs.val, &data)) {
 				if (GetLastError() == ERROR_NO_MORE_FILES) {
 					action(p, 2);
 					return;

@@ -119,15 +119,13 @@ void set_value<uint32_t>(crwstr path, crwstr value_name, const uint32_t &value) 
 }
 
 unique_val<HKEY> create_key(crwstr path, bool write) {
-	unique_val<HKEY> hk;
-	auto code = RegCreateKeyEx(
-		HKEY_CURRENT_USER, path.c_str(),
-		0, nullptr, 0, write ? KEY_ALL_ACCESS : KEY_READ, nullptr, &hk.val, nullptr
-	);
-	if (code) throw error_win32(err_open_key, { path }, code);
-	hk.deleter = &RegCloseKey;
-	hk.empty = false;
-	return hk;
+	return unique_val<HKEY>([&](HKEY *phk) {
+		auto code = RegCreateKeyEx(
+			HKEY_CURRENT_USER, path.c_str(),
+			0, nullptr, 0, write ? KEY_ALL_ACCESS : KEY_READ, nullptr, phk, nullptr
+		);
+		if (code) throw error_win32(err_open_key, { path }, code);
+	}, &RegCloseKey);
 }
 
 std::vector<wstr> list_distro_id() {

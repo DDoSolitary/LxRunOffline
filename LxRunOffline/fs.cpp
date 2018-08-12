@@ -43,7 +43,7 @@ void set_cs_info(HANDLE dir) {
 #ifndef LXRUNOFFLINE_NO_WIN10
 	FILE_CASE_SENSITIVE_INFORMATION info;
 	auto stat = NtQueryInformationFile(dir, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
-	if (stat && (info.Flags & FILE_CS_FLAG_CASE_SENSITIVE_DIR)) return;
+	if (!stat && (info.Flags & FILE_CS_FLAG_CASE_SENSITIVE_DIR)) return;
 	info.Flags = FILE_CS_FLAG_CASE_SENSITIVE_DIR;
 	stat = NtSetInformationFile(dir, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
 	if (stat) throw error_nt(err_set_cs, {}, stat);

@@ -106,10 +106,40 @@ int wmain(int argc, wchar_t **argv) {
 				std::wcout << s << std::endl;
 			}
 		} else if (!wcscmp(argv[1], L"set-env")) {
-			std::vector<wstr> env;
-			desc.add_options()(",v", po::wvalue<std::vector<wstr>>(&env)->required(), "Environment variables to be set. This argument can be specified multiple times.");
+			std::vector<wstr> envs;
+			desc.add_options()(",v", po::wvalue<std::vector<wstr>>(&envs)->required(), "Environment variables to be set. This argument can be specified multiple times.");
 			parse_args();
-			set_distro_env(name, env);
+			set_distro_env(name, envs);
+		} else if (!wcscmp(argv[1], L"add-env")) {
+			wstr env;
+			bool force;
+			desc.add_options()(",v", po::wvalue<wstr>(&env)->required(), "The environment variable to add.");
+			desc.add_options()(",f", po::bool_switch(&force), "Overwrite if the environment variable already exists.");
+			parse_args();
+			auto p = env.find(L'=');
+			if (p == wstr::npos) throw error_other(err_invalid_env, { env });
+			auto env_name = env.substr(0, p + 1);
+			auto envs = get_distro_env(name);
+			auto it = std::find_if(envs.begin(), envs.end(), [&](crwstr s) {
+				return !s.compare(0, env_name.size(), env_name);
+			});
+			if (it != envs.end()) {
+				if (force) envs.erase(it);
+				else throw error_other(err_env_exists, { *it });
+			}
+			envs.push_back(env);
+			set_distro_env(name, envs);
+		} else if (!wcscmp(argv[1], L"remove-env")) {
+			wstr env_name;
+			desc.add_options()(",v", po::wvalue<wstr>(&env_name)->required(), "Name of the environment variable to remove.");
+			parse_args();
+			auto envs = get_distro_env(name);
+			auto it = std::find_if(envs.begin(), envs.end(), [&](crwstr s) {
+				return !s.compare(0, env_name.size() + 1, env_name + L"=");
+			});
+			if (it == envs.end()) throw error_other(err_env_not_found, { env_name });
+			envs.erase(it);
+			set_distro_env(name, envs);
 		} else if (!wcscmp(argv[1], L"get-uid")) {
 			parse_args();
 			std::wcout << get_distro_uid(name);
@@ -163,6 +193,8 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    get-dir        Get the installation directory of a distribution." << std::endl
 				<< L"    get-env        Get the default environment variables of a distribution." << std::endl
 				<< L"    set-env        Set the default environment variables of a distribution." << std::endl
+				<< L"    add-env        Add to the default environment variables of a distribution." << std::endl
+				<< L"    remove-env     Remove from the default environment variables of a distribution." << std::endl
 				<< L"    get-uid        Get the UID of the default user of a distribution." << std::endl
 				<< L"    set-uid        Set the UID of the default user of a distribution." << std::endl
 				<< L"    get-kernelcmd  Get the default kernel command line of a distribution." << std::endl

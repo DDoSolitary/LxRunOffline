@@ -36,7 +36,10 @@ const wstr msg_table[] = {
 	L"The action \"%1%\" is not recognized.",
 	L"Couldn't load wslapi.dll. Please make sure that WSL has been installed.",
 	L"Error occurred when trying to launch the distro \"%1%\".",
-	L"Error occurred when creating a shortcut."
+	L"Error occurred when creating a shortcut.",
+	L"Invalid environment variable: \"%1%\".",
+	L"Environment variable already exists: \"%1%\".",
+	L"Environment variable \"%1%\" not found."
 };
 
 err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {

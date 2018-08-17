@@ -35,7 +35,10 @@ enum err_msg {
 	err_invalid_action,
 	err_no_wslapi,
 	err_launch_distro,
-	err_create_shortcut
+	err_create_shortcut,
+	err_invalid_env,
+	err_env_exists,
+	err_env_not_found
 };
 
 class err {

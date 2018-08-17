@@ -18,7 +18,13 @@ bool progress_printed;
 void write(crwstr output, uint16_t color) {
 	CONSOLE_SCREEN_BUFFER_INFO ci;
 	bool ok = hcon != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hcon, &ci);
-	if (ok) SetConsoleTextAttribute(hcon, color);
+	if (ok) {
+		if (progress_printed && SetConsoleCursorPosition(hcon, { 0,ci.dwCursorPosition.Y })) {
+			for (int i = 0; i < ci.dwSize.X - 1; i++) std::wcout << L' ';
+			SetConsoleCursorPosition(hcon, { 0,ci.dwCursorPosition.Y });
+		}
+		SetConsoleTextAttribute(hcon, color);
+	}
 	std::wcerr << output << std::endl;
 	if (ok) SetConsoleTextAttribute(hcon, ci.wAttributes);
 	progress_printed = false;
@@ -39,14 +45,13 @@ void print_progress(double progress) {
 	if (!GetConsoleScreenBufferInfo(hcon, &ci)) return;
 	auto tot = ci.dwSize.X - 3;
 	auto cnt = (int)round(tot * progress);
-	if (cnt == lc) return;
+	if (progress_printed && (cnt == lc || !SetConsoleCursorPosition(hcon, { 0,ci.dwCursorPosition.Y }))) return;
 	lc = cnt;
-	if (progress_printed && !SetConsoleCursorPosition(hcon, { 0,(int16_t)(ci.dwCursorPosition.Y - 1) })) return;
 	std::wcerr << L'[';
 	for (int i = 0; i < tot; i++) {
 		if (i < cnt) std::wcerr << L'=';
 		else std::wcerr << L'-';
 	}
-	std::wcerr << L']' << std::endl;
+	std::wcerr << L']';
 	progress_printed = true;
 }

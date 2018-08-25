@@ -26,6 +26,7 @@ enum err_msg {
 	err_enum_key,
 	err_get_key_value,
 	err_set_key_value,
+	err_delete_key_value,
 	err_create_guid,
 	err_convert_guid,
 	err_distro_not_found,
@@ -37,7 +38,8 @@ enum err_msg {
 	err_create_shortcut,
 	err_invalid_env,
 	err_env_exists,
-	err_env_not_found
+	err_env_not_found,
+	err_no_default_distro
 };
 
 class err {

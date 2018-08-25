@@ -27,6 +27,7 @@ const wstr msg_table[] = {
 	L"Couldn't get subkeys of the registry key \"%1%\".",
 	L"Couldn't get the value \"%2%\" of the registry key \"%1%\".",
 	L"Couldn't set the value \"%2%\" of the registry key \"%1%\".",
+	L"Couldn't delete the value \"%2%\" of the registry key \"%1%\".",
 	L"Couldn't create a GUID.",
 	L"Couldn't convert a GUID to a string.",
 	L"Couldn't find the distro named \"%1%\".",
@@ -38,7 +39,8 @@ const wstr msg_table[] = {
 	L"Error occurred when creating a shortcut.",
 	L"Invalid environment variable: \"%1%\".",
 	L"Environment variable already exists: \"%1%\".",
-	L"Environment variable \"%1%\" not found."
+	L"Environment variable \"%1%\" not found.",
+	L"Couldn't find a valid default distribution."
 };
 
 err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {

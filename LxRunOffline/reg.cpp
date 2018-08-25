@@ -191,9 +191,23 @@ void register_distro(crwstr name, crwstr path) {
 }
 
 void unregister_distro(crwstr name) {
+	auto dn = get_default_distro();
 	auto p = get_distro_key(name);
 	auto code = RegDeleteTree(HKEY_CURRENT_USER, p.c_str());
 	if (code) throw error_win32(err_delete_key, { p }, code);
+	if (dn == name) {
+		try {
+			auto l = list_distro_id();
+			if (l.empty()) {
+				auto code = RegDeleteKeyValue(HKEY_CURRENT_USER, reg_base_path.c_str(), value_default_distro.c_str());
+				if (!code) throw error_win32(err_delete_key_value, { reg_base_path,value_default_distro }, code);
+			} else {
+				set_value(reg_base_path, value_default_distro, l.front());
+			}
+		} catch (const err &e) {
+			log_warning(e.format());
+		}
+	}
 }
 
 wstr get_distro_dir(crwstr name) {

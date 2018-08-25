@@ -37,7 +37,16 @@ int wmain(int argc, wchar_t **argv) {
 				std::wcout << s << std::endl;
 			}
 		} else if (!wcscmp(argv[1], L"get-default")) {
-			std::wcout << get_default_distro() << std::endl;
+			try {
+				std::wcout << get_default_distro() << std::endl;
+			} catch (err &e) {
+				if (e.msg_code == err_get_key_value && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
+					e.msg_code = err_no_default_distro;
+					e.msg_args.clear();
+					e.err_code = S_OK;
+				}
+				throw;
+			}
 		} else if (!wcscmp(argv[1], L"set-default")) {
 			parse_args();
 			set_default_distro(name);

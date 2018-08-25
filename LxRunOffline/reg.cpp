@@ -224,7 +224,7 @@ T get_with_default(crwstr name, crwstr value_name, T default_value) {
 	try {
 		return get_value<T>(p, value_name);
 	} catch (const err &e) {
-		if (e.err_code == ERROR_FILE_NOT_FOUND) {
+		if (e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
 			set_value(p, value_name, default_value);
 			return default_value;
 		}

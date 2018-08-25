@@ -39,13 +39,10 @@ int wmain(int argc, wchar_t **argv) {
 		} else if (!wcscmp(argv[1], L"get-default")) {
 			try {
 				std::wcout << get_default_distro() << std::endl;
-			} catch (err &e) {
+			} catch (const err &e) {
 				if (e.msg_code == err_get_key_value && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
-					e.msg_code = err_no_default_distro;
-					e.msg_args.clear();
-					e.err_code = S_OK;
-				}
-				throw;
+					throw error_other(err_no_default_distro, {});
+				} else throw;
 			}
 		} else if (!wcscmp(argv[1], L"set-default")) {
 			parse_args();

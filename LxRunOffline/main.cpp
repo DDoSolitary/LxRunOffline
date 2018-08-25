@@ -84,16 +84,18 @@ int wmain(int argc, wchar_t **argv) {
 			set_distro_dir(name, dir);
 		} else if (!wcscmp(argv[1], L"duplicate")) {
 			wstr new_name, dir;
-			desc.add_options()(",d", po::wvalue<wstr>(&dir)->required(), "The directory to copy the distribution to.");
-			desc.add_options()(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.");
+			desc.add_options()
+				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to copy the distribution to.")
+				(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.");
 			parse_args();
 			duplicate_distro(name, new_name, dir);
 			copy_directory(get_distro_dir(name), dir);
 		} else if (!wcscmp(argv[1], L"run")) {
 			wstr cmd;
 			bool no_cwd;
-			desc.add_options()(",c", po::wvalue<wstr>(&cmd)->default_value(L"/bin/bash --login", "/bin/bash --login"), "The command to run.");
-			desc.add_options()(",w", po::bool_switch(&no_cwd), "Don't use the working directory in Windows for the Linux process.");
+			desc.add_options()
+				(",c", po::wvalue<wstr>(&cmd)->default_value(L"/bin/bash --login", "/bin/bash --login"), "The command to run.")
+				(",w", po::bool_switch(&no_cwd), "Don't use the working directory in Windows for the Linux process.");
 			parse_args();
 			auto hw = LoadLibraryEx(L"wslapi.dll", 0, LOAD_LIBRARY_SEARCH_SYSTEM32);
 			if (hw == INVALID_HANDLE_VALUE) throw error_win32_last(err_no_wslapi, {});
@@ -119,8 +121,9 @@ int wmain(int argc, wchar_t **argv) {
 		} else if (!wcscmp(argv[1], L"add-env")) {
 			wstr env;
 			bool force;
-			desc.add_options()(",v", po::wvalue<wstr>(&env)->required(), "The environment variable to add.");
-			desc.add_options()(",f", po::bool_switch(&force), "Overwrite if the environment variable already exists.");
+			desc.add_options()
+				(",v", po::wvalue<wstr>(&env)->required(), "The environment variable to add.")
+				(",f", po::bool_switch(&force), "Overwrite if the environment variable already exists.");
 			parse_args();
 			auto p = env.find(L'=');
 			if (p == wstr::npos) throw error_other(err_invalid_env, { env });
@@ -172,8 +175,9 @@ int wmain(int argc, wchar_t **argv) {
 			set_distro_flags(name, flags);
 		} else if (!wcscmp(argv[1], L"shortcut")) {
 			wstr fp, ip;
-			desc.add_options()(",f", po::wvalue<wstr>(&fp)->required(), "Path to the shortcut to be created, including the \".lnk\" suffix.");
-			desc.add_options()(",i", po::wvalue<wstr>(&ip), "Path to the icon file for the shortcut. This argument is optional.");
+			desc.add_options()
+				(",f", po::wvalue<wstr>(&fp)->required(), "Path to the shortcut to be created, including the \".lnk\" suffix.")
+				(",i", po::wvalue<wstr>(&ip), "Path to the icon file for the shortcut. This argument is optional.");
 			parse_args();
 			create_shortcut(name, fp, ip);
 		} else {

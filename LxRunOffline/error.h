@@ -24,7 +24,6 @@ enum err_msg {
 	err_open_key,
 	err_delete_key,
 	err_enum_key,
-	err_copy_key,
 	err_get_key_value,
 	err_set_key_value,
 	err_create_guid,

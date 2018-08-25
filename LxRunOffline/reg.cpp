@@ -118,11 +118,11 @@ void set_value<uint32_t>(crwstr path, crwstr value_name, const uint32_t &value) 
 	set_dynamic(path, value_name, REG_DWORD, &value, sizeof(value));
 }
 
-unique_val<HKEY> create_key(crwstr path, bool write) {
+unique_val<HKEY> create_key(crwstr path) {
 	return unique_val<HKEY>([&](HKEY *phk) {
 		auto code = RegCreateKeyEx(
 			HKEY_CURRENT_USER, path.c_str(),
-			0, nullptr, 0, write ? KEY_ALL_ACCESS : KEY_READ, nullptr, phk, nullptr
+			0, nullptr, 0, KEY_READ, nullptr, phk, nullptr
 		);
 		if (code) throw error_win32(err_open_key, { path }, code);
 	}, &RegCloseKey);
@@ -130,7 +130,7 @@ unique_val<HKEY> create_key(crwstr path, bool write) {
 
 std::vector<wstr> list_distro_id() {
 	std::vector<wstr> res;
-	auto hk = create_key(reg_base_path, false);
+	auto hk = create_key(reg_base_path);
 	auto ib = std::make_unique<wchar_t[]>(guid_len + 1);
 	for (int i = 0;; i++) {
 		DWORD bs = guid_len + 1;
@@ -179,7 +179,7 @@ void register_distro(crwstr name, crwstr path) {
 	}
 
 	auto p = reg_base_path + new_guid();
-	create_key(p, false);
+	create_key(p);
 	set_value(p, value_distro_name, name);
 	set_value(p, value_dir, get_full_path(path));
 	set_value(p, value_state, default_state);
@@ -258,8 +258,13 @@ void duplicate_distro(crwstr name, crwstr new_name, crwstr new_dir) {
 
 	auto sp = get_distro_key(name);
 	auto tp = reg_base_path + new_guid();
-	auto code = RegCopyTree(HKEY_CURRENT_USER, sp.c_str(), create_key(tp, true).val);
-	if (code) throw error_win32(err_copy_key, { sp,tp }, code);
+	create_key(tp);
 	set_value(tp, value_distro_name, new_name);
 	set_value(tp, value_dir, get_full_path(new_dir));
+	set_value(tp, value_state, default_state);
+	set_value(tp, value_version, default_version);
+	set_value(tp, value_env, get_with_default(name, value_env, default_env));
+	set_value(tp, value_uid, get_with_default(name, value_uid, default_uid));
+	set_value(tp, value_kernel_cmd, get_with_default(name, value_kernel_cmd, default_kernel_cmd));
+	set_value(tp, value_flags, get_with_default(name, value_flags, default_flags));
 }

@@ -200,7 +200,7 @@ void unregister_distro(crwstr name) {
 			auto l = list_distro_id();
 			if (l.empty()) {
 				auto code = RegDeleteKeyValue(HKEY_CURRENT_USER, reg_base_path.c_str(), value_default_distro.c_str());
-				if (!code) throw error_win32(err_delete_key_value, { reg_base_path,value_default_distro }, code);
+				if (code) throw error_win32(err_delete_key_value, { reg_base_path,value_default_distro }, code);
 			} else {
 				set_value(reg_base_path, value_default_distro, l.front());
 			}

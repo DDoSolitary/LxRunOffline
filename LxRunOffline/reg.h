@@ -16,4 +16,16 @@ wstr get_distro_kernel_cmd(crwstr name);
 void set_distro_kernel_cmd(crwstr name, crwstr value);
 uint32_t get_distro_flags(crwstr name);
 void set_distro_flags(crwstr name, uint32_t value);
-void duplicate_distro(crwstr name, crwstr new_name, crwstr new_dir);
+
+class reg_conf {
+public:
+	std::vector<wstr> env;
+	wstr kernel_cmd;
+	uint32_t uid, flags;
+
+	reg_conf();
+	void load_file(crwstr path);
+	void save_file(crwstr path);
+	void load_distro(crwstr name);
+	void configure_distro(crwstr name);
+};

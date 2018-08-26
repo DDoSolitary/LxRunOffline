@@ -156,14 +156,6 @@ wstr transform_win_path(crwstr path) {
 	return o;
 }
 
-wstr from_utf8(const char *s) {
-	auto res = probe_and_call<wchar_t, int>([&](wchar_t *buf, int len) {
-		return MultiByteToWideChar(CP_UTF8, 0, s, -1, buf, len);
-	});
-	if (!res.second) throw error_win32_last(err_from_utf8, {});
-	return res.first.get();
-}
-
 void create_directory(crwstr path) {
 	for (auto i = path.find(L'\\', 7); i != path.size() - 1; i = path.find(L'\\', i + 1)) {
 		auto p = path.substr(0, i);

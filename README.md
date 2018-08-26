@@ -36,7 +36,7 @@ Visual Studio 2017 and Windows SDK 10.0.17134 are required.
 Install [vcpkg and its VS integration](https://github.com/Microsoft/vcpkg) (if you haven't) and install dependencies.
 
 ```
-vcpkg install --triplet x64-windows libarchive boost-program-options
+vcpkg install --triplet x64-windows libarchive boost-program-options tinyxml2
 ```
 
 Then build with Visual Studio or MSBuild.
@@ -46,7 +46,7 @@ Then build with Visual Studio or MSBuild.
 Open the "MSYS2 MinGW 64-bit" shell, and install necessary packages.
 
 ```
-pacman -Sy --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost
+pacman -Sy --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2
 ```
 
 Then run `make`.

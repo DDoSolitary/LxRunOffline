@@ -40,7 +40,8 @@ const wstr msg_table[] = {
 	L"Invalid environment variable: \"%1%\".",
 	L"Environment variable already exists: \"%1%\".",
 	L"Environment variable \"%1%\" not found.",
-	L"Couldn't find a valid default distribution."
+	L"Couldn't find a valid default distribution.",
+	L"Error occurred while processing the config file: %1%"
 };
 
 err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {

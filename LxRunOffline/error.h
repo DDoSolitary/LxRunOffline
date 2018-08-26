@@ -39,7 +39,8 @@ enum err_msg {
 	err_invalid_env,
 	err_env_exists,
 	err_env_not_found,
-	err_no_default_distro
+	err_no_default_distro,
+	err_config_file
 };
 
 class err {

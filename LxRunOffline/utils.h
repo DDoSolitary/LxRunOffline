@@ -6,6 +6,8 @@ extern uint32_t win_build;
 void log_warning(crwstr msg);
 void log_error(crwstr msg);
 void print_progress(double progress);
+wstr from_utf8(const char *s);
+std::unique_ptr<char[]> to_utf8(wstr s);
 
 template<typename TEle, typename TLen>
 std::pair<std::unique_ptr<TEle[]>, TLen> probe_and_call(std::function<TLen(TEle *, TLen)> func) {

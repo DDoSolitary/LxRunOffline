@@ -48,15 +48,19 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			set_default_distro(name);
 		} else if (!wcscmp(argv[1], L"install")) {
-			wstr dir, file, root;
+			wstr dir, file, root, conf_path;
 			bool shortcut;
 			desc.add_options()
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to install the distribution into.")
 				(",f", po::wvalue<wstr>(&file)->required(), "The tar file containing the root filesystem of the distribution to be installed.")
 				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional.")
+				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
 				(",s", po::bool_switch(&shortcut), "Create a shortcut for this distribution on Desktop.");
 			parse_args();
+			reg_conf conf;
+			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(name, dir);
+			conf.configure_distro(name);
 			extract_archive(file, root, dir);
 			auto dp = unique_val<wchar_t *>([&](wchar_t **ps) {
 				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, ps);
@@ -69,10 +73,15 @@ int wmain(int argc, wchar_t **argv) {
 			unregister_distro(name);
 			delete_directory(dir);
 		} else if (!wcscmp(argv[1], L"register")) {
-			wstr dir;
-			desc.add_options()(",d", po::wvalue<wstr>(&dir)->required(), "The directory containing the distribution.");
+			wstr dir, conf_path;
+			desc.add_options()
+				(",d", po::wvalue<wstr>(&dir)->required(), "The directory containing the distribution.")
+				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.");
 			parse_args();
+			reg_conf conf;
+			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(name, dir);
+			conf.configure_distro(name);
 		} else if (!wcscmp(argv[1], L"unregister")) {
 			parse_args();
 			unregister_distro(name);
@@ -83,12 +92,17 @@ int wmain(int argc, wchar_t **argv) {
 			move_directory(get_distro_dir(name), dir);
 			set_distro_dir(name, dir);
 		} else if (!wcscmp(argv[1], L"duplicate")) {
-			wstr new_name, dir;
+			wstr new_name, dir, conf_path;
 			desc.add_options()
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to copy the distribution to.")
-				(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.");
+				(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.")
+				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.");
 			parse_args();
-			duplicate_distro(name, new_name, dir);
+			reg_conf conf;
+			conf.load_distro(name);
+			if (!conf_path.empty()) conf.load_file(conf_path);
+			register_distro(new_name, dir);
+			conf.configure_distro(new_name);
 			copy_directory(get_distro_dir(name), dir);
 		} else if (!wcscmp(argv[1], L"run")) {
 			wstr cmd;
@@ -180,6 +194,20 @@ int wmain(int argc, wchar_t **argv) {
 				(",i", po::wvalue<wstr>(&ip), "Path to the icon file for the shortcut. This argument is optional.");
 			parse_args();
 			create_shortcut(name, fp, ip);
+		} else if (!wcscmp(argv[1], L"export-config")) {
+			wstr file;
+			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the XML file to export to.");
+			parse_args();
+			reg_conf conf;
+			conf.load_distro(name);
+			conf.save_file(file);
+		} else if (!wcscmp(argv[1], L"import-config")) {
+			wstr file;
+			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "The XML file to import from.");
+			parse_args();
+			reg_conf conf;
+			conf.load_file(file);
+			conf.configure_distro(name);
 		} else {
 			throw error_other(err_invalid_action, { argv[1] });
 		}
@@ -211,7 +239,9 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    set-kernelcmd  Set the default kernel command line of a distribution." << std::endl
 				<< L"    get-flags      Get some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl
 				<< L"    set-flags      Set some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl
-				<< L"    shortcut       Create a shortcut to launch a distro." << std::endl;
+				<< L"    shortcut       Create a shortcut to launch a distribution." << std::endl
+				<< L"    export-config  Export configuration of a distribution to an XML file." << std::endl
+				<< L"    import-config  Import configuration of a distribution from an XML file." << std::endl;
 #ifdef LXRUNOFFLINE_VERSION
 			std::wcerr << L"    version        Get version information about this LxRunOffline.exe." << std::endl;
 #endif

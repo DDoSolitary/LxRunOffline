@@ -1,7 +1,10 @@
 ﻿#include "stdafx.h"
 #include "error.h"
 #include "fs.h"
+#include "reg.h"
 #include "utils.h"
+
+namespace tx = tinyxml2;
 
 const wstr
 	reg_base_path = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\",
@@ -184,10 +187,6 @@ void register_distro(crwstr name, crwstr path) {
 	set_value(p, value_dir, get_full_path(path));
 	set_value(p, value_state, default_state);
 	set_value(p, value_version, default_version);
-	set_value(p, value_env, default_env);
-	set_value(p, value_uid, default_uid);
-	set_value(p, value_kernel_cmd, default_kernel_cmd);
-	set_value(p, value_flags, default_flags);
 }
 
 void unregister_distro(crwstr name) {
@@ -219,13 +218,12 @@ void set_distro_dir(crwstr name, crwstr value) {
 }
 
 template<typename T>
-T get_with_default(crwstr name, crwstr value_name, T default_value) {
-	auto p = get_distro_key(name);
+T get_with_default(crwstr path, crwstr value_name, T default_value) {
 	try {
-		return get_value<T>(p, value_name);
+		return get_value<T>(path, value_name);
 	} catch (const err &e) {
 		if (e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
-			set_value(p, value_name, default_value);
+			set_value(path, value_name, default_value);
 			return default_value;
 		}
 		throw;
@@ -233,7 +231,7 @@ T get_with_default(crwstr name, crwstr value_name, T default_value) {
 }
 
 std::vector<wstr> get_distro_env(crwstr name) {
-	return get_with_default(name, value_env, default_env);
+	return get_with_default(get_distro_key(name), value_env, default_env);
 }
 
 void set_distro_env(crwstr name, const std::vector<wstr> &value) {
@@ -241,7 +239,7 @@ void set_distro_env(crwstr name, const std::vector<wstr> &value) {
 }
 
 uint32_t get_distro_uid(crwstr name) {
-	return get_with_default(name, value_uid, default_uid);
+	return get_with_default(get_distro_key(name), value_uid, default_uid);
 }
 
 void set_distro_uid(crwstr name, uint32_t value) {
@@ -249,7 +247,7 @@ void set_distro_uid(crwstr name, uint32_t value) {
 }
 
 wstr get_distro_kernel_cmd(crwstr name) {
-	return get_with_default(name, value_kernel_cmd, default_kernel_cmd);
+	return get_with_default(get_distro_key(name), value_kernel_cmd, default_kernel_cmd);
 }
 
 void set_distro_kernel_cmd(crwstr name, crwstr value) {
@@ -257,28 +255,91 @@ void set_distro_kernel_cmd(crwstr name, crwstr value) {
 }
 
 uint32_t get_distro_flags(crwstr name) {
-	return get_with_default(name, value_flags, default_flags);
+	return get_with_default(get_distro_key(name), value_flags, default_flags);
 }
 
 void set_distro_flags(crwstr name, uint32_t value) {
 	set_value(get_distro_key(name), value_flags, value);
 }
 
-void duplicate_distro(crwstr name, crwstr new_name, crwstr new_dir) {
-	auto l = list_distros();
-	if (count(l.begin(), l.end(), new_name)) {
-		throw error_other(err_distro_exists, { new_name });
-	}
+reg_conf::reg_conf()
+	: env(default_env), uid(default_uid), kernel_cmd(default_kernel_cmd), flags(default_flags) {
+}
 
-	auto sp = get_distro_key(name);
-	auto tp = reg_base_path + new_guid();
-	create_key(tp);
-	set_value(tp, value_distro_name, new_name);
-	set_value(tp, value_dir, get_full_path(new_dir));
-	set_value(tp, value_state, default_state);
-	set_value(tp, value_version, default_version);
-	set_value(tp, value_env, get_with_default(name, value_env, default_env));
-	set_value(tp, value_uid, get_with_default(name, value_uid, default_uid));
-	set_value(tp, value_kernel_cmd, get_with_default(name, value_kernel_cmd, default_kernel_cmd));
-	set_value(tp, value_flags, get_with_default(name, value_flags, default_flags));
+err error_xml(tx::XMLError e) {
+	return error_other(err_config_file, { from_utf8(tx::XMLDocument::ErrorIDToName(e)) });
+}
+
+void reg_conf::load_file(crwstr path) {
+	auto f = unique_val<FILE *>([&](FILE **pf) {
+		*pf = _wfopen(path.c_str(), L"rb");
+		if (!*pf) throw error_win32_last(err_open_file, { path });
+	}, &fclose);
+	tx::XMLDocument doc;
+	auto e = doc.LoadFile(f.val);
+	if (e) throw error_xml(e);
+	tx::XMLElement *ele, *rt = doc.FirstChildElement("config");
+	if (!rt) throw error_other(err_config_file, { L"Root element \"config\" not found." });
+	if (ele = rt->FirstChildElement("envs")) {
+		env.clear();
+		for (auto ee = ele->FirstChildElement("env"); ee; ee = ee->NextSiblingElement("env")) {
+			auto s = ee->GetText();
+			if (!s) throw error_xml(tx::XML_NO_TEXT_NODE);
+			env.push_back(from_utf8(s));
+		}
+	}
+	if (ele = rt->FirstChildElement("uid")) {
+		e = ele->QueryUnsignedText(&uid);
+		if (e) throw error_xml(e);
+	}
+	if (ele = rt->FirstChildElement("kernel-cmd")) {
+		auto s = ele->GetText();
+		if (!s) throw error_xml(tx::XML_NO_TEXT_NODE);
+		kernel_cmd = from_utf8(s);
+	}
+	if (ele = rt->FirstChildElement("flags")) {
+		e = ele->QueryUnsignedText(&flags);
+		if (e) throw error_xml(e);
+	}
+}
+
+void reg_conf::save_file(crwstr path) {
+	auto f = unique_val<FILE *>([&](FILE **pf) {
+		*pf = _wfopen(path.c_str(), L"wb");
+		if (!*pf) throw error_win32_last(err_create_file, { path });
+	}, &fclose);
+	tx::XMLDocument doc;
+	doc.SetBOM(true);
+	tx::XMLElement *ele, *rt = doc.NewElement("config");
+	doc.InsertEndChild(rt);
+	rt->InsertEndChild(ele = doc.NewElement("envs"));
+	for (crwstr e : env) {
+		tx::XMLElement *ee;
+		ele->InsertEndChild(ee = doc.NewElement("env"));
+		ee->SetText(to_utf8(e).get());
+	}
+	rt->InsertEndChild(ele = doc.NewElement("uid"));
+	ele->SetText(uid);
+	rt->InsertEndChild(ele = doc.NewElement("kernel-cmd"));
+	ele->SetText(to_utf8(kernel_cmd).get());
+	rt->InsertEndChild(ele = doc.NewElement("flags"));
+	ele->SetText(flags);
+	auto e = doc.SaveFile(f.val);
+	if (e) throw error_xml(e);
+}
+
+void reg_conf::load_distro(crwstr name) {
+	auto p = get_distro_key(name);
+	env = get_with_default(p, value_env, default_env);
+	uid = get_with_default(p, value_uid, default_uid);
+	kernel_cmd = get_with_default(p, value_kernel_cmd, default_kernel_cmd);
+	flags = get_with_default(p, value_flags, default_flags);
+}
+
+void reg_conf::configure_distro(crwstr name) {
+	auto p = get_distro_key(name);
+	set_value(p, value_env, env);
+	set_value(p, value_uid, uid);
+	set_value(p, value_kernel_cmd, kernel_cmd);
+	set_value(p, value_flags, flags);
 }

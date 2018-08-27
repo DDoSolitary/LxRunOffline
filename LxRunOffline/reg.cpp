@@ -167,8 +167,14 @@ wstr get_distro_key(crwstr name) {
 }
 
 wstr get_default_distro() {
-	auto p = reg_base_path + get_value<wstr>(reg_base_path, value_default_distro);
-	return get_value<wstr>(p, value_distro_name);
+	try {
+		auto p = reg_base_path + get_value<wstr>(reg_base_path, value_default_distro);
+		return get_value<wstr>(p, value_distro_name);
+	} catch (const err &e) {
+		if (e.msg_code == err_get_key_value && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
+			throw error_other(err_no_default_distro, {});
+		} else throw;
+	}
 }
 
 void set_default_distro(crwstr name) {
@@ -187,14 +193,35 @@ void register_distro(crwstr name, crwstr path) {
 	set_value(p, value_dir, get_full_path(path));
 	set_value(p, value_state, default_state);
 	set_value(p, value_version, default_version);
+
+	try {
+		get_default_distro();
+	} catch (const err &e) {
+		if (e.msg_code == err_no_default_distro) {
+			try {
+				set_default_distro(name);
+			} catch (const err &e) {
+				log_warning(e.format());
+			}
+		} else {
+			log_warning(e.format());
+		}
+	}
 }
 
 void unregister_distro(crwstr name) {
-	auto dn = get_default_distro();
+	bool d;
+	try {
+		d = get_default_distro() == name;
+	} catch (const err &e) {
+		log_warning(e.format());
+	}
+
 	auto p = get_distro_key(name);
 	auto code = RegDeleteTree(HKEY_CURRENT_USER, p.c_str());
 	if (code) throw error_win32(err_delete_key, { p }, code);
-	if (dn == name) {
+
+	if (d) {
 		try {
 			auto l = list_distro_id();
 			if (l.empty()) {

@@ -3,6 +3,12 @@
 #include "ntdll.h"
 #include "utils.h"
 
+enum enum_dir_type {
+	enum_dir_enter,
+	enum_dir_exit,
+	enum_dir_file
+};
+
 struct lxattrb {
 	uint16_t flags;
 	uint16_t ver;
@@ -260,12 +266,12 @@ void extract_archive(crwstr archive_path, crwstr archive_root_path, crwstr targe
 	}
 }
 
-void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
+void enum_directory(crwstr root_path, std::function<void(crwstr, enum_dir_type)> action) {
 	std::function<void(crwstr)> enum_rec;
 	enum_rec = [&](crwstr p) {
 		auto ap = root_path + p;
 		set_cs_info(open_file(ap, true, false, true).val);
-		action(p, 1);
+		action(p, enum_dir_enter);
 		WIN32_FIND_DATA data;
 		auto hs = unique_val<HANDLE>([&](HANDLE *ph) {
 			*ph = FindFirstFile((ap + L'*').c_str(), &data);
@@ -280,12 +286,12 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
 				if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 					enum_rec(np + L'\\');
 				} else {
-					action(np, 0);
+					action(np, enum_dir_file);
 				}
 			}
 			if (!FindNextFile(hs.val, &data)) {
 				if (GetLastError() == ERROR_NO_MORE_FILES) {
-					action(p, 2);
+					action(p, enum_dir_exit);
 					return;
 				}
 				throw error_win32_last(err_enum_dir, { ap });
@@ -297,12 +303,13 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, int)> action) {
 
 void delete_directory(crwstr path) {
 	auto dp = transform_win_path(path);
-	enum_directory(dp, [&](crwstr p, int f) {
-		if (f == 1) return;
-		auto del = f ? RemoveDirectory : DeleteFile;
+	enum_directory(dp, [&](crwstr p, enum_dir_type t) {
+		if (t == enum_dir_enter) return;
+		bool dir = t == enum_dir_exit;
+		auto del = dir ? RemoveDirectory : DeleteFile;
 		auto ap = dp + p;
 		if (!del((ap.c_str()))) {
-			throw error_win32_last(f ? err_delete_dir : err_delete_file, { ap });
+			throw error_win32_last(dir ? err_delete_dir : err_delete_file, { ap });
 		}
 	});
 }
@@ -314,11 +321,13 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 	std::map<uint64_t, wstr> id_map;
 	auto buf = std::make_unique<char[]>(BUFSIZ);
 
-	enum_directory(sp, [&](crwstr p, int f) {
-		if (f == 2) return;
+	enum_directory(sp, [&](crwstr p, enum_dir_type t) {
+		if (t == enum_dir_exit) return;
+		bool dir = t == enum_dir_enter;
+
 		auto nsp = sp + p;
 		auto ntp = tp + p;
-		auto hs = open_file(nsp, f, false, false);
+		auto hs = open_file(nsp, dir, false, false);
 
 		BY_HANDLE_FILE_INFORMATION info;
 		if (!GetFileInformationByHandle(hs.val, &info)) {
@@ -332,14 +341,14 @@ void copy_directory(crwstr source_path, crwstr target_path) {
 			}
 		} else {
 			if (info.nNumberOfLinks > 1) id_map[id] = ntp;
-			auto ht = open_file(ntp, f, true, true);
+			auto ht = open_file(ntp, dir, true, true);
 			try {
 				copy_lx_ea(hs.val, ht.val);
 			} catch (err &e) {
 				e.push_if_empty(e.msg_code == err_get_ea ? nsp : ntp);
 				throw;
 			}
-			if (f) {
+			if (dir) {
 				try {
 					set_cs_info(ht.val);
 				} catch (err &e) {

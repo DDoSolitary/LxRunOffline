@@ -45,8 +45,9 @@ after_build:
           $dir = ".\x64\$Env:CONFIGURATION"
           $sys = "$Env:WINDIR\System32"
           7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY' "$sys\msvcp140.dll" "$sys\vcruntime140.dll"
+          $hash = (Get-FileHash $name -Algorithm SHA256).Hash
+          $hash | Out-File sha256.txt
           if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
-              $hash = (Get-FileHash $name -Algorithm SHA256).Hash
               $version = $Env:VERSION.Substring(1)
               cd choco
               (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
@@ -57,10 +58,11 @@ after_build:
       }
 artifacts:
   - path: '*.zip'
+  - path: sha256.txt
   - path: choco\*.nupkg
 deploy:
   - provider: GitHub
-    artifact: /.*\.zip/
+    artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
       - Fix some typos of error messages.

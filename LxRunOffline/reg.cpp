@@ -8,27 +8,15 @@ namespace tx = tinyxml2;
 
 const wstr
 	reg_base_path = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\",
-	value_default_distro = L"DefaultDistribution",
-	value_distro_name = L"DistributionName",
-	value_dir = L"BasePath",
-	value_state = L"State",
-	value_version = L"Version",
-	value_env = L"DefaultEnvironment",
-	value_uid = L"DefaultUid",
-	value_kernel_cmd = L"KernelCommandLine",
-	value_flags = L"Flags",
-	default_kernel_cmd = L"BOOT_IMAGE=/kernel init=/init ro";
-const std::vector<wstr> default_env = {
-	L"HOSTTYPE=x86_64",
-	L"LANG=en_US.UTF-8",
-	L"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
-	L"TERM=xterm-256color"
-};
-const uint32_t
-default_state = 1,
-default_version = 1,
-default_uid = 0,
-default_flags = 7;
+	vn_default_distro = L"DefaultDistribution",
+	vn_distro_name = L"DistributionName",
+	vn_dir = L"BasePath",
+	vn_state = L"State",
+	vn_version = L"Version",
+	vn_env = L"DefaultEnvironment",
+	vn_uid = L"DefaultUid",
+	vn_kernel_cmd = L"KernelCommandLine",
+	vn_flags = L"Flags";
 const auto guid_len = 38;
 
 wstr new_guid() {
@@ -106,7 +94,7 @@ void set_value<std::vector<wstr>>(crwstr path, crwstr value_name, const std::vec
 	) + 1;
 	auto buf = std::make_unique<wchar_t[]>(cnt);
 	auto ps = buf.get();
-	for (const auto &s : value) {
+	for (crwstr s : value) {
 		std::copy(s.begin(), s.end(), ps);
 		ps += s.size();
 		*ps = 0;
@@ -149,14 +137,14 @@ std::vector<wstr> list_distros() {
 	auto res = list_distro_id();
 	std::transform(
 		res.begin(), res.end(), res.begin(),
-		[](crwstr id) { return  get_value<wstr>(reg_base_path + id, value_distro_name); }
+		[](crwstr id) { return  get_value<wstr>(reg_base_path + id, vn_distro_name); }
 	);
 	return res;
 }
 
 wstr get_distro_id(crwstr name) {
-	for (const auto &id : list_distro_id()) {
-		auto cn = get_value<wstr>(reg_base_path + id, value_distro_name);
+	for (crwstr id : list_distro_id()) {
+		auto cn = get_value<wstr>(reg_base_path + id, vn_distro_name);
 		if (name == cn) return id;
 	}
 	throw error_other(err_distro_not_found, { name });
@@ -168,8 +156,8 @@ wstr get_distro_key(crwstr name) {
 
 wstr get_default_distro() {
 	try {
-		auto p = reg_base_path + get_value<wstr>(reg_base_path, value_default_distro);
-		return get_value<wstr>(p, value_distro_name);
+		auto p = reg_base_path + get_value<wstr>(reg_base_path, vn_default_distro);
+		return get_value<wstr>(p, vn_distro_name);
 	} catch (const err &e) {
 		if (e.msg_code == err_get_key_value && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
 			throw error_other(err_no_default_distro, {});
@@ -178,7 +166,7 @@ wstr get_default_distro() {
 }
 
 void set_default_distro(crwstr name) {
-	set_value(reg_base_path, value_default_distro, get_distro_id(name));
+	set_value(reg_base_path, vn_default_distro, get_distro_id(name));
 }
 
 void register_distro(crwstr name, crwstr path) {
@@ -189,10 +177,10 @@ void register_distro(crwstr name, crwstr path) {
 
 	auto p = reg_base_path + new_guid();
 	create_key(p);
-	set_value(p, value_distro_name, name);
-	set_value(p, value_dir, get_full_path(path));
-	set_value(p, value_state, default_state);
-	set_value(p, value_version, default_version);
+	set_value(p, vn_distro_name, name);
+	set_value(p, vn_dir, get_full_path(path));
+	set_value(p, vn_state, 1);
+	set_value(p, vn_version, 1);
 
 	try {
 		get_default_distro();
@@ -225,10 +213,10 @@ void unregister_distro(crwstr name) {
 		try {
 			auto l = list_distro_id();
 			if (l.empty()) {
-				auto code = RegDeleteKeyValue(HKEY_CURRENT_USER, reg_base_path.c_str(), value_default_distro.c_str());
-				if (code) throw error_win32(err_delete_key_value, { reg_base_path,value_default_distro }, code);
+				auto code = RegDeleteKeyValue(HKEY_CURRENT_USER, reg_base_path.c_str(), vn_default_distro.c_str());
+				if (code) throw error_win32(err_delete_key_value, { reg_base_path,vn_default_distro }, code);
 			} else {
-				set_value(reg_base_path, value_default_distro, l.front());
+				set_value(reg_base_path, vn_default_distro, l.front());
 			}
 		} catch (const err &e) {
 			log_warning(e.format());
@@ -237,67 +225,38 @@ void unregister_distro(crwstr name) {
 }
 
 wstr get_distro_dir(crwstr name) {
-	return get_value<wstr>(get_distro_key(name), value_dir);
+	return get_value<wstr>(get_distro_key(name), vn_dir);
 }
 
 void set_distro_dir(crwstr name, crwstr value) {
-	set_value(get_distro_key(name), value_dir, get_full_path(value));
+	set_value(get_distro_key(name), vn_dir, get_full_path(value));
 }
 
-template<typename T>
-T get_with_default(crwstr path, crwstr value_name, T default_value) {
-	try {
-		return get_value<T>(path, value_name);
-	} catch (const err &e) {
-		if (e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
-			set_value(path, value_name, default_value);
-			return default_value;
-		}
-		throw;
-	}
+uint32_t get_distro_version(crwstr name) {
+	return get_value<uint32_t>(get_distro_key(name), vn_version);
 }
 
-std::vector<wstr> get_distro_env(crwstr name) {
-	return get_with_default(get_distro_key(name), value_env, default_env);
+void set_distro_version(crwstr name, uint32_t value) {
+	set_value(get_distro_key(name), vn_version, value);
 }
 
-void set_distro_env(crwstr name, const std::vector<wstr> &value) {
-	set_value(get_distro_key(name), value_env, value);
-}
-
-uint32_t get_distro_uid(crwstr name) {
-	return get_with_default(get_distro_key(name), value_uid, default_uid);
-}
-
-void set_distro_uid(crwstr name, uint32_t value) {
-	set_value(get_distro_key(name), value_uid, value);
-}
-
-wstr get_distro_kernel_cmd(crwstr name) {
-	return get_with_default(get_distro_key(name), value_kernel_cmd, default_kernel_cmd);
-}
-
-void set_distro_kernel_cmd(crwstr name, crwstr value) {
-	set_value(get_distro_key(name), value_kernel_cmd, value);
-}
-
-uint32_t get_distro_flags(crwstr name) {
-	return get_with_default(get_distro_key(name), value_flags, default_flags);
-}
-
-void set_distro_flags(crwstr name, uint32_t value) {
-	set_value(get_distro_key(name), value_flags, value);
-}
-
-reg_conf::reg_conf()
-	: env(default_env), uid(default_uid), kernel_cmd(default_kernel_cmd), flags(default_flags) {
+reg_config::reg_config() {
+	env = {
+		L"HOSTTYPE=x86_64",
+		L"LANG=en_US.UTF-8",
+		L"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+		L"TERM=xterm-256color"
+	};
+	uid = 0;
+	kernel_cmd = L"BOOT_IMAGE=/kernel init=/init ro";
+	flags = 7;
 }
 
 err error_xml(tx::XMLError e) {
 	return error_other(err_config_file, { from_utf8(tx::XMLDocument::ErrorIDToName(e)) });
 }
 
-void reg_conf::load_file(crwstr path) {
+void reg_config::load_file(crwstr path) {
 	auto f = unique_val<FILE *>([&](FILE **pf) {
 		*pf = _wfopen(path.c_str(), L"rb");
 		if (!*pf) throw error_win32_last(err_open_file, { path });
@@ -330,7 +289,7 @@ void reg_conf::load_file(crwstr path) {
 	}
 }
 
-void reg_conf::save_file(crwstr path) {
+void reg_config::save_file(crwstr path) {
 	auto f = unique_val<FILE *>([&](FILE **pf) {
 		*pf = _wfopen(path.c_str(), L"wb");
 		if (!*pf) throw error_win32_last(err_create_file, { path });
@@ -355,18 +314,25 @@ void reg_conf::save_file(crwstr path) {
 	if (e) throw error_xml(e);
 }
 
-void reg_conf::load_distro(crwstr name) {
-	auto p = get_distro_key(name);
-	env = get_with_default(p, value_env, default_env);
-	uid = get_with_default(p, value_uid, default_uid);
-	kernel_cmd = get_with_default(p, value_kernel_cmd, default_kernel_cmd);
-	flags = get_with_default(p, value_flags, default_flags);
+template<typename T>
+void try_get_value(crwstr path, crwstr value_name, T &value) {
+	try {
+		value = get_value<T>(path, value_name);
+	} catch (...) {}
 }
 
-void reg_conf::configure_distro(crwstr name) {
+void reg_config::load_distro(crwstr name, config_mask desired) {
 	auto p = get_distro_key(name);
-	set_value(p, value_env, env);
-	set_value(p, value_uid, uid);
-	set_value(p, value_kernel_cmd, kernel_cmd);
-	set_value(p, value_flags, flags);
+	if (desired & config_env) try_get_value(p, vn_env, env);
+	if (desired & config_uid) try_get_value(p, vn_uid, uid);
+	if (desired & config_kernel_cmd) try_get_value(p, vn_kernel_cmd, kernel_cmd);
+	if (desired & config_flags) try_get_value(p, vn_flags, flags);
+}
+
+void reg_config::configure_distro(crwstr name, config_mask desired) {
+	auto p = get_distro_key(name);
+	if (desired & config_env) set_value(p, vn_env, env);
+	if (desired & config_uid) set_value(p, vn_uid, uid);
+	if (desired & config_kernel_cmd) set_value(p, vn_kernel_cmd, kernel_cmd);
+	if (desired & config_flags) set_value(p, vn_flags, flags);
 }

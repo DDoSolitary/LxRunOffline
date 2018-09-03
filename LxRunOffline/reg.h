@@ -8,24 +8,26 @@ void register_distro(crwstr name, crwstr path);
 void unregister_distro(crwstr name);
 wstr get_distro_dir(crwstr name);
 void set_distro_dir(crwstr name, crwstr value);
-std::vector<wstr> get_distro_env(crwstr name);
-void set_distro_env(crwstr name, const std::vector<wstr> &value);
-uint32_t get_distro_uid(crwstr name);
-void set_distro_uid(crwstr name, uint32_t value);
-wstr get_distro_kernel_cmd(crwstr name);
-void set_distro_kernel_cmd(crwstr name, crwstr value);
-uint32_t get_distro_flags(crwstr name);
-void set_distro_flags(crwstr name, uint32_t value);
+uint32_t get_distro_version(crwstr name);
+void set_distro_version(crwstr name, uint32_t value);
 
-class reg_conf {
+enum config_mask {
+	config_env = 1,
+	config_uid = 2,
+	config_kernel_cmd = 4,
+	config_flags = 8,
+	config_all = 15
+};
+
+class reg_config {
 public:
 	std::vector<wstr> env;
 	wstr kernel_cmd;
 	uint32_t uid, flags;
 
-	reg_conf();
+	reg_config();
 	void load_file(crwstr path);
 	void save_file(crwstr path);
-	void load_distro(crwstr name);
-	void configure_distro(crwstr name);
+	void load_distro(crwstr name, config_mask desired);
+	void configure_distro(crwstr name, config_mask desired);
 };

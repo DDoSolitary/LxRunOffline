@@ -68,7 +68,7 @@ wstr err::format() const {
 	std::wstringstream ss;
 
 	auto fmt = boost::wformat(msg_table[msg_code]);
-	for (const auto &s : msg_args) fmt = fmt % s;
+	for (crwstr s : msg_args) fmt = fmt % s;
 	ss << fmt << std::endl;
 
 	if (err_code) {

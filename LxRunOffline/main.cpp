@@ -33,7 +33,7 @@ int wmain(int argc, wchar_t **argv) {
 			std::wcout << L"LxRunOffline " << LXRUNOFFLINE_VERSION << std::endl;
 #endif
 		} else if (!wcscmp(argv[1], L"list")) {
-			for (const auto &s : list_distros()) {
+			for (crwstr s : list_distros()) {
 				std::wcout << s << std::endl;
 			}
 		} else if (!wcscmp(argv[1], L"get-default")) {
@@ -51,10 +51,10 @@ int wmain(int argc, wchar_t **argv) {
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
 				(",s", po::bool_switch(&shortcut), "Create a shortcut for this distribution on Desktop.");
 			parse_args();
-			reg_conf conf;
+			reg_config conf;
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(name, dir);
-			conf.configure_distro(name);
+			conf.configure_distro(name, config_all);
 			extract_archive(file, root, dir);
 			auto dp = unique_val<wchar_t *>([&](wchar_t **ps) {
 				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, ps);
@@ -72,10 +72,10 @@ int wmain(int argc, wchar_t **argv) {
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory containing the distribution.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.");
 			parse_args();
-			reg_conf conf;
+			reg_config conf;
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(name, dir);
-			conf.configure_distro(name);
+			conf.configure_distro(name, config_all);
 		} else if (!wcscmp(argv[1], L"unregister")) {
 			parse_args();
 			unregister_distro(name);
@@ -92,11 +92,11 @@ int wmain(int argc, wchar_t **argv) {
 				(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.");
 			parse_args();
-			reg_conf conf;
-			conf.load_distro(name);
+			reg_config conf;
+			conf.load_distro(name, config_all);
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(new_name, dir);
-			conf.configure_distro(new_name);
+			conf.configure_distro(new_name, config_all);
 			copy_directory(get_distro_dir(name), dir);
 		} else if (!wcscmp(argv[1], L"run")) {
 			wstr cmd;
@@ -118,14 +118,16 @@ int wmain(int argc, wchar_t **argv) {
 			std::wcout << get_distro_dir(name);
 		} else if (!wcscmp(argv[1], L"get-env")) {
 			parse_args();
-			for (const auto &s : get_distro_env(name)) {
+			reg_config conf;
+			conf.load_distro(name, config_env);
+			for (crwstr s : conf.env) {
 				std::wcout << s << std::endl;
 			}
 		} else if (!wcscmp(argv[1], L"set-env")) {
-			std::vector<wstr> envs;
-			desc.add_options()(",v", po::wvalue<std::vector<wstr>>(&envs)->required(), "Environment variables to be set. This argument can be specified multiple times.");
+			reg_config conf;
+			desc.add_options()(",v", po::wvalue<std::vector<wstr>>(&conf.env)->required(), "Environment variables to be set. This argument can be specified multiple times.");
 			parse_args();
-			set_distro_env(name, envs);
+			conf.configure_distro(name, config_env);
 		} else if (!wcscmp(argv[1], L"add-env")) {
 			wstr env;
 			bool force;
@@ -136,51 +138,59 @@ int wmain(int argc, wchar_t **argv) {
 			auto p = env.find(L'=');
 			if (p == wstr::npos) throw error_other(err_invalid_env, { env });
 			auto env_name = env.substr(0, p + 1);
-			auto envs = get_distro_env(name);
-			auto it = std::find_if(envs.begin(), envs.end(), [&](crwstr s) {
+			reg_config conf;
+			conf.load_distro(name, config_env);
+			auto it = std::find_if(conf.env.begin(), conf.env.end(), [&](crwstr s) {
 				return !s.compare(0, env_name.size(), env_name);
 			});
-			if (it != envs.end()) {
-				if (force) envs.erase(it);
+			if (it != conf.env.end()) {
+				if (force) conf.env.erase(it);
 				else throw error_other(err_env_exists, { *it });
 			}
-			envs.push_back(env);
-			set_distro_env(name, envs);
+			conf.env.push_back(env);
+			conf.configure_distro(name, config_env);
 		} else if (!wcscmp(argv[1], L"remove-env")) {
 			wstr env_name;
 			desc.add_options()(",v", po::wvalue<wstr>(&env_name)->required(), "Name of the environment variable to remove.");
 			parse_args();
-			auto envs = get_distro_env(name);
-			auto it = std::find_if(envs.begin(), envs.end(), [&](crwstr s) {
+			reg_config conf;
+			conf.load_distro(name, config_env);
+			auto it = std::find_if(conf.env.begin(), conf.env.end(), [&](crwstr s) {
 				return !s.compare(0, env_name.size() + 1, env_name + L"=");
 			});
-			if (it == envs.end()) throw error_other(err_env_not_found, { env_name });
-			envs.erase(it);
-			set_distro_env(name, envs);
+			if (it == conf.env.end()) throw error_other(err_env_not_found, { env_name });
+			conf.env.erase(it);
+			conf.configure_distro(name, config_env);
 		} else if (!wcscmp(argv[1], L"get-uid")) {
 			parse_args();
-			std::wcout << get_distro_uid(name);
+			reg_config conf;
+			conf.load_distro(name, config_uid);
+			std::wcout << conf.uid;
 		} else if (!wcscmp(argv[1], L"set-uid")) {
-			uint32_t uid;
-			desc.add_options()(",v", po::wvalue<uint32_t>(&uid)->required(), "UID to be set.");
+			reg_config conf;
+			desc.add_options()(",v", po::wvalue<uint32_t>(&conf.uid)->required(), "UID to be set.");
 			parse_args();
-			set_distro_uid(name, uid);
+			conf.configure_distro(name, config_uid);
 		} else if (!wcscmp(argv[1], L"get-kernelcmd")) {
 			parse_args();
-			std::wcout << get_distro_kernel_cmd(name);
+			reg_config conf;
+			conf.load_distro(name, config_kernel_cmd);
+			std::wcout << conf.kernel_cmd;
 		} else if (!wcscmp(argv[1], L"set-kernelcmd")) {
-			wstr cmd;
-			desc.add_options()(",v", po::wvalue<wstr>(&cmd)->required(), "Kernel command line to be set.");
+			reg_config conf;
+			desc.add_options()(",v", po::wvalue<wstr>(&conf.kernel_cmd)->required(), "Kernel command line to be set.");
 			parse_args();
-			set_distro_kernel_cmd(name, cmd);
+			conf.configure_distro(name, config_kernel_cmd);
 		} else if (!wcscmp(argv[1], L"get-flags")) {
 			parse_args();
-			std::wcout << get_distro_flags(name);
+			reg_config conf;
+			conf.load_distro(name, config_flags);
+			std::wcout << conf.flags;
 		} else if (!wcscmp(argv[1], L"set-flags")) {
-			uint32_t flags;
-			desc.add_options()(",v", po::wvalue<uint32_t>(&flags)->required(), "Flags to be set.");
+			reg_config conf;
+			desc.add_options()(",v", po::wvalue<uint32_t>(&conf.flags)->required(), "Flags to be set.");
 			parse_args();
-			set_distro_flags(name, flags);
+			conf.configure_distro(name, config_flags);
 		} else if (!wcscmp(argv[1], L"shortcut")) {
 			wstr fp, ip;
 			desc.add_options()
@@ -192,16 +202,16 @@ int wmain(int argc, wchar_t **argv) {
 			wstr file;
 			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the XML file to export to.");
 			parse_args();
-			reg_conf conf;
-			conf.load_distro(name);
+			reg_config conf;
+			conf.load_distro(name, config_all);
 			conf.save_file(file);
 		} else if (!wcscmp(argv[1], L"import-config")) {
 			wstr file;
 			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "The XML file to import from.");
 			parse_args();
-			reg_conf conf;
+			reg_config conf;
 			conf.load_file(file);
-			conf.configure_distro(name);
+			conf.configure_distro(name, config_all);
 		} else {
 			throw error_other(err_invalid_action, { argv[1] });
 		}

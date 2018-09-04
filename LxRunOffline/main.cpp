@@ -241,8 +241,8 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    set-uid        Set the UID of the default user of a distribution." << std::endl
 				<< L"    get-kernelcmd  Get the default kernel command line of a distribution." << std::endl
 				<< L"    set-kernelcmd  Set the default kernel command line of a distribution." << std::endl
-				<< L"    get-flags      Get some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl
-				<< L"    set-flags      Set some flags of a distribution. See https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx for details." << std::endl
+				<< L"    get-flags      Get some flags of a distribution. See https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags for details." << std::endl
+				<< L"    set-flags      Set some flags of a distribution. See https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags for details." << std::endl
 				<< L"    shortcut       Create a shortcut to launch a distribution." << std::endl
 				<< L"    export-config  Export configuration of a distribution to an XML file." << std::endl
 				<< L"    import-config  Import configuration of a distribution from an XML file." << std::endl;

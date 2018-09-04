@@ -56,8 +56,8 @@ int wmain(int argc, wchar_t **argv) {
 			register_distro(name, dir);
 			conf.configure_distro(name, config_all);
 			extract_archive(file, root, dir);
-			auto dp = unique_val<wchar_t *>([&](wchar_t **ps) {
-				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, ps);
+			auto dp = unique_val<wchar_t *>([&](wchar_t *&s) {
+				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
 				if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
 			}, &CoTaskMemFree);
 			if (shortcut) create_shortcut(name, dp.val + (L'\\' + name + L".lnk"), L"");

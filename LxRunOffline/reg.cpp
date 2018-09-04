@@ -110,10 +110,10 @@ void set_value<uint32_t>(crwstr path, crwstr value_name, const uint32_t &value) 
 }
 
 unique_val<HKEY> create_key(crwstr path) {
-	return unique_val<HKEY>([&](HKEY *phk) {
+	return unique_val<HKEY>([&](HKEY &hk) {
 		auto code = RegCreateKeyEx(
 			HKEY_CURRENT_USER, path.c_str(),
-			0, nullptr, 0, KEY_READ, nullptr, phk, nullptr
+			0, nullptr, 0, KEY_READ, nullptr, &hk, nullptr
 		);
 		if (code) throw error_win32(err_open_key, { path }, code);
 	}, &RegCloseKey);
@@ -257,9 +257,9 @@ err error_xml(tx::XMLError e) {
 }
 
 void reg_config::load_file(crwstr path) {
-	auto f = unique_val<FILE *>([&](FILE **pf) {
-		*pf = _wfopen(path.c_str(), L"rb");
-		if (!*pf) throw error_win32_last(err_open_file, { path });
+	auto f = unique_val<FILE *>([&](FILE *&f) {
+		f = _wfopen(path.c_str(), L"rb");
+		if (!f) throw error_win32_last(err_open_file, { path });
 	}, &fclose);
 	tx::XMLDocument doc;
 	auto e = doc.LoadFile(f.val);
@@ -290,9 +290,9 @@ void reg_config::load_file(crwstr path) {
 }
 
 void reg_config::save_file(crwstr path) {
-	auto f = unique_val<FILE *>([&](FILE **pf) {
-		*pf = _wfopen(path.c_str(), L"wb");
-		if (!*pf) throw error_win32_last(err_create_file, { path });
+	auto f = unique_val<FILE *>([&](FILE *&f) {
+		f = _wfopen(path.c_str(), L"wb");
+		if (!f) throw error_win32_last(err_create_file, { path });
 	}, &fclose);
 	tx::XMLDocument doc;
 	doc.SetBOM(true);

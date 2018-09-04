@@ -96,15 +96,15 @@ unique_val<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) 
 		}
 		log_warning((boost::wformat(L"The directory \"%1%\" already exists.") % path).str());
 	}
-	return unique_val<HANDLE>([&](HANDLE *ph) {
-		*ph = CreateFile(
+	return unique_val<HANDLE>([&](HANDLE &h) {
+		h = CreateFile(
 			path.c_str(),
 			GENERIC_READ | (write ? GENERIC_WRITE : 0),
 			FILE_SHARE_READ, nullptr,
 			create && !is_dir ? CREATE_NEW : OPEN_EXISTING,
 			is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
 		);
-		if (*ph == INVALID_HANDLE_VALUE) {
+		if (h == INVALID_HANDLE_VALUE) {
 			if (is_dir) throw error_win32_last(err_open_dir, { path });
 			throw error_win32_last(create ? err_create_file : err_open_file, { path });
 		}
@@ -273,9 +273,9 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, enum_dir_type)>
 		set_cs_info(open_file(ap, true, false, true).val);
 		action(p, enum_dir_enter);
 		WIN32_FIND_DATA data;
-		auto hs = unique_val<HANDLE>([&](HANDLE *ph) {
-			*ph = FindFirstFile((ap + L'*').c_str(), &data);
-			if (*ph == INVALID_HANDLE_VALUE) {
+		auto hs = unique_val<HANDLE>([&](HANDLE &h) {
+			h = FindFirstFile((ap + L'*').c_str(), &data);
+			if (h == INVALID_HANDLE_VALUE) {
 				throw error_win32_last(err_enum_dir, { ap });
 			}
 		}, &FindClose);

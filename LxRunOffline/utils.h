@@ -33,9 +33,9 @@ public:
 	std::function<void(T)> deleter;
 	bool empty;
 
-	unique_val(std::function<void(T *)> val_func, std::function<void(T)> deleter)
+	unique_val(std::function<void(T &)> val_func, std::function<void(T)> deleter)
 		: deleter(deleter), empty(false) {
-		val_func(&val);
+		val_func(val);
 	}
 
 

@@ -11,7 +11,7 @@ BEGIN
 		BLOCK "040904B0"
 		BEGIN
 			VALUE "CompanyName", "DDoSolitary"
-			VALUE "FileDescription", "A full-featured utility for Windows Subsystem for Linux."
+			VALUE "FileDescription", "A full-featured utility for managing Windows Subsystem for Linux."
 			VALUE "LegalCopyright", "Copyright (c) 2016-2018 DDoSolitary"
 			VALUE "ProductName", "LxRunOffline"
 #ifdef LXRUNOFFLINE_FILE_VERSION_STR

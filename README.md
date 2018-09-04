@@ -3,17 +3,18 @@
 [![Build status](https://img.shields.io/appveyor/ci/ddosolitary/lxrunoffline/master.svg)](https://ci.appveyor.com/project/ddosolitary/lxrunoffline)
 [![Chocolatey](https://img.shields.io/chocolatey/v/lxrunoffline.svg)](https://chocolatey.org/packages/lxrunoffline)
 
-A full-featured utility for *Windows Subsystem for Linux (WSL)*.
+A full-featured utility for managing *Windows Subsystem for Linux (WSL)*.
 
 # Features
 
-- No Internet access required when installing.
-- Install any Linux distros to any location on your disk.
-- Moving existing installations to other locations.
-- Duplicating existing installations. (To create backups.)
-- Register existing installation directories. (For portable usage.)
-- Running arbitrary Linux commands on installations.
-- Configure default user, environment variables and various configuration flags.
+- Install any Linux distro to any directory on your computer.
+- Move an existing installation to another directory.
+- Duplicate(copy) an existing installation.
+- Register an existing installation directory. This enables you to install to a USB stick and use it on different computers.
+- Run arbitrary Linux commands in a specified installation.
+- Configure default user, environment variables and [various flags](https://msdn.microsoft.com/en-us/library/windows/desktop/mt826872(v=vs.85).aspx).
+- Export configuration to an XML file and import from the file. (Coming soon.)
+- Export an installation to a tar file. (Coming soon.)
 
 # Install
 
@@ -23,7 +24,7 @@ You can install via Chocolatey `choco install lxrunoffline`, or download the bin
 
 # Usage
 
-See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) for where to download tar files for different distros, which is required by the `LxRunOffline install` command.
+See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) to download tar files for different distros, which are used by the `LxRunOffline install` command.
 
 Run `LxRunOffline` for the command line interface.
 

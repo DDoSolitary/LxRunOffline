@@ -318,7 +318,11 @@ template<typename T>
 void try_get_value(crwstr path, crwstr value_name, T &value) {
 	try {
 		value = get_value<T>(path, value_name);
-	} catch (...) {}
+	} catch (const err &e) {
+		if (e.msg_code != err_get_key_value || e.err_code != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
+			throw;
+		}
+	}
 }
 
 void reg_config::load_distro(crwstr name, config_mask desired) {

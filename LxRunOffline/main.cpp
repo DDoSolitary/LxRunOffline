@@ -227,11 +227,11 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    sd, set-default    Set the default distribution, which is used by bash.exe." << std::endl
 				<< L"    i, install         Install a new distribution." << std::endl
 				<< L"    ui, uninstall      Uninstall a distribution." << std::endl
-				<< L"    rg, register        Register an existing installation directory." << std::endl
+				<< L"    rg, register       Register an existing installation directory." << std::endl
 				<< L"    ur, unregister     Unregister a distribution but not delete the installation directory." << std::endl
 				<< L"    m, move            Move a distribution to a new directory." << std::endl
 				<< L"    d, duplicate       Duplicate an existing distribution in a new directory." << std::endl
-				<< L"    r, run            Run a command in a distribution." << std::endl
+				<< L"    r, run             Run a command in a distribution." << std::endl
 				<< L"    gd, get-dir        Get the installation directory of a distribution." << std::endl
 				<< L"    ge, get-env        Get the default environment variables of a distribution." << std::endl
 				<< L"    se, set-env        Set the default environment variables of a distribution." << std::endl

@@ -36,7 +36,6 @@ public:
 		val_func(val);
 	}
 
-
 	unique_val(T val, std::function<void(T)> deleter)
 		: val(val), deleter(deleter) {}
 
@@ -45,13 +44,13 @@ public:
 	}
 
 	unique_val &operator=(unique_val &&o) {
-		if (!deleter) deleter(val);
+		if (deleter) deleter(val);
 		move(o);
 		return *this;
 	}
 
 	~unique_val() {
-		if (!deleter) {
+		if (deleter) {
 			deleter(val);
 			deleter = nullptr;
 		}

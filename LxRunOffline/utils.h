@@ -24,38 +24,36 @@ class unique_val {
 	void move(unique_val &o) {
 		val = o.val;
 		deleter = o.deleter;
-		empty = o.empty;
-		o.empty = true;
+		o.deleter = nullptr;
 	}
 
 public:
 	T val;
 	std::function<void(T)> deleter;
-	bool empty;
 
 	unique_val(std::function<void(T &)> val_func, std::function<void(T)> deleter)
-		: deleter(deleter), empty(false) {
+		: deleter(deleter) {
 		val_func(val);
 	}
 
 
 	unique_val(T val, std::function<void(T)> deleter)
-		: val(val), deleter(deleter), empty(false) {}
+		: val(val), deleter(deleter) {}
 
 	unique_val(unique_val &&o) {
 		move(o);
 	}
 
 	unique_val &operator=(unique_val &&o) {
-		if (!empty) deleter(val);
+		if (!deleter) deleter(val);
 		move(o);
 		return *this;
 	}
 
 	~unique_val() {
-		if (!empty) {
+		if (!deleter) {
 			deleter(val);
-			empty = true;
+			deleter = nullptr;
 		}
 	}
 

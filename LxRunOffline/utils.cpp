@@ -61,7 +61,7 @@ wstr from_utf8(const char *s) {
 	auto res = probe_and_call<wchar_t, int>([&](wchar_t *buf, int len) {
 		return MultiByteToWideChar(CP_UTF8, 0, s, -1, buf, len);
 	});
-	if (!res.second) throw error_win32_last(err_from_utf8, {});
+	if (!res.second) throw error_win32_last(err_convert_encoding, {});
 	return res.first.get();
 }
 
@@ -69,6 +69,6 @@ std::unique_ptr<char[]> to_utf8(wstr s) {
 	auto res = probe_and_call<char, int>([&](char *buf, int len) {
 		return WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, buf, len, nullptr, nullptr);
 	});
-	if (!res.second) throw error_win32_last(err_from_utf8, {});
+	if (!res.second) throw error_win32_last(err_convert_encoding, {});
 	return std::move(res.first);
 }

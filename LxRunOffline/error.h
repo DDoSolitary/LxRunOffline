@@ -17,7 +17,7 @@ enum err_msg {
 	err_read_file,
 	err_write_file,
 	err_transform_path,
-	err_from_utf8,
+	err_convert_encoding,
 	err_archive,
 	err_get_version,
 	err_version_old,

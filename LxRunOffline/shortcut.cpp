@@ -1,6 +1,6 @@
 ﻿#include "stdafx.h"
 #include "error.h"
-#include "fs.h"
+#include "utils.h"
 
 void create_shortcut(crwstr distro_name, crwstr file_path, crwstr icon_path) {
 	auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);

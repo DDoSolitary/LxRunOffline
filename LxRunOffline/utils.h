@@ -8,6 +8,7 @@ void log_error(crwstr msg);
 void print_progress(double progress);
 wstr from_utf8(const char *s);
 std::unique_ptr<char[]> to_utf8(wstr s);
+wstr get_full_path(crwstr path);
 
 template<typename TEle, typename TLen>
 std::pair<std::unique_ptr<TEle[]>, TLen> probe_and_call(std::function<TLen(TEle *, TLen)> func) {
@@ -21,6 +22,9 @@ std::pair<std::unique_ptr<TEle[]>, TLen> probe_and_call(std::function<TLen(TEle 
 
 template<typename T>
 class unique_val {
+	T val;
+	std::function<void(T)> deleter;
+
 	void move(unique_val &o) {
 		val = o.val;
 		deleter = o.deleter;
@@ -28,9 +32,6 @@ class unique_val {
 	}
 
 public:
-	T val;
-	std::function<void(T)> deleter;
-
 	unique_val(std::function<void(T &)> val_func, std::function<void(T)> deleter)
 		: deleter(deleter) {
 		val_func(val);
@@ -58,4 +59,8 @@ public:
 
 	unique_val(const unique_val &) = delete;
 	unique_val &operator=(const unique_val &) = delete;
+
+	T get() const {
+		return val;
+	}
 };

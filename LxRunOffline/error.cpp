@@ -11,9 +11,12 @@ const wstr msg_table[] = {
 	L"Couldn't delete the directory \"%1%\".",
 	L"Couldn't get contents of the directory \"%1%\".",
 	L"Couldn't get information of the file \"%1%\".",
+	L"Couldn't get size of the file \"%1%\".",
 	L"Couldn't get the extended attribute \"%1%\" of the file or directory \"%2%\".",
 	L"Couldn't set the extended attribute \"%1%\" of the file or directory \"%2%\".",
+	L"The extended attribute \"%1%\" of the file or directory \"%2%\" is invalid.",
 	L"Couldn't set the case sensitive attribute of the directory \"%1%\".",
+	L"The symlink file \"%2%\" has an invalid length %1%.",
 	L"Couldn't create the hard link from \"%1%\" to \"%2%\".",
 	L"Couldn't read from the file \"%1%\".",
 	L"Couldn't write to the file \"%1%\".",
@@ -64,17 +67,17 @@ err error_other(err_msg msg_code, const std::vector<wstr> &msg_args) {
 	return error_hresult(msg_code, msg_args, S_OK);
 }
 
-wstr err::format() const {
+wstr format_error(const err &e) {
 	std::wstringstream ss;
 
-	auto fmt = boost::wformat(msg_table[msg_code]);
-	for (crwstr s : msg_args) fmt = fmt % s;
+	auto fmt = boost::wformat(msg_table[e.msg_code]);
+	for (crwstr s : e.msg_args) fmt = fmt % s;
 	ss << fmt << std::endl;
 
-	if (err_code) {
+	if (e.err_code) {
 		ss << L"Reason: ";
-		if (err_code & FACILITY_NT_BIT) {
-			auto stat = err_code & ~FACILITY_NT_BIT;
+		if (e.err_code & FACILITY_NT_BIT) {
+			auto stat = e.err_code & ~FACILITY_NT_BIT;
 			wchar_t *buf = nullptr;
 			auto f = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS;
 			auto hm = LoadLibrary(L"ntdll.dll");
@@ -87,14 +90,10 @@ wstr err::format() const {
 				ss << L"Unknown NTSTATUS: " << L"0x" << std::setfill(L'0') << std::setw(8) << std::hex << stat;
 			}
 		} else {
-			_com_error ce(err_code);
+			_com_error ce(e.err_code);
 			ss << ce.ErrorMessage();
 		}
 	}
 
 	return ss.str();
-}
-
-void err::push_if_empty(crwstr arg) {
-	if (msg_args.empty()) msg_args.push_back(arg);
 }

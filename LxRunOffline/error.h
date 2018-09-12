@@ -10,9 +10,12 @@ enum err_msg {
 	err_delete_dir,
 	err_enum_dir,
 	err_file_info,
+	err_file_size,
 	err_get_ea,
 	err_set_ea,
+	err_invalid_ea,
 	err_set_cs,
+	err_symlink_length,
 	err_hard_link,
 	err_read_file,
 	err_write_file,
@@ -43,13 +46,10 @@ enum err_msg {
 	err_config_file
 };
 
-class err {
-public:
+struct err {
 	err_msg msg_code;
 	std::vector<wstr> msg_args;
 	HRESULT err_code;
-	wstr format() const;
-	void push_if_empty(crwstr arg);
 };
 
 err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code);
@@ -57,3 +57,4 @@ err error_win32(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t er
 err error_win32_last(err_msg msg_code, const std::vector<wstr> &msg_args);
 err error_nt(err_msg msg_code, const std::vector<wstr> &msg_args, NTSTATUS err_code);
 err error_other(err_msg msg_code, const std::vector<wstr> &msg_args);
+wstr format_error(const err &e);

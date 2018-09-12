@@ -72,3 +72,13 @@ std::unique_ptr<char[]> to_utf8(wstr s) {
 	if (!res.second) throw error_win32_last(err_convert_encoding, {});
 	return std::move(res.first);
 }
+
+wstr get_full_path(crwstr path) {
+	auto fp = probe_and_call<wchar_t, int>([&](wchar_t *buf, int len) {
+		return GetFullPathName(path.c_str(), len, buf, nullptr);
+	});
+	if (!fp.second) {
+		throw error_win32_last(err_transform_path, { path });
+	}
+	return fp.first.get();
+}

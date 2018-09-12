@@ -1,6 +1,5 @@
 ﻿#include "stdafx.h"
 #include "error.h"
-#include "fs.h"
 #include "reg.h"
 #include "utils.h"
 
@@ -125,7 +124,7 @@ std::vector<wstr> list_distro_id() {
 	auto ib = std::make_unique<wchar_t[]>(guid_len + 1);
 	for (int i = 0;; i++) {
 		DWORD bs = guid_len + 1;
-		auto code = RegEnumKeyEx(hk.val, i, ib.get(), &bs, 0, nullptr, nullptr, nullptr);
+		auto code = RegEnumKeyEx(hk.get(), i, ib.get(), &bs, 0, nullptr, nullptr, nullptr);
 		if (code == ERROR_NO_MORE_ITEMS) break;
 		else if (code) throw error_win32(err_enum_key, { reg_base_path }, code);
 		res.push_back(ib.get());
@@ -189,10 +188,10 @@ void register_distro(crwstr name, crwstr path) {
 			try {
 				set_default_distro(name);
 			} catch (const err &e) {
-				log_warning(e.format());
+				log_warning(format_error(e));
 			}
 		} else {
-			log_warning(e.format());
+			log_warning(format_error(e));
 		}
 	}
 }
@@ -202,7 +201,7 @@ void unregister_distro(crwstr name) {
 	try {
 		d = get_default_distro() == name;
 	} catch (const err &e) {
-		log_warning(e.format());
+		log_warning(format_error(e));
 	}
 
 	auto p = get_distro_key(name);
@@ -219,7 +218,7 @@ void unregister_distro(crwstr name) {
 				set_value(reg_base_path, vn_default_distro, l.front());
 			}
 		} catch (const err &e) {
-			log_warning(e.format());
+			log_warning(format_error(e));
 		}
 	}
 }
@@ -262,7 +261,7 @@ void reg_config::load_file(crwstr path) {
 		if (!f) throw error_win32_last(err_open_file, { path });
 	}, &fclose);
 	tx::XMLDocument doc;
-	auto e = doc.LoadFile(f.val);
+	auto e = doc.LoadFile(f.get());
 	if (e) throw error_xml(e);
 	tx::XMLElement *ele, *rt = doc.FirstChildElement("config");
 	if (!rt) throw error_other(err_config_file, { L"Root element \"config\" not found." });
@@ -310,7 +309,7 @@ void reg_config::save_file(crwstr path) const {
 	ele->SetText(to_utf8(kernel_cmd).get());
 	rt->InsertEndChild(ele = doc.NewElement("flags"));
 	ele->SetText(flags);
-	auto e = doc.SaveFile(f.val);
+	auto e = doc.SaveFile(f.get());
 	if (e) throw error_xml(e);
 }
 

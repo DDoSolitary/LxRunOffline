@@ -55,12 +55,15 @@ int wmain(int argc, wchar_t **argv) {
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(name, dir);
 			conf.configure_distro(name, config_all);
-			extract_archive(file, root, dir);
-			auto dp = unique_val<wchar_t *>([&](wchar_t *&s) {
-				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
-				if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
-			}, &CoTaskMemFree);
-			if (shortcut) create_shortcut(name, dp.val + (L'\\' + name + L".lnk"), L"");
+			auto writer = wsl_v1_writer(dir);
+			archive_reader(file, root).run(writer);
+			if (shortcut) {
+				auto dp = unique_val<wchar_t *>([&](wchar_t *&s) {
+					auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
+					if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
+				}, &CoTaskMemFree);
+				create_shortcut(name, dp.get() + (L'\\' + name + L".lnk"), L"");
+			}
 		} else if (!wcscmp(argv[1], L"ui") || !wcscmp(argv[1], L"uninstall")) {
 			parse_args();
 			auto dir = get_distro_dir(name);
@@ -83,7 +86,11 @@ int wmain(int argc, wchar_t **argv) {
 			wstr dir;
 			desc.add_options()(",d", po::wvalue<wstr>(&dir)->required(), "The directory to move the distribution to.");
 			parse_args();
-			move_directory(get_distro_dir(name), dir);
+			auto sp = get_distro_dir(name);
+			if (!move_directory(sp, dir)) {
+				auto writer = wsl_v1_writer(dir);
+				wsl_v1_reader(sp).run(writer);
+			}
 			set_distro_dir(name, dir);
 		} else if (!wcscmp(argv[1], L"d") || !wcscmp(argv[1], L"duplicate")) {
 			wstr new_name, dir, conf_path;
@@ -97,7 +104,8 @@ int wmain(int argc, wchar_t **argv) {
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(new_name, dir);
 			conf.configure_distro(new_name, config_all);
-			copy_directory(get_distro_dir(name), dir);
+			auto writer = wsl_v1_writer(dir);
+			wsl_v1_reader(get_distro_dir(name)).run(writer);
 		} else if (!wcscmp(argv[1], L"r") || !wcscmp(argv[1], L"run")) {
 			wstr cmd;
 			bool no_cwd;
@@ -216,7 +224,7 @@ int wmain(int argc, wchar_t **argv) {
 			throw error_other(err_invalid_action, { argv[1] });
 		}
 	} catch (const err &e) {
-		log_error(e.format());
+		log_error(format_error(e));
 		if (e.msg_code == err_set_cs && e.err_code == HRESULT_FROM_NT(STATUS_ACCESS_DENIED)) {
 			log_warning(L"You may have run into a known bug of Windows (https://github.com/Microsoft/WSL/issues/3304). Please try giving \"Delete subfolders or files\" permission of the target directory to the current user or simply running this tool with admin privilege.");
 		} else if (e.msg_code == err_no_action || e.msg_code == err_invalid_action) {

@@ -49,7 +49,7 @@ void set_dynamic(crwstr path, crwstr value_name, uint32_t type, const void *valu
 	if (code) throw error_win32(err_set_key_value, { path,value_name }, code);
 }
 
-template<typename T> T get_value(crwstr, crwstr) { assert(false); }
+template<typename T> T get_value(crwstr, crwstr);
 
 template<>
 wstr get_value<wstr>(crwstr path, crwstr value_name) {
@@ -79,7 +79,7 @@ uint32_t get_value<uint32_t>(crwstr path, crwstr value_name) {
 	return res;
 }
 
-template<typename T> void set_value(crwstr, crwstr, const T &) { assert(false); }
+template<typename T> void set_value(crwstr, crwstr, const T &);
 
 template<>
 void set_value<wstr>(crwstr path, crwstr value_name, crwstr value) {
@@ -179,8 +179,8 @@ void register_distro(crwstr name, crwstr path) {
 	create_key(p);
 	set_value(p, vn_distro_name, name);
 	set_value(p, vn_dir, get_full_path(path));
-	set_value(p, vn_state, 1);
-	set_value(p, vn_version, 1);
+	set_value(p, vn_state, (uint32_t)1);
+	set_value(p, vn_version, (uint32_t)1);
 
 	try {
 		get_default_distro();

@@ -289,7 +289,7 @@ void reg_config::load_file(crwstr path) {
 	}
 }
 
-void reg_config::save_file(crwstr path) {
+void reg_config::save_file(crwstr path) const {
 	auto f = unique_val<FILE *>([&](FILE *&f) {
 		f = _wfopen(path.c_str(), L"wb");
 		if (!f) throw error_win32_last(err_create_file, { path });
@@ -333,7 +333,7 @@ void reg_config::load_distro(crwstr name, config_mask desired) {
 	if (desired & config_flags) try_get_value(p, vn_flags, flags);
 }
 
-void reg_config::configure_distro(crwstr name, config_mask desired) {
+void reg_config::configure_distro(crwstr name, config_mask desired) const {
 	auto p = get_distro_key(name);
 	if (desired & config_env) set_value(p, vn_env, env);
 	if (desired & config_uid) set_value(p, vn_uid, uid);

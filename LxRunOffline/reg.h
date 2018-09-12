@@ -27,7 +27,7 @@ public:
 
 	reg_config();
 	void load_file(crwstr path);
-	void save_file(crwstr path);
+	void save_file(crwstr path) const;
 	void load_distro(crwstr name, config_mask desired);
-	void configure_distro(crwstr name, config_mask desired);
+	void configure_distro(crwstr name, config_mask desired) const;
 };

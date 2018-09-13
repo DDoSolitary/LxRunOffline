@@ -390,13 +390,12 @@ void wsl_reader::run(fs_writer &writer) {
 			}
 			writer.write_new_file(lp, attr);
 			DWORD rc;
-			while (true) {
+			do {
 				if (!ReadFile(hf.get(), buf, BUFSIZ, &rc, nullptr)) {
 					throw error_win32_last(err_read_file, { path });
 				}
 				writer.write_file_data(buf, rc);
-				if (rc == 0) break;
-			}
+			} while (rc);
 		}
 	});
 }

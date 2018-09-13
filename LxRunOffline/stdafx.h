@@ -26,6 +26,7 @@
 #include <numeric>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <archive.h>
@@ -36,3 +37,6 @@
 
 typedef std::wstring wstr;
 typedef const std::wstring &crwstr;
+
+template<typename T>
+using unique_ptr_del = std::unique_ptr<typename std::remove_pointer<T>::type, std::function<void(T)>>;

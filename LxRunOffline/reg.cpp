@@ -108,14 +108,14 @@ void set_value<uint32_t>(crwstr path, crwstr value_name, const uint32_t &value) 
 	set_dynamic(path, value_name, REG_DWORD, &value, sizeof(value));
 }
 
-unique_val<HKEY> create_key(crwstr path) {
-	return unique_val<HKEY>([&](HKEY &hk) {
-		auto code = RegCreateKeyEx(
-			HKEY_CURRENT_USER, path.c_str(),
-			0, nullptr, 0, KEY_READ, nullptr, &hk, nullptr
-		);
-		if (code) throw error_win32(err_open_key, { path }, code);
-	}, &RegCloseKey);
+unique_ptr_del<HKEY> create_key(crwstr path) {
+	HKEY hk;
+	auto code = RegCreateKeyEx(
+		HKEY_CURRENT_USER, path.c_str(),
+		0, nullptr, 0, KEY_READ, nullptr, &hk, nullptr
+	);
+	if (code) throw error_win32(err_open_key, { path }, code);
+	return unique_ptr_del<HKEY>(hk, &RegCloseKey);
 }
 
 std::vector<wstr> list_distro_id() {
@@ -256,10 +256,11 @@ err error_xml(tx::XMLError e) {
 }
 
 void reg_config::load_file(crwstr path) {
-	auto f = unique_val<FILE *>([&](FILE *&f) {
-		f = _wfopen(path.c_str(), L"rb");
-		if (!f) throw error_win32_last(err_open_file, { path });
-	}, &fclose);
+	auto f = unique_ptr_del<FILE *>(_wfopen(path.c_str(), L"rb"), &fclose);
+	if (!f.get()) {
+		f.release();
+		throw error_win32_last(err_open_file, { path });
+	}
 	tx::XMLDocument doc;
 	auto e = doc.LoadFile(f.get());
 	if (e) throw error_xml(e);
@@ -289,10 +290,11 @@ void reg_config::load_file(crwstr path) {
 }
 
 void reg_config::save_file(crwstr path) const {
-	auto f = unique_val<FILE *>([&](FILE *&f) {
-		f = _wfopen(path.c_str(), L"wb");
-		if (!f) throw error_win32_last(err_create_file, { path });
-	}, &fclose);
+	auto f = unique_ptr_del<FILE *>(_wfopen(path.c_str(), L"wb"), &fclose);
+	if (!f.get()) {
+		f.release();
+		throw error_win32_last(err_create_file, { path });
+	}
 	tx::XMLDocument doc;
 	doc.SetBOM(true);
 	tx::XMLElement *ele, *rt = doc.NewElement("config");

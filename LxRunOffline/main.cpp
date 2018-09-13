@@ -58,10 +58,10 @@ int wmain(int argc, wchar_t **argv) {
 			auto writer = wsl_v1_writer(dir);
 			archive_reader(file, root).run(writer);
 			if (shortcut) {
-				auto dp = unique_val<wchar_t *>([&](wchar_t *&s) {
-					auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
-					if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
-				}, &CoTaskMemFree);
+				wchar_t *s;
+				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
+				if (FAILED(hr)) throw error_hresult(err_create_shortcut, {}, hr);
+				auto dp = unique_ptr_del<wchar_t *>(s, &CoTaskMemFree);
 				create_shortcut(name, dp.get() + (L'\\' + name + L".lnk"), L"");
 			}
 		} else if (!wcscmp(argv[1], L"ui") || !wcscmp(argv[1], L"uninstall")) {

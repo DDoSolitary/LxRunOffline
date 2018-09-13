@@ -41,20 +41,19 @@ bool check_archive(archive *pa, int stat) {
 	throw error_other(err_archive, { ss.str() });
 }
 
-unique_val<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) {
-	return unique_val<HANDLE>([&](HANDLE &h) {
-		h = CreateFile(
-			path.c_str(),
-			GENERIC_READ | (write ? GENERIC_WRITE : 0),
-			FILE_SHARE_READ, nullptr,
-			create ? CREATE_NEW : OPEN_EXISTING,
-			is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
-		);
-		if (h == INVALID_HANDLE_VALUE) {
-			if (is_dir) throw error_win32_last(err_open_dir, { path });
-			throw error_win32_last(create ? err_create_file : err_open_file, { path });
-		}
-	}, &CloseHandle);
+unique_ptr_del<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) {
+	auto h = CreateFile(
+		path.c_str(),
+		GENERIC_READ | (write ? GENERIC_WRITE : 0),
+		FILE_SHARE_READ, nullptr,
+		create ? CREATE_NEW : OPEN_EXISTING,
+		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
+	);
+	if (h == INVALID_HANDLE_VALUE) {
+		if (is_dir) throw error_win32_last(err_open_dir, { path });
+		throw error_win32_last(create ? err_create_file : err_open_file, { path });
+	}
+	return unique_ptr_del<HANDLE>(h, &CloseHandle);
 }
 
 void create_parents(crwstr path) {
@@ -131,12 +130,11 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, enum_dir_type)>
 		}
 		action(p, enum_dir_enter);
 		WIN32_FIND_DATA data;
-		auto hs = unique_val<HANDLE>([&](HANDLE &h) {
-			h = FindFirstFile((ap + L'*').c_str(), &data);
-			if (h == INVALID_HANDLE_VALUE) {
-				throw error_win32_last(err_enum_dir, { ap });
-			}
-		}, &FindClose);
+		auto hs = unique_ptr_del<HANDLE>(FindFirstFile((ap + L'*').c_str(), &data), &FindClose);
+		if (hs.get() == INVALID_HANDLE_VALUE) {
+			hs.release();
+			throw error_win32_last(err_enum_dir, { ap });
+		}
 		while (true) {
 			if (wcscmp(data.cFileName, L".") && wcscmp(data.cFileName, L"..")) {
 				auto np = p + data.cFileName;
@@ -209,7 +207,7 @@ bool normalize_linux_path(wstr &path, crwstr root) {
 }
 
 wsl_writer::wsl_writer(crwstr base_path)
-	: path(normalize_win_path(base_path) + L"rootfs\\"), blen(path.size()), hf_data(0, nullptr) {
+	: path(normalize_win_path(base_path) + L"rootfs\\"), blen(path.size()), hf_data(nullptr) {
 	create_parents(path);
 }
 
@@ -222,13 +220,13 @@ void wsl_writer::write_data(HANDLE hf, const char *buf, uint32_t size) const {
 
 void wsl_writer::write_new_file(crwstr linux_path, const file_attr &attr) {
 	set_path(linux_path);
-	hf_data = std::move(open_file(path, false, true, true));
+	hf_data = open_file(path, false, true, true);
 	write_attr(hf_data.get(), attr);
 }
 
 void wsl_writer::write_file_data(const char *buf, uint32_t size) {
 	if (size) write_data(hf_data.get(), buf, size);
-	else hf_data = std::move(unique_val<HANDLE>(0, nullptr));
+	else hf_data.reset(nullptr);
 }
 
 void wsl_writer::write_directory(crwstr linux_path, const file_attr &attr) {
@@ -302,7 +300,7 @@ void archive_reader::run(fs_writer &writer) {
 	LARGE_INTEGER as;
 	auto ha = open_file(archive_path, false, false, false);
 	if (!GetFileSizeEx(ha.get(), &as)) as.QuadPart = 0;
-	auto pa = unique_val<archive *>(archive_read_new(), &archive_read_free);
+	auto pa = unique_ptr_del<archive *>(archive_read_new(), &archive_read_free);
 	check_archive(pa.get(), archive_read_support_filter_all(pa.get()));
 	check_archive(pa.get(), archive_read_support_format_all(pa.get()));
 	check_archive(pa.get(), archive_read_open_filename_w(pa.get(), archive_path.c_str(), BUFSIZ));

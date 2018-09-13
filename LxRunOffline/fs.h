@@ -25,7 +25,7 @@ class wsl_writer : public fs_writer {
 protected:
 	wstr path;
 	const size_t blen;
-	unique_val<HANDLE> hf_data;
+	unique_ptr_del<HANDLE> hf_data;
 	void write_data(HANDLE, const char *, uint32_t) const;
 	virtual void set_path(crwstr) = 0;
 	virtual void write_attr(HANDLE, const file_attr &) const = 0;

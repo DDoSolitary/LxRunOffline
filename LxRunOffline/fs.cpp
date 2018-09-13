@@ -332,7 +332,9 @@ void archive_reader::run(fs_writer &writer) {
 			(uint32_t)pst->st_mode,
 			(uint32_t)pst->st_uid,
 			(uint32_t)pst->st_gid,
-			mt,mt,mt
+			archive_entry_atime_is_set(pe) ? unix_time{ (uint64_t)pst->st_atime,(uint32_t)archive_entry_atime_nsec(pe) } : mt,
+			mt,
+			archive_entry_ctime_is_set(pe) ? unix_time{ (uint64_t)pst->st_ctime,(uint32_t)archive_entry_ctime_nsec(pe) } : mt
 		};
 		if (type == AE_IFREG) {
 			writer.write_new_file(p, attr);

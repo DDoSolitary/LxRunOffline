@@ -9,6 +9,7 @@ struct unix_time {
 
 struct file_attr {
 	uint32_t mode, uid, gid;
+	uint64_t size;
 	unix_time at, mt, ct;
 };
 
@@ -17,8 +18,21 @@ public:
 	virtual void write_new_file(crwstr, const file_attr &) = 0;
 	virtual void write_file_data(const char *, uint32_t) = 0;
 	virtual void write_directory(crwstr, const file_attr &) = 0;
-	virtual void write_symlink(crwstr, const file_attr &, const char *, uint32_t) = 0;
+	virtual void write_symlink(crwstr, const file_attr &, const char *) = 0;
 	virtual void write_hard_link(crwstr, crwstr) = 0;
+};
+
+class archive_writer : public fs_writer {
+	unique_ptr_del<archive *> pa;
+	unique_ptr_del<archive_entry *> pe;
+	void write_entry(crwstr, const file_attr &);
+public:
+	archive_writer(crwstr);
+	void write_new_file(crwstr, const file_attr &);
+	void write_file_data(const char *, uint32_t);
+	void write_directory(crwstr, const file_attr &);
+	void write_symlink(crwstr, const file_attr &, const char *);
+	void write_hard_link(crwstr, crwstr);
 };
 
 class wsl_writer : public fs_writer {
@@ -29,13 +43,13 @@ protected:
 	void write_data(HANDLE, const char *, uint32_t) const;
 	virtual void set_path(crwstr) = 0;
 	virtual void write_attr(HANDLE, const file_attr &) const = 0;
-	virtual void write_symlink_data(HANDLE, const char *, uint32_t) const = 0;
+	virtual void write_symlink_data(HANDLE, const char *) const = 0;
 public:
 	wsl_writer(crwstr);
 	void write_new_file(crwstr, const file_attr &);
 	void write_file_data(const char *, uint32_t);
 	void write_directory(crwstr, const file_attr &);
-	void write_symlink(crwstr, const file_attr &, const char *, uint32_t);
+	void write_symlink(crwstr, const file_attr &, const char *);
 	void write_hard_link(crwstr, crwstr);
 };
 
@@ -43,7 +57,7 @@ class wsl_v1_writer : public wsl_writer {
 protected:
 	void set_path(crwstr);
 	void write_attr(HANDLE, const file_attr &) const;
-	void write_symlink_data(HANDLE, const char *, uint32_t) const;
+	void write_symlink_data(HANDLE, const char *) const;
 public:
 	using wsl_writer::wsl_writer;
 };
@@ -66,7 +80,7 @@ protected:
 	const size_t blen;
 	virtual wstr convert_path(crwstr) const = 0;
 	virtual file_attr read_attr(HANDLE) const = 0;
-	virtual std::pair<std::unique_ptr<char[]>, uint32_t> read_symlink_data(HANDLE) const = 0;
+	virtual std::unique_ptr<char[]> read_symlink_data(HANDLE) const = 0;
 public:
 	wsl_reader(crwstr);
 	void run(fs_writer &);
@@ -76,7 +90,7 @@ class wsl_v1_reader : public wsl_reader {
 protected:
 	wstr convert_path(crwstr) const;
 	file_attr read_attr(HANDLE) const;
-	std::pair<std::unique_ptr<char[]>, uint32_t> read_symlink_data(HANDLE) const;
+	std::unique_ptr<char[]> read_symlink_data(HANDLE) const;
 public:
 	using wsl_reader::wsl_reader;
 };

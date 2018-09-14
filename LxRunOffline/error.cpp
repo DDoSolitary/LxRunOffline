@@ -16,7 +16,7 @@ const wstr msg_table[] = {
 	L"Couldn't set the extended attribute \"%1%\" of the file or directory \"%2%\".",
 	L"The extended attribute \"%1%\" of the file or directory \"%2%\" is invalid.",
 	L"Couldn't set the case sensitive attribute of the directory \"%1%\".",
-	L"The symlink file \"%2%\" has an invalid length %1%.",
+	L"The symlink file \"%1%\" has an invalid length %2%.",
 	L"Couldn't create the hard link from \"%1%\" to \"%2%\".",
 	L"Couldn't read from the file \"%1%\".",
 	L"Couldn't write to the file \"%1%\".",

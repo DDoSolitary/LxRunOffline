@@ -106,6 +106,12 @@ int wmain(int argc, wchar_t **argv) {
 			conf.configure_distro(new_name, config_all);
 			auto writer = wsl_v1_writer(dir);
 			wsl_v1_reader(get_distro_dir(name)).run(writer);
+		} else if (!wcscmp(argv[1], L"e") || !wcscmp(argv[1], L"export")) {
+			wstr file;
+			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to.");
+			parse_args();
+			auto writer = archive_writer(file);
+			wsl_v1_reader(get_distro_dir(name)).run(writer);
 		} else if (!wcscmp(argv[1], L"r") || !wcscmp(argv[1], L"run")) {
 			wstr cmd;
 			bool no_cwd;
@@ -239,6 +245,7 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    ur, unregister     Unregister a distribution but not delete the installation directory." << std::endl
 				<< L"    m, move            Move a distribution to a new directory." << std::endl
 				<< L"    d, duplicate       Duplicate an existing distribution in a new directory." << std::endl
+				<< L"    e, export          Export a distribution's filesystem to a .tar.gz file, which can be imported by the \"install\" command." << std::endl
 				<< L"    r, run             Run a command in a distribution." << std::endl
 				<< L"    di, get-dir        Get the installation directory of a distribution." << std::endl
 				<< L"    ge, get-env        Get the default environment variables of a distribution." << std::endl

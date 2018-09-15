@@ -41,11 +41,10 @@ bool check_archive(archive *pa, int stat) {
 	throw error_other(err_archive, { ss.str() });
 }
 
-unique_ptr_del<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool write) {
+unique_ptr_del<HANDLE> open_file(crwstr path, bool is_dir, bool create) {
 	auto h = CreateFile(
 		path.c_str(),
-		GENERIC_READ | (write ? GENERIC_WRITE : 0),
-		FILE_SHARE_READ, nullptr,
+		MAXIMUM_ALLOWED, FILE_SHARE_READ, nullptr,
 		create ? CREATE_NEW : OPEN_EXISTING,
 		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
 	);
@@ -146,7 +145,7 @@ void enum_directory(crwstr root_path, std::function<void(crwstr, enum_dir_type)>
 	enum_rec = [&](crwstr p) {
 		auto ap = root_path + p;
 		try {
-			set_cs_info(open_file(ap, true, false, true).get());
+			set_cs_info(open_file(ap, true, false).get());
 		} catch (err &e) {
 			if (e.msg_code == err_set_cs) e.msg_args.push_back(ap);
 			throw;
@@ -294,7 +293,7 @@ void wsl_writer::write_data(HANDLE hf, const char *buf, uint32_t size) const {
 
 void wsl_writer::write_new_file(crwstr linux_path, const file_attr &attr) {
 	set_path(linux_path);
-	hf_data = open_file(path, false, true, true);
+	hf_data = open_file(path, false, true);
 	write_attr(hf_data.get(), attr);
 }
 
@@ -310,7 +309,7 @@ void wsl_writer::write_directory(crwstr linux_path, const file_attr &attr) {
 		if (GetLastError() != ERROR_ALREADY_EXISTS) throw e;
 		log_warning(format_error(e));
 	}
-	auto hf = open_file(path, true, false, true);
+	auto hf = open_file(path, true, false);
 	write_attr(hf.get(), attr);
 	try {
 		set_cs_info(hf.get());
@@ -322,7 +321,7 @@ void wsl_writer::write_directory(crwstr linux_path, const file_attr &attr) {
 
 void wsl_writer::write_symlink(crwstr linux_path, const file_attr &attr, const char *target_path) {
 	set_path(linux_path);
-	auto hf = open_file(path, false, true, true);
+	auto hf = open_file(path, false, true);
 	write_attr(hf.get(), attr);
 	write_symlink_data(hf.get(), target_path);
 }
@@ -371,7 +370,7 @@ archive_reader::archive_reader(crwstr archive_path, crwstr root_path)
 void archive_reader::run(fs_writer &writer) {
 	auto rp = root_path;
 	append_slash(rp, L'/');
-	auto as = get_file_size(open_file(archive_path, false, false, false).get());
+	auto as = get_file_size(open_file(archive_path, false, false).get());
 	auto pa = unique_ptr_del<archive *>(archive_read_new(), &archive_read_free);
 	check_archive(pa.get(), archive_read_support_filter_all(pa.get()));
 	check_archive(pa.get(), archive_read_support_format_all(pa.get()));
@@ -436,7 +435,7 @@ void wsl_reader::run(fs_writer &writer) {
 		path.resize(blen);
 		path += rp;
 		auto lp = convert_path(rp);
-		auto hf = open_file(path, dir, false, false);
+		auto hf = open_file(path, dir, false);
 		if (!dir) {
 			BY_HANDLE_FILE_INFORMATION info;
 			if (!GetFileInformationByHandle(hf.get(), &info)) {

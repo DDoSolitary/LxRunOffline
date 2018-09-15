@@ -71,6 +71,19 @@ uint64_t get_file_size(HANDLE hf) {
 	return sz.QuadPart;
 }
 
+void grant_delete_child(HANDLE hf) {
+	PACL pa;
+	PSECURITY_DESCRIPTOR pdb;
+	if (GetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, &pa, nullptr, &pdb)) return;
+	auto pd = unique_ptr_del<PSECURITY_DESCRIPTOR>(pdb, &LocalFree);
+	EXPLICIT_ACCESS ea;
+	BuildExplicitAccessWithName(&ea, (wchar_t *)L"CURRENT_USER", FILE_DELETE_CHILD, GRANT_ACCESS, CONTAINER_INHERIT_ACE);
+	PACL pnab;
+	if (SetEntriesInAcl(1, &ea, pa, &pnab)) return;
+	auto pna = unique_ptr_del<PACL>(pnab, &LocalFree);
+	SetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, pna.get(), nullptr);
+}
+
 void set_cs_info(HANDLE hd) {
 #ifndef LXRUNOFFLINE_NO_WIN10
 	FILE_CASE_SENSITIVE_INFORMATION info;
@@ -78,6 +91,10 @@ void set_cs_info(HANDLE hd) {
 	if (!stat && (info.Flags & FILE_CS_FLAG_CASE_SENSITIVE_DIR)) return;
 	info.Flags = FILE_CS_FLAG_CASE_SENSITIVE_DIR;
 	stat = NtSetInformationFile(hd, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
+	if (stat == STATUS_ACCESS_DENIED) {
+		grant_delete_child(hd);
+		stat = NtSetInformationFile(hd, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
+	}
 	if (stat) throw error_nt(err_set_cs, {}, stat);
 #endif
 }

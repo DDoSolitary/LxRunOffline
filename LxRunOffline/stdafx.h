@@ -14,6 +14,7 @@
 #include <ntstatus.h>
 #include <comdef.h>
 #include <ShlObj.h>
+#include <AclAPI.h>
 
 #undef _CRT_SECURE_NO_WARNINGS
 

@@ -590,6 +590,7 @@ file_attr wsl_v2_reader::read_attr(HANDLE hf) const {
 		attr.uid = get_ea<uint32_t>(hf, "$LXUID");
 		attr.gid = get_ea<uint32_t>(hf, "$LXGID");
 		attr.mode = get_ea<uint32_t>(hf, "$LXMOD");
+		attr.size = get_file_size(hf);
 	} catch (err &e) {
 		e.msg_args.push_back(path);
 		throw;

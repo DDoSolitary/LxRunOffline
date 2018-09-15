@@ -13,8 +13,8 @@ A full-featured utility for managing *Windows Subsystem for Linux (WSL)*.
 - Register an existing installation directory. This enables you to install to a USB stick and use it on different computers.
 - Run arbitrary Linux commands in a specified installation.
 - Configure default user, environment variables and [various flags](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags).
-- Export configuration to an XML file and import from the file. (Coming soon.)
-- Export an installation to a tar file. (Coming soon.)
+- Export configuration to an XML file and import from the file.
+- Export an installation to a tar file.
 
 # Install
 

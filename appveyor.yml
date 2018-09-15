@@ -65,12 +65,11 @@ deploy:
     artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
-      - Fix some typos of error messages.
-      - Improve the progress bar.
-      - Set registry values to default ones on installation.
-      - Require write access of the source directory only when necessary on copying.
-      - Fix issues related to CRT linking.
-      - Add two new commands: `add-env`, `remove-env`.
+      - Add shorthands for commands.
+      - Improve default distro handling.
+      - Add new commands: export, export-config, import-config
+      - Update some error messages.
+      - Fix an permission issue when installing.
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

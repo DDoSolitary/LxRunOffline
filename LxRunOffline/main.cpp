@@ -231,9 +231,7 @@ int wmain(int argc, wchar_t **argv) {
 		}
 	} catch (const err &e) {
 		log_error(format_error(e));
-		if (e.msg_code == err_set_cs && e.err_code == HRESULT_FROM_NT(STATUS_ACCESS_DENIED)) {
-			log_warning(L"You may have run into a known bug of Windows (https://github.com/Microsoft/WSL/issues/3304). Please try giving \"Delete subfolders or files\" permission of the target directory to the current user or simply running this tool with admin privilege.");
-		} else if (e.msg_code == err_no_action || e.msg_code == err_invalid_action) {
+		if (e.msg_code == err_no_action || e.msg_code == err_invalid_action) {
 			std::wcerr
 				<< L"Supported actions are:" << std::endl
 				<< L"    l, list            List all installed distributions." << std::endl

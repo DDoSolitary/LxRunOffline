@@ -62,6 +62,15 @@ public:
 	using wsl_writer::wsl_writer;
 };
 
+class wsl_v2_writer : public wsl_writer {
+protected:
+	void set_path(crwstr);
+	void write_attr(HANDLE, const file_attr &) const;
+	void write_symlink_data(HANDLE, const char *) const;
+public:
+	using wsl_writer::wsl_writer;
+};
+
 class fs_reader {
 public:
 	virtual void run(fs_writer &writer) = 0;

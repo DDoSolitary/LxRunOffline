@@ -228,6 +228,15 @@ bool normalize_linux_path(wstr &path, crwstr root) {
 	return wp > 0;
 }
 
+void time_u2f(const unix_time &ut, LARGE_INTEGER &ft) {
+	ft.QuadPart = ut.sec * 10000000 + ut.nsec / 100 + 116444736000000000;
+}
+
+unix_time time_f2u(const LARGE_INTEGER &ft) {
+	auto t = ft.QuadPart - 116444736000000000;
+	return { (uint64_t)(t / 10000000),(uint32_t)(t % 10000000 * 100) };
+}
+
 archive_writer::archive_writer(crwstr path)
 	: pa(archive_write_new(), &archive_write_free), pe(archive_entry_new(), &archive_entry_free) {
 	check_archive(pa.get(), archive_write_set_format_gnutar(pa.get()));
@@ -362,6 +371,53 @@ void wsl_v1_writer::write_attr(HANDLE hf, const file_attr &attr) const {
 
 void wsl_v1_writer::write_symlink_data(HANDLE hf, const char *target_path) const {
 	write_data(hf, target_path, (uint32_t)strlen(target_path));
+}
+
+void wsl_v2_writer::set_path(crwstr linux_path) {
+	path.resize(blen);
+	for (auto c : linux_path) {
+		if (c == L'/') path += L'\\';
+		else if (is_special_char(c)) path += c | 0xf000;
+		else path += c;
+	}
+}
+
+void wsl_v2_writer::write_attr(HANDLE hf, const file_attr &attr) const {
+	try {
+		set_ea(hf, "$LXUID", attr.uid);
+		set_ea(hf, "$LXGID", attr.gid);
+		set_ea(hf, "$LXMOD", attr.mode);
+	} catch (err &e) {
+		e.msg_args.push_back(path);
+		throw;
+	}
+	FILE_BASIC_INFO info;
+	time_u2f(attr.at, info.LastAccessTime);
+	time_u2f(attr.mt, info.LastWriteTime);
+	time_u2f(attr.ct, info.ChangeTime);
+	info.CreationTime = info.ChangeTime;
+	info.FileAttributes = 0;
+	if (!SetFileInformationByHandle(hf, FileBasicInfo, &info, sizeof(FILE_BASIC_INFO))) {
+		throw error_win32_last(err_set_ft, { path });
+	}
+}
+
+void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target_path) const {
+	auto pl = strlen(target_path);
+	auto dl = (uint16_t)(pl + 4);
+	auto bl = (uint32_t)(UFIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer) + dl);
+	auto buf = std::make_unique<char[]>(bl);
+	auto pb = (REPARSE_DATA_BUFFER *)buf.get();
+	pb->ReparseTag = IO_REPARSE_TAG_LX_SYMLINK;
+	pb->ReparseDataLength = dl;
+	pb->Reserved = 0;
+	uint32_t v = 2;
+	memcpy(pb->DataBuffer, &v, 4);
+	memcpy(pb->DataBuffer + 4, target_path, pl);
+	DWORD cnt;
+	if (!DeviceIoControl(hf, FSCTL_SET_REPARSE_POINT, pb, bl, nullptr, 0, &cnt, nullptr)) {
+		throw error_win32_last(err_set_reparse, { path });
+	}
 }
 
 archive_reader::archive_reader(crwstr archive_path, crwstr root_path)

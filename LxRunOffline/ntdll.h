@@ -3,6 +3,7 @@
 #include "stdafx.h"
 
 #define FILE_CS_FLAG_CASE_SENSITIVE_DIR 0x00000001
+#define IO_REPARSE_TAG_LX_SYMLINK (0xA000001DL)
 #define FileCaseSensitiveInformation (FILE_INFORMATION_CLASS)71
 
 struct FILE_CASE_SENSITIVE_INFORMATION {
@@ -25,6 +26,12 @@ struct FILE_FULL_EA_INFORMATION {
 };
 #endif
 
+struct REPARSE_DATA_BUFFER {
+	ULONG  ReparseTag;
+	USHORT ReparseDataLength;
+	USHORT Reserved;
+	UCHAR  DataBuffer[1];
+};
 
 extern "C" {
 	NTSYSAPI NTSTATUS NTAPI NtQueryEaFile(

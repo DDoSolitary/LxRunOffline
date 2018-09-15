@@ -101,10 +101,10 @@ void set_cs_info(HANDLE hd) {
 template<typename T>
 T get_ea(HANDLE hf, const char *name) {
 	auto nl = (uint8_t)strlen(name);
-	auto gil = (uint32_t)(sizeof(FILE_GET_EA_INFORMATION) + nl);
+	auto gil = (uint32_t)(FIELD_OFFSET(FILE_GET_EA_INFORMATION, EaName) + nl + 1);
 	auto bgi = std::make_unique<char[]>(gil);
 	auto pgi = (FILE_GET_EA_INFORMATION *)bgi.get();
-	auto il = (uint32_t)(sizeof(FILE_FULL_EA_INFORMATION) + nl + sizeof(T));
+	auto il = (uint32_t)(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + nl + 1 + sizeof(T));
 	auto bi = std::make_unique<char[]>(il);
 	auto pi = (FILE_FULL_EA_INFORMATION *)bi.get();
 	pgi->NextEntryOffset = 0;
@@ -127,7 +127,7 @@ T get_ea(HANDLE hf, const char *name) {
 template<typename T>
 void set_ea(HANDLE hf, const char *name, const T &data) {
 	auto nl = (uint8_t)strlen(name);
-	auto il = (uint32_t)(sizeof(FILE_FULL_EA_INFORMATION) + nl + sizeof(T));
+	auto il = (uint32_t)(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + nl + 1 + sizeof(T));
 	auto bi = std::make_unique<char[]>(il);
 	auto pi = (FILE_FULL_EA_INFORMATION *)bi.get();
 	pi->NextEntryOffset = 0;
@@ -405,7 +405,7 @@ void wsl_v2_writer::write_attr(HANDLE hf, const file_attr &attr) const {
 void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target_path) const {
 	auto pl = strlen(target_path);
 	auto dl = (uint16_t)(pl + 4);
-	auto bl = (uint32_t)(UFIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer) + dl);
+	auto bl = (uint32_t)(FIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer) + dl);
 	auto buf = std::make_unique<char[]>(bl);
 	auto pb = (REPARSE_DATA_BUFFER *)buf.get();
 	pb->ReparseTag = IO_REPARSE_TAG_LX_SYMLINK;

@@ -104,5 +104,14 @@ public:
 	using wsl_reader::wsl_reader;
 };
 
+class wsl_v2_reader : public wsl_reader {
+protected:
+	wstr convert_path(crwstr) const;
+	file_attr read_attr(HANDLE) const;
+	std::unique_ptr<char[]> read_symlink_data(HANDLE) const;
+public:
+	using wsl_reader::wsl_reader;
+};
+
 bool move_directory(crwstr source_path, crwstr target_path);
 void delete_directory(crwstr path);

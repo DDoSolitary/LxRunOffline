@@ -46,7 +46,7 @@ unique_ptr_del<HANDLE> open_file(crwstr path, bool is_dir, bool create) {
 		path.c_str(),
 		MAXIMUM_ALLOWED, FILE_SHARE_READ, nullptr,
 		create ? CREATE_NEW : OPEN_EXISTING,
-		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : 0, 0
+		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : FILE_FLAG_OPEN_REPARSE_POINT, 0
 	);
 	if (h == INVALID_HANDLE_VALUE) {
 		if (is_dir) throw error_win32_last(err_open_dir, { path });
@@ -232,9 +232,10 @@ void time_u2f(const unix_time &ut, LARGE_INTEGER &ft) {
 	ft.QuadPart = ut.sec * 10000000 + ut.nsec / 100 + 116444736000000000;
 }
 
-unix_time time_f2u(const LARGE_INTEGER &ft) {
+void time_f2u(const LARGE_INTEGER &ft, unix_time &ut) {
 	auto t = ft.QuadPart - 116444736000000000;
-	return { (uint64_t)(t / 10000000),(uint32_t)(t % 10000000 * 100) };
+	ut.sec = (uint64_t)(t / 10000000);
+	ut.nsec = (uint32_t)(t % 10000000 * 100);
 }
 
 archive_writer::archive_writer(crwstr path)
@@ -571,6 +572,52 @@ std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(HANDLE hf) const {
 	}
 	buf.get()[sz] = 0;
 	return buf;
+}
+
+wstr wsl_v2_reader::convert_path(crwstr path) const {
+	wstr s;
+	for (auto c : path) {
+		if (c == L'\\') s += L'/';
+		else if ((c & 0xf000) == 0xf000) s += c & ~0xf000;
+		else s += c;
+	}
+	return s;
+}
+
+file_attr wsl_v2_reader::read_attr(HANDLE hf) const {
+	file_attr attr;
+	try {
+		attr.uid = get_ea<uint32_t>(hf, "$LXUID");
+		attr.gid = get_ea<uint32_t>(hf, "$LXGID");
+		attr.mode = get_ea<uint32_t>(hf, "$LXMOD");
+	} catch (err &e) {
+		e.msg_args.push_back(path);
+		throw;
+	}
+	FILE_BASIC_INFO info;
+	if (!GetFileInformationByHandleEx(hf, FileBasicInfo, &info, sizeof(info))) {
+		throw error_win32_last(err_get_ft, { path });
+	}
+	time_f2u(info.LastAccessTime, attr.at);
+	time_f2u(info.LastWriteTime, attr.mt);
+	time_f2u(info.ChangeTime, attr.ct);
+	return attr;
+}
+
+std::unique_ptr<char[]> wsl_v2_reader::read_symlink_data(HANDLE hf) const {
+	char buf[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+	DWORD cnt;
+	if (!DeviceIoControl(hf, FSCTL_GET_REPARSE_POINT, nullptr, 0, buf, sizeof(buf), &cnt, nullptr)) {
+		if (GetLastError() == ERROR_NOT_A_REPARSE_POINT) return nullptr;
+		throw error_win32_last(err_get_reparse, { path });
+	}
+	auto pb = (REPARSE_DATA_BUFFER *)&buf;
+	if (pb->ReparseTag != IO_REPARSE_TAG_LX_SYMLINK) return nullptr;
+	auto pl = pb->ReparseDataLength - 4;
+	auto s = std::make_unique<char[]>(pl + 1);
+	memcpy(s.get(), pb->DataBuffer + 4, pl);
+	s.get()[pl] = 0;
+	return s;
 }
 
 bool move_directory(crwstr source_path, crwstr target_path) {

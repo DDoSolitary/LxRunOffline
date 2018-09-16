@@ -570,7 +570,7 @@ std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(HANDLE hf) const {
 			throw error_win32_last(err_read_file, { path });
 		}
 	}
-	buf.get()[sz] = 0;
+	buf[sz] = 0;
 	return buf;
 }
 
@@ -617,7 +617,7 @@ std::unique_ptr<char[]> wsl_v2_reader::read_symlink_data(HANDLE hf) const {
 	auto pl = pb->ReparseDataLength - 4;
 	auto s = std::make_unique<char[]>(pl + 1);
 	memcpy(s.get(), pb->DataBuffer + 4, pl);
-	s.get()[pl] = 0;
+	s[pl] = 0;
 	return s;
 }
 

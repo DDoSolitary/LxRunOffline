@@ -88,8 +88,9 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			auto sp = get_distro_dir(name);
 			if (!move_directory(sp, dir)) {
-				auto writer = wsl_v1_writer(dir);
-				select_wsl_reader(get_distro_version(name), sp)->run(writer);
+				auto ver = get_distro_version(name);
+				auto writer = select_wsl_writer(ver, dir);
+				select_wsl_reader(ver, sp)->run(*writer);
 			}
 			set_distro_dir(name, dir);
 		} else if (!wcscmp(argv[1], L"d") || !wcscmp(argv[1], L"duplicate")) {

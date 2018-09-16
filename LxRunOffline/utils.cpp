@@ -2,7 +2,7 @@
 #include "error.h"
 #include "utils.h"
 
-uint32_t win_build = []() {
+const uint32_t win_build = []() {
 	OSVERSIONINFO ver;
 	ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 #pragma warning(disable:4996)

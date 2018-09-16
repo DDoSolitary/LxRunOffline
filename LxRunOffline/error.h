@@ -38,6 +38,7 @@ enum err_msg {
 	err_convert_guid,
 	err_distro_not_found,
 	err_distro_exists,
+	err_no_default_distro,
 	err_no_action,
 	err_invalid_action,
 	err_no_wslapi,
@@ -46,8 +47,8 @@ enum err_msg {
 	err_invalid_env,
 	err_env_exists,
 	err_env_not_found,
-	err_no_default_distro,
-	err_config_file
+	err_config_file,
+	err_fs_version
 };
 
 struct err {

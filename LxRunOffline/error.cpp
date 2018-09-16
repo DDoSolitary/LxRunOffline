@@ -39,6 +39,7 @@ const wstr msg_table[] = {
 	L"Couldn't convert a GUID to a string.",
 	L"Couldn't find the distro \"%1%\".",
 	L"The distro \"%1%\" already exists.",
+	L"Couldn't find a valid default distribution.",
 	L"No action is specified.",
 	L"The action \"%1%\" is not recognized.",
 	L"Couldn't load wslapi.dll. Please make sure that WSL has been installed.",
@@ -47,8 +48,8 @@ const wstr msg_table[] = {
 	L"The environment variable \"%1%\" is invalid.",
 	L"The environment variable \"%1%\" already exists.",
 	L"Environment variable \"%1%\" not found.",
-	L"Couldn't find a valid default distribution.",
-	L"Error occurred while processing the config file: %1%"
+	L"Error occurred while processing the config file: %1%",
+	L"Filesystem version %1% is not recognized."
 };
 
 err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {

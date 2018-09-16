@@ -89,7 +89,7 @@ int wmain(int argc, wchar_t **argv) {
 			auto sp = get_distro_dir(name);
 			if (!move_directory(sp, dir)) {
 				auto writer = wsl_v1_writer(dir);
-				wsl_v1_reader(sp).run(writer);
+				select_wsl_reader(get_distro_version(name), sp)->run(writer);
 			}
 			set_distro_dir(name, dir);
 		} else if (!wcscmp(argv[1], L"d") || !wcscmp(argv[1], L"duplicate")) {
@@ -105,13 +105,13 @@ int wmain(int argc, wchar_t **argv) {
 			register_distro(new_name, dir);
 			conf.configure_distro(new_name, config_all);
 			auto writer = wsl_v1_writer(dir);
-			wsl_v1_reader(get_distro_dir(name)).run(writer);
+			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
 		} else if (!wcscmp(argv[1], L"e") || !wcscmp(argv[1], L"export")) {
 			wstr file;
 			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to.");
 			parse_args();
 			auto writer = archive_writer(file);
-			wsl_v1_reader(get_distro_dir(name)).run(writer);
+			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
 		} else if (!wcscmp(argv[1], L"r") || !wcscmp(argv[1], L"run")) {
 			wstr cmd;
 			bool no_cwd;

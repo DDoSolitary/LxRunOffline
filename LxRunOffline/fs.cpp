@@ -355,7 +355,7 @@ void wsl_v1_writer::set_path(crwstr linux_path) {
 	}
 }
 
-void wsl_v1_writer::write_attr(HANDLE hf, const file_attr &attr) const {
+void wsl_v1_writer::write_attr(HANDLE hf, const file_attr &attr) {
 	try {
 		set_ea(hf, "LXATTRB", lxattrb{
 			0,1,
@@ -374,16 +374,7 @@ void wsl_v1_writer::write_symlink_data(HANDLE hf, const char *target_path) const
 	write_data(hf, target_path, (uint32_t)strlen(target_path));
 }
 
-void wsl_v2_writer::set_path(crwstr linux_path) {
-	path.resize(blen);
-	for (auto c : linux_path) {
-		if (c == L'/') path += L'\\';
-		else if (is_special_char(c)) path += c | 0xf000;
-		else path += c;
-	}
-}
-
-void wsl_v2_writer::write_attr(HANDLE hf, const file_attr &attr) const {
+void wsl_v2_writer::real_write_attr(HANDLE hf, const file_attr &attr, crwstr path) const {
 	try {
 		set_ea(hf, "$LXUID", attr.uid);
 		set_ea(hf, "$LXGID", attr.gid);
@@ -403,6 +394,27 @@ void wsl_v2_writer::write_attr(HANDLE hf, const file_attr &attr) const {
 	}
 }
 
+void wsl_v2_writer::set_path(crwstr linux_path) {
+	path.resize(blen);
+	for (auto c : linux_path) {
+		if (c == L'/') path += L'\\';
+		else if (is_special_char(c)) path += c | 0xf000;
+		else path += c;
+	}
+}
+
+void wsl_v2_writer::write_attr(HANDLE hf, const file_attr &attr) {
+	if ((attr.mode & AE_IFDIR) == AE_IFDIR) {
+		while (!dir_attr.empty()) {
+			auto p = dir_attr.top();
+			if (!path.compare(0, p.first.size(), p.first)) break;
+			dir_attr.pop();
+			real_write_attr(open_file(p.first, true, false).get(), p.second, p.first);
+		}
+		dir_attr.push(std::make_pair(path, attr));
+	} else real_write_attr(hf, attr, path);
+}
+
 void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target_path) const {
 	auto pl = strlen(target_path);
 	auto dl = (uint16_t)(pl + 4);
@@ -418,6 +430,14 @@ void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target_path) const
 	DWORD cnt;
 	if (!DeviceIoControl(hf, FSCTL_SET_REPARSE_POINT, pb, bl, nullptr, 0, &cnt, nullptr)) {
 		throw error_win32_last(err_set_reparse, { path });
+	}
+}
+
+wsl_v2_writer::~wsl_v2_writer() {
+	while (!dir_attr.empty()) {
+		auto p = dir_attr.top();
+		dir_attr.pop();
+		real_write_attr(open_file(p.first, true, false).get(), p.second, p.first);
 	}
 }
 

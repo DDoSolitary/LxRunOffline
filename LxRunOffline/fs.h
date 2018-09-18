@@ -42,10 +42,11 @@ protected:
 	unique_ptr_del<HANDLE> hf_data;
 	void write_data(HANDLE, const char *, uint32_t) const;
 	virtual void set_path(crwstr) = 0;
-	virtual void write_attr(HANDLE, const file_attr &) const = 0;
+	virtual void write_attr(HANDLE, const file_attr &) = 0;
 	virtual void write_symlink_data(HANDLE, const char *) const = 0;
 public:
 	wsl_writer(crwstr);
+	virtual ~wsl_writer() = default;
 	void write_new_file(crwstr, const file_attr &);
 	void write_file_data(const char *, uint32_t);
 	void write_directory(crwstr, const file_attr &);
@@ -56,19 +57,22 @@ public:
 class wsl_v1_writer : public wsl_writer {
 protected:
 	void set_path(crwstr);
-	void write_attr(HANDLE, const file_attr &) const;
+	void write_attr(HANDLE, const file_attr &);
 	void write_symlink_data(HANDLE, const char *) const;
 public:
 	using wsl_writer::wsl_writer;
 };
 
 class wsl_v2_writer : public wsl_writer {
+	std::stack<std::pair<wstr, file_attr>> dir_attr;
+	void real_write_attr(HANDLE, const file_attr &, crwstr) const;
 protected:
 	void set_path(crwstr);
-	void write_attr(HANDLE, const file_attr &) const;
+	void write_attr(HANDLE, const file_attr &);
 	void write_symlink_data(HANDLE, const char *) const;
 public:
 	using wsl_writer::wsl_writer;
+	~wsl_v2_writer();
 };
 
 class fs_reader {

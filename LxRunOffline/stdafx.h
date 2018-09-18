@@ -26,6 +26,7 @@
 #include <memory>
 #include <numeric>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <type_traits>
 #include <vector>

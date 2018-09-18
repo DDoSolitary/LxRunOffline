@@ -309,7 +309,7 @@ void wsl_writer::write_new_file(crwstr linux_path, const file_attr &attr) {
 
 void wsl_writer::write_file_data(const char *buf, uint32_t size) {
 	if (size) write_data(hf_data.get(), buf, size);
-	else hf_data.reset(nullptr);
+	else hf_data.reset();
 }
 
 void wsl_writer::write_directory(crwstr linux_path, const file_attr &attr) {

@@ -136,6 +136,9 @@ int wmain(int argc, wchar_t **argv) {
 		} else if (!wcscmp(argv[1], L"di") || !wcscmp(argv[1], L"get-dir")) {
 			parse_args();
 			std::wcout << get_distro_dir(name);
+		} else if (!wcscmp(argv[1], L"gv") || !wcscmp(argv[1], L"get-version")) {
+			parse_args();
+			std::wcout << get_distro_version(name);
 		} else if (!wcscmp(argv[1], L"ge") || !wcscmp(argv[1], L"get-env")) {
 			parse_args();
 			reg_config conf;
@@ -252,6 +255,7 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    e, export          Export a distribution's filesystem to a .tar.gz file, which can be imported by the \"install\" command." << std::endl
 				<< L"    r, run             Run a command in a distribution." << std::endl
 				<< L"    di, get-dir        Get the installation directory of a distribution." << std::endl
+				<< L"    gv, get-version    Get the filesystem version of a distribution." << std::endl
 				<< L"    ge, get-env        Get the default environment variables of a distribution." << std::endl
 				<< L"    se, set-env        Set the default environment variables of a distribution." << std::endl
 				<< L"    ae, add-env        Add to the default environment variables of a distribution." << std::endl

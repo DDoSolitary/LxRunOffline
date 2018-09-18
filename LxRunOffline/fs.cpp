@@ -621,6 +621,16 @@ std::unique_ptr<char[]> wsl_v2_reader::read_symlink_data(HANDLE hf) const {
 	return s;
 }
 
+uint32_t detect_version(crwstr path) {
+	try {
+		get_ea<uint32_t>(open_file(normalize_win_path(path) + L"rootfs", true, false).get(), "$LXUID");
+	} catch (const err &e) {
+		if (e.msg_code == err_invalid_ea) return 1;
+		throw;
+	}
+	return 2;
+}
+
 std::unique_ptr<wsl_writer> select_wsl_writer(uint32_t version, crwstr path) {
 	if (version == 1) return std::unique_ptr<wsl_writer>(new wsl_v1_writer(path));
 	else if (version == 2) return std::unique_ptr<wsl_writer>(new wsl_v2_writer(path));

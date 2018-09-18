@@ -168,7 +168,7 @@ void set_default_distro(crwstr name) {
 	set_value(reg_base_path, vn_default_distro, get_distro_id(name));
 }
 
-void register_distro(crwstr name, crwstr path) {
+void register_distro(crwstr name, crwstr path, uint32_t version) {
 	auto l = list_distros();
 	if (count(l.begin(), l.end(), name)) {
 		throw error_other(err_distro_exists, { name });
@@ -179,7 +179,7 @@ void register_distro(crwstr name, crwstr path) {
 	set_value(p, vn_distro_name, name);
 	set_value(p, vn_dir, get_full_path(path));
 	set_value(p, vn_state, (uint32_t)1);
-	set_value(p, vn_version, (uint32_t)1);
+	set_value(p, vn_version, version);
 
 	try {
 		get_default_distro();
@@ -233,10 +233,6 @@ void set_distro_dir(crwstr name, crwstr value) {
 
 uint32_t get_distro_version(crwstr name) {
 	return get_value<uint32_t>(get_distro_key(name), vn_version);
-}
-
-void set_distro_version(crwstr name, uint32_t value) {
-	set_value(get_distro_key(name), vn_version, value);
 }
 
 reg_config::reg_config() {

@@ -4,12 +4,11 @@
 std::vector<wstr> list_distros();
 wstr get_default_distro();
 void set_default_distro(crwstr name);
-void register_distro(crwstr name, crwstr path);
+void register_distro(crwstr name, crwstr path, uint32_t version);
 void unregister_distro(crwstr name);
 wstr get_distro_dir(crwstr name);
 void set_distro_dir(crwstr name, crwstr value);
 uint32_t get_distro_version(crwstr name);
-void set_distro_version(crwstr name, uint32_t value);
 
 enum config_mask {
 	config_env = 1,

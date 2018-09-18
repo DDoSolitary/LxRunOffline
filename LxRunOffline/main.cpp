@@ -43,20 +43,22 @@ int wmain(int argc, wchar_t **argv) {
 			set_default_distro(name);
 		} else if (!wcscmp(argv[1], L"i") || !wcscmp(argv[1], L"install")) {
 			wstr dir, file, root, conf_path;
+			uint32_t ver;
 			bool shortcut;
 			desc.add_options()
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to install the distribution into.")
 				(",f", po::wvalue<wstr>(&file)->required(), "The tar file containing the root filesystem of the distribution to be installed.")
 				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
+				(",v", po::wvalue<uint32_t>(&ver)->default_value(win_build >= 17760 ? 2 : 1), "The version of filesystem to use, latest available one if not specified.")
 				(",s", po::bool_switch(&shortcut), "Create a shortcut for this distribution on Desktop.");
 			parse_args();
 			reg_config conf;
 			if (!conf_path.empty()) conf.load_file(conf_path);
-			register_distro(name, dir);
+			register_distro(name, dir, ver);
 			conf.configure_distro(name, config_all);
-			auto writer = wsl_v1_writer(dir);
-			archive_reader(file, root).run(writer);
+			auto writer = select_wsl_writer(ver, dir);
+			archive_reader(file, root).run(*writer);
 			if (shortcut) {
 				wchar_t *s;
 				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
@@ -77,7 +79,7 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			reg_config conf;
 			if (!conf_path.empty()) conf.load_file(conf_path);
-			register_distro(name, dir);
+			register_distro(name, dir, detect_version(dir));
 			conf.configure_distro(name, config_all);
 		} else if (!wcscmp(argv[1], L"ur") || !wcscmp(argv[1], L"unregister")) {
 			parse_args();
@@ -95,18 +97,21 @@ int wmain(int argc, wchar_t **argv) {
 			set_distro_dir(name, dir);
 		} else if (!wcscmp(argv[1], L"d") || !wcscmp(argv[1], L"duplicate")) {
 			wstr new_name, dir, conf_path;
+			uint32_t ver;
 			desc.add_options()
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to copy the distribution to.")
 				(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.")
-				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.");
+				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
+				(",v", po::wvalue<uint32_t>(&ver)->default_value(0), "The version of filesystem to use, same as source if not specified.");
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_all);
 			if (!conf_path.empty()) conf.load_file(conf_path);
-			register_distro(new_name, dir);
+			register_distro(new_name, dir, ver);
 			conf.configure_distro(new_name, config_all);
-			auto writer = wsl_v1_writer(dir);
-			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
+			auto ov = get_distro_version(name);
+			auto writer = select_wsl_writer(ver ? ver : ov, dir);
+			select_wsl_reader(ov, get_distro_dir(name))->run(*writer);
 		} else if (!wcscmp(argv[1], L"e") || !wcscmp(argv[1], L"export")) {
 			wstr file;
 			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to.");

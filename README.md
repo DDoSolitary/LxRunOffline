@@ -5,6 +5,16 @@
 
 A full-featured utility for managing *Windows Subsystem for Linux (WSL)*.
 
+# Donation
+
+It would be greatly appreciated if you could make a donation to cover the cost of my dev machine hosted on Vultr.
+
+PayPal [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.me/ddosolitary)
+
+Alipay
+
+![Alipay](https://image.ibb.co/kkxV99/1537608529099_20180922174914623.jpg)
+
 # Features
 
 - Install any Linux distro to any directory on your computer.

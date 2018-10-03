@@ -10,6 +10,11 @@ cache:
 configuration: Release
 before_build:
   - ps: $version = (git describe --tags).Substring(1)
+  - ps: |
+      if ($Env:APPVEYOR_REPO_TAG -ne 'true' -and -not ($version -match '-')) {
+          git tag -d "v$version"
+          $version = (git describe --tags).Substring(1)
+      }
   - ps: Update-AppveyorBuild -Version "v$version"
   - ps: |
       if ($Env:USE_MSYS -ne 'true') {

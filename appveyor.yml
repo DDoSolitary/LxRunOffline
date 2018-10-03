@@ -9,8 +9,8 @@ cache:
   - C:\tools\vcpkg\installed
 configuration: Release
 before_build:
-  - ps: $Env:VERSION=(git describe --tags)
-  - ps: Update-AppveyorBuild -Version $Env:VERSION
+  - ps: $version = (git describe --tags).Substring(1)
+  - ps: Update-AppveyorBuild -Version "v$version"
   - ps: |
       if ($Env:USE_MSYS -ne 'true') {
           pushd C:\tools\vcpkg
@@ -27,13 +27,12 @@ before_build:
 build_script:
   - ps: |
       if ($Env:USE_MSYS -ne 'true') {
-          $fileVersion = $fileVersionStr = $Env:VERSION.Substring(1)
           if ($Env:APPVEYOR_REPO_TAG -ne 'true') {
-              $fileVersion = $fileVersion.Substring(0, $fileVersion.LastIndexOf('-')).Replace('.', ',').Replace('-', ',')
+              $fileVersion = $version.Substring(0, $version.LastIndexOf('-')).Replace('.', ',').Replace('-', ',')
           } else {
-              $fileVersion = $fileVersion.Replace('.', ',') + ',0'
+              $fileVersion = $version.Replace('.', ',') + ',0'
           }
-          msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"$Env:VERSION\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$fileVersionStr\\\`"`"
+          msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"v$version\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$version\\\`"`"
       } else {
           C:\msys64\usr\bin\bash -l -c "cd /c/projects/lxrunoffline && make"
       }
@@ -41,14 +40,13 @@ after_build:
   - ps: |
       if ($Env:USE_MSYS -ne 'true') {
           $project = $Env:APPVEYOR_PROJECT_NAME
-          $name = "$project-$Env:VERSION.zip"
+          $name = "$project-v$version.zip"
           $dir = ".\x64\$Env:CONFIGURATION"
           $sys = "$Env:WINDIR\System32"
           7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY' "$sys\msvcp140.dll" "$sys\vcruntime140.dll"
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash
           $hash | Out-File sha256.txt
           if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
-              $version = $Env:VERSION.Substring(1)
               cd choco
               (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
               (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii

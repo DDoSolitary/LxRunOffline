@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 
 #define WIN32_NO_STATUS
 #include <Windows.h>

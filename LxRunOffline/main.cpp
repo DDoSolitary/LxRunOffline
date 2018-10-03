@@ -238,6 +238,10 @@ int wmain(int argc, wchar_t **argv) {
 		} else {
 			throw error_other(err_invalid_action, { argv[1] });
 		}
+
+		if (clock() % 10 < 3) {
+			log_warning(L"Love this tool? Would you like to make a donation: https://github.com/DDoSolitary/LxRunOffline/blob/master/README.md#donation");
+		}
 	} catch (const err &e) {
 		log_error(format_error(e));
 		if (e.msg_code == err_no_action || e.msg_code == err_invalid_action) {

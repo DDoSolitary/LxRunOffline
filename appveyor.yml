@@ -68,11 +68,9 @@ deploy:
     artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
-      - Add shorthands for commands.
-      - Improve default distro handling.
-      - Add new commands: export, export-config, import-config
-      - Update some error messages.
-      - Fix an permission issue when installing.
+      - Support the new filesystem indroduced in the Win10 October Update.
+      - Add new command `get-version`.
+      - Display donation requests randomly.
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

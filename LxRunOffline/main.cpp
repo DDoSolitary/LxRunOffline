@@ -50,7 +50,7 @@ int wmain(int argc, wchar_t **argv) {
 				(",f", po::wvalue<wstr>(&file)->required(), "The tar file containing the root filesystem of the distribution to be installed.")
 				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
-				(",v", po::wvalue<uint32_t>(&ver)->default_value(win_build >= 17760 ? 2 : 1), "The version of filesystem to use, latest available one if not specified.")
+				(",v", po::wvalue<uint32_t>(&ver)->default_value(win_build >= 17763 ? 2 : 1), "The version of filesystem to use, latest available one if not specified.")
 				(",s", po::bool_switch(&shortcut), "Create a shortcut for this distribution on Desktop.");
 			parse_args();
 			reg_config conf;

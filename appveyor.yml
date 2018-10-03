@@ -26,8 +26,8 @@ before_build:
           vcpkg install libarchive boost-program-options boost-format tinyxml2
           vcpkg upgrade --no-dry-run
       } else {
-          C:\msys64\usr\bin\bash -l -c "pacman -Sy --needed --noconfirm pacman 2>&1"
-          C:\msys64\usr\bin\bash -l -c "pacman -S --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2 2>&1"
+          C:\msys64\usr\bin\bash -l -c 'pacman -Sy --needed --noconfirm pacman 2>&1'
+          C:\msys64\usr\bin\bash -l -c 'pacman -S --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2 2>&1'
       }
 build_script:
   - ps: |
@@ -39,7 +39,7 @@ build_script:
           }
           msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"v$version\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$version\\\`"`"
       } else {
-          C:\msys64\usr\bin\bash -l -c "cd /c/projects/lxrunoffline && make"
+          C:\msys64\usr\bin\bash -l -c 'cd /c/projects/lxrunoffline && make'
       }
 after_build:
   - ps: |

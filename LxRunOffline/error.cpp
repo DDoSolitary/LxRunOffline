@@ -26,7 +26,7 @@ const wstr msg_table[] = {
 	L"Couldn't write to the file \"%1%\".",
 	L"Couldn't recognize the path \"%1%\".",
 	L"Couldn't convert the encoding of a string.",
-	L"Error occurred while processing the archive.",
+	L"Error occurred while processing the archive: %1%",
 	L"Couldn't get Windows version information. \"%1%\"",
 	L"Windows 10 v%1% (v10.0.%2%) or later is required. Please upgrade your system.",
 	L"Couldn't open or create the registry key \"%1%\".",

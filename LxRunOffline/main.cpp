@@ -120,7 +120,7 @@ int wmain(int argc, wchar_t **argv) {
 			wstr cmd;
 			bool no_cwd;
 			desc.add_options()
-				(",c", po::wvalue<wstr>(&cmd)->default_value(L"/bin/bash --login", "/bin/bash --login"), "The command to run.")
+				(",c", po::wvalue<wstr>(&cmd), "The command to run. Launch default shell if not specified.")
 				(",w", po::bool_switch(&no_cwd), "Don't use the working directory in Windows for the Linux process.");
 			parse_args();
 			auto hw = LoadLibraryEx(L"wslapi.dll", 0, LOAD_LIBRARY_SEARCH_SYSTEM32);
@@ -128,7 +128,7 @@ int wmain(int argc, wchar_t **argv) {
 			auto launch = (HRESULT(__stdcall *)(PCWSTR, PCWSTR, BOOL, DWORD *))GetProcAddress(hw, "WslLaunchInteractive");
 			if (!launch) throw error_win32_last(err_no_wslapi, {});
 			DWORD code;
-			auto hr = launch(name.c_str(), cmd.c_str(), !no_cwd, &code);
+			auto hr = launch(name.c_str(), cmd.empty() ? nullptr : cmd.c_str(), !no_cwd, &code);
 			if (FAILED(hr)) throw error_hresult(err_launch_distro, { name }, hr);
 			return code;
 		} else if (!wcscmp(argv[1], L"di") || !wcscmp(argv[1], L"get-dir")) {

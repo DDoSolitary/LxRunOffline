@@ -21,11 +21,9 @@ int wmain(int argc, wchar_t **argv) {
 	};
 
 	try {
-#ifndef LXRUNOFFLINE_NO_WIN10
 		if (win_build < 17134) {
 			throw error_other(err_version_old, { L"1803",L"17134" });
 		}
-#endif
 		if (argc < 2) {
 			throw error_other(err_no_action, {});
 #ifdef LXRUNOFFLINE_VERSION

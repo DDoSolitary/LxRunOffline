@@ -16,6 +16,8 @@
 #include <comdef.h>
 #include <ShlObj.h>
 #include <AclAPI.h>
+#include <io.h>
+#include <fcntl.h>
 
 #undef _CRT_SECURE_NO_WARNINGS
 

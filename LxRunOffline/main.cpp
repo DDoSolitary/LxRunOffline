@@ -11,6 +11,9 @@ namespace po = boost::program_options;
 extern "C"
 #endif
 int wmain(int argc, wchar_t **argv) {
+	_setmode(_fileno(stdout), _O_U16TEXT);
+	_setmode(_fileno(stderr), _O_U16TEXT);
+
 	wstr name;
 	po::options_description desc("Options");
 	desc.add_options()(",n", po::wvalue<wstr>(&name)->required(), "Name of the distribution");

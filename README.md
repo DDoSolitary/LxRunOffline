@@ -9,7 +9,7 @@ A full-featured utility for managing *Windows Subsystem for Linux (WSL)*.
 
 It would be greatly appreciated if you could make a donation to cover the cost of my dev machine hosted on Vultr.
 
-PayPal [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.me/ddosolitary)
+PayPal [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.me/ddosolitaryorz)
 
 Alipay
 

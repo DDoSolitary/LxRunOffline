@@ -67,6 +67,7 @@ int wmain(int argc, wchar_t **argv) {
 				auto dp = unique_ptr_del<wchar_t *>(s, &CoTaskMemFree);
 				create_shortcut(name, dp.get() + (L'\\' + name + L".lnk"), L"");
 			}
+			log_warning(L"Love this tool? Would you like to make a donation: https://github.com/DDoSolitary/LxRunOffline/blob/master/README.md#donation");
 		} else if (!wcscmp(argv[1], L"ui") || !wcscmp(argv[1], L"uninstall")) {
 			parse_args();
 			auto dir = get_distro_dir(name);
@@ -238,10 +239,6 @@ int wmain(int argc, wchar_t **argv) {
 			conf.configure_distro(name, config_all);
 		} else {
 			throw error_other(err_invalid_action, { argv[1] });
-		}
-
-		if (clock() % 10 < 3) {
-			log_warning(L"Love this tool? Would you like to make a donation: https://github.com/DDoSolitary/LxRunOffline/blob/master/README.md#donation");
 		}
 	} catch (const err &e) {
 		log_error(format_error(e));

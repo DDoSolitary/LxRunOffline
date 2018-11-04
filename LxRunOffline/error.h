@@ -38,6 +38,7 @@ enum err_msg {
 	err_convert_guid,
 	err_distro_not_found,
 	err_distro_exists,
+	err_distro_running,
 	err_no_default_distro,
 	err_no_action,
 	err_invalid_action,

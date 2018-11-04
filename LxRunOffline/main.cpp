@@ -7,6 +7,13 @@
 
 namespace po = boost::program_options;
 
+void check_running(crwstr name) {
+	auto p = get_distro_dir(name) + L"\\temp";
+	if (PathIsDirectory(p.c_str()) && !PathIsDirectoryEmpty(p.c_str())) {
+		throw error_other(err_distro_running, { name });
+	}
+}
+
 #ifdef __MINGW32__
 extern "C"
 #endif
@@ -70,6 +77,7 @@ int wmain(int argc, wchar_t **argv) {
 			log_warning(L"Love this tool? Would you like to make a donation: https://github.com/DDoSolitary/LxRunOffline/blob/master/README.md#donation");
 		} else if (!wcscmp(argv[1], L"ui") || !wcscmp(argv[1], L"uninstall")) {
 			parse_args();
+			check_running(name);
 			auto dir = get_distro_dir(name);
 			unregister_distro(name);
 			delete_directory(dir);
@@ -90,6 +98,7 @@ int wmain(int argc, wchar_t **argv) {
 			wstr dir;
 			desc.add_options()(",d", po::wvalue<wstr>(&dir)->required(), "The directory to move the distribution to.");
 			parse_args();
+			check_running(name);
 			auto sp = get_distro_dir(name);
 			if (!move_directory(sp, dir)) {
 				auto ver = get_distro_version(name);

@@ -1,5 +1,4 @@
 ﻿#pragma once
-#pragma comment(lib, "Shlwapi.lib")
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -18,7 +17,6 @@
 #include <AclAPI.h>
 #include <io.h>
 #include <fcntl.h>
-#include <Shlwapi.h>
 
 #undef _CRT_SECURE_NO_WARNINGS
 

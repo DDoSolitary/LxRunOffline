@@ -11,7 +11,7 @@ void check_running(crwstr name) {
 	auto p = get_distro_dir(name) + L"\\rootfs\\init";
 	auto h = CreateFile(p.c_str(), DELETE, 0, nullptr, OPEN_ALWAYS, 0, nullptr);
 	if (GetLastError() == ERROR_SHARING_VIOLATION) throw error_other(err_distro_running, { name });
-	if (h) CloseHandle(h);
+	if (h != INVALID_HANDLE_VALUE) CloseHandle(h);
 }
 
 #ifdef __MINGW32__

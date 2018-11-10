@@ -118,10 +118,11 @@ int wmain(int argc, wchar_t **argv) {
 			reg_config conf;
 			conf.load_distro(name, config_all);
 			if (!conf_path.empty()) conf.load_file(conf_path);
-			register_distro(new_name, dir, ver);
-			conf.configure_distro(new_name, config_all);
 			auto ov = get_distro_version(name);
-			auto writer = select_wsl_writer(ver ? ver : ov, dir);
+			auto nv = ver ? ver : ov;
+			register_distro(new_name, dir, nv);
+			conf.configure_distro(new_name, config_all);
+			auto writer = select_wsl_writer(nv, dir);
 			select_wsl_reader(ov, get_distro_dir(name))->run(*writer);
 		} else if (!wcscmp(argv[1], L"e") || !wcscmp(argv[1], L"export")) {
 			wstr file;

@@ -68,9 +68,12 @@ deploy:
     artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
-      - Support the new filesystem indroduced in the Win10 October Update.
-      - Add new command `get-version`.
-      - Display donation requests randomly.
+      - Fix error output of err_archive.
+      - Launch default shell if `run -c` isn't specified.
+      - Fix Unicode ouput.
+      - Display donation request only after installation.
+      - Check if target distro is running before moving/uninstalling.
+      - Fix version handling for the `duplicate` command.
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

@@ -287,10 +287,10 @@ int wmain(int argc, wchar_t **argv) {
 		}
 		return 1;
 	} catch (const po::error &e) {
-		std::wstringstream ss;
-		ss << e.what();
-		log_error(ss.str());
-		std::cout << std::endl << desc;
+		log_error(from_utf8(e.what()));
+		std::stringstream ss;
+		ss << desc;
+		std::wcout << std::endl << from_utf8(ss.str().c_str());
 	}
 	return 0;
 }

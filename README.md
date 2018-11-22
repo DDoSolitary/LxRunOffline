@@ -36,7 +36,7 @@ You can install via Chocolatey `choco install lxrunoffline`, Scoop `scoop instal
 
 See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) to download tar files for different distros, which are used by the `LxRunOffline install` command.
 
-Run `LxRunOffline` for the command line interface.
+Run `LxRunOffline` for available actions and run `LxRunOffline <action-name>` for available arguments/flags.
 
 # Build
 

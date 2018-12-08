@@ -68,12 +68,7 @@ deploy:
     artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
-      - Fix error output of err_archive.
-      - Launch default shell if `run -c` isn't specified.
-      - Fix Unicode ouput.
-      - Display donation request only after installation.
-      - Check if target distro is running before moving/uninstalling.
-      - Fix version handling for the `duplicate` command.
+      - Fix help info output. (#65)
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

@@ -1,43 +1,76 @@
 ﻿image: Visual Studio 2017
-init:
-  - ps: |
-      if ($Env:APPVEYOR_REPO_TAG -eq 'true') { Update-AppveyorBuild -Version "$Env:APPVEYOR_REPO_TAG_NAME" }
-      else { Update-AppveyorBuild -Version "dev-$($Env:APPVEYOR_REPO_COMMIT.Substring(0, 7))" }
-install:
-  - ps: .paket\paket.exe install
+environment:
+  matrix:
+    - USE_MSYS: false
+      VCPKG_DEFAULT_TRIPLET: x64-windows
+    - USE_MSYS: true
+      MSYSTEM: MINGW64
+cache:
+  - C:\tools\vcpkg\installed
 configuration: Release
-build:
-  parallel: true
+before_build:
+  - ps: $version = (git describe --tags).Substring(1)
+  - ps: |
+      if ($Env:APPVEYOR_REPO_TAG -ne 'true' -and -not ($version -match '-')) {
+          git tag -d "v$version"
+          $version = (git describe --tags).Substring(1)
+      }
+  - ps: Update-AppveyorBuild -Version "v$version"
+  - ps: |
+      if ($Env:USE_MSYS -ne 'true') {
+          pushd C:\tools\vcpkg
+          git pull -q
+          .\bootstrap-vcpkg.bat
+          popd
+          vcpkg integrate install
+          vcpkg install libarchive boost-program-options boost-format tinyxml2
+          vcpkg upgrade --no-dry-run
+      } else {
+          C:\msys64\usr\bin\bash -l -c 'pacman -Sy --needed --noconfirm pacman 2>&1'
+          C:\msys64\usr\bin\bash -l -c 'pacman -S --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2 2>&1'
+      }
+build_script:
+  - ps: |
+      if ($Env:USE_MSYS -ne 'true') {
+          if ($Env:APPVEYOR_REPO_TAG -ne 'true') {
+              $fileVersion = $version.Substring(0, $version.LastIndexOf('-')).Replace('.', ',').Replace('-', ',')
+          } else {
+              $fileVersion = $version.Replace('.', ',') + ',0'
+          }
+          msbuild /p:Configuration=$Env:CONFIGURATION /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"v$version\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$version\\\`"`"
+      } else {
+          C:\msys64\usr\bin\bash -l -c 'cd /c/projects/lxrunoffline && make'
+      }
 after_build:
   - ps: |
-      $project = $Env:APPVEYOR_PROJECT_NAME
-      $name = "$project-$Env:APPVEYOR_BUILD_VERSION.zip"
-      $dir = ".\$project\bin\$Env:CONFIGURATION"
-      7z a $name "$dir\$project.exe" "$dir\$project.exe.config" "$dir\CommandLine.dll" 'LICENSE' 'LICENSE-3RD-PARTY'
-      if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
+      if ($Env:USE_MSYS -ne 'true') {
+          $project = $Env:APPVEYOR_PROJECT_NAME
+          $name = "$project-v$version.zip"
+          $dir = ".\x64\$Env:CONFIGURATION"
+          $sys = "$Env:WINDIR\System32"
+          7z a $name "$dir\$project.exe" "$dir\*.dll" 'LICENSE' 'LICENSE-3RD-PARTY' "$sys\msvcp140.dll" "$sys\vcruntime140.dll"
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash
-          $version = $Env:APPVEYOR_REPO_TAG_NAME.Substring(1)
-          cd choco
-          (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
-          (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii
-          (cat tools\chocolateyInstall.ps1) -replace '{CHECKSUM}', $hash | sc tools\chocolateyInstall.ps1 -Encoding Ascii
-          choco pack
+          $hash | Out-File sha256.txt
+          if ($Env:APPVEYOR_REPO_TAG -eq 'true') {
+              cd choco
+              (cat "$project.nuspec") -replace '{VERSION}', $version | sc "$project.nuspec" -Encoding Ascii
+              (cat tools\chocolateyInstall.ps1) -replace '{VERSION}', $version | sc tools\chocolateyInstall.ps1 -Encoding Ascii
+              (cat tools\chocolateyInstall.ps1) -replace '{CHECKSUM}', $hash | sc tools\chocolateyInstall.ps1 -Encoding Ascii
+              choco pack
+          }
       }
 artifacts:
   - path: '*.zip'
+  - path: sha256.txt
   - path: choco\*.nupkg
 deploy:
   - provider: GitHub
-    artifact: /.*\.zip/
+    artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
-      - Fix the problem that `robocopy` doesn't work when using relative paths.
-      - Fix the problem that the program crashes if user disallow starting `robocopy` using UAC.
-      - Fix the `config-env` command.
-      - Support running a distribution without propagating current working directory. (`run -w`)
-      - Improve error output, add logging.
+      - Fix help info output. (#65)
     auth_token:
-      secure: saJApLHQjPJ+XmMy3Qk+khAvfIKI4dveBtSnUESRX14qpUy3WPlhM97Ixbja/Tjg
+      secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:
       appveyor_repo_tag: true
 
@@ -45,6 +78,6 @@ deploy:
     artifact: /.*\.nupkg/
     server: https://push.chocolatey.org/
     api_key:
-      secure: Vo2L43MTVd1m6V60iP3G2B1MiAzLjnriIjlkD/B9SUJCRM/6HH5E1jbxyg7MmtB0
+      secure: O5vJKMFYeafCP5lAd3ABYUhYE0qhnL7b0dDphDYHiabv2DovKSyb67fm5PX6aUMg
     on:
       appveyor_repo_tag: true

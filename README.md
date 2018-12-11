@@ -1,35 +1,71 @@
 # LxRunOffline
 
-[![Build status](https://ci.appveyor.com/api/projects/status/wnqrsjk1rdc1cmpn?svg=true)](https://ci.appveyor.com/project/ddosolitary/lxrunoffline)
+[![Build status](https://img.shields.io/appveyor/ci/ddosolitary/lxrunoffline/master.svg)](https://ci.appveyor.com/project/ddosolitary/lxrunoffline)
+[![Chocolatey](https://img.shields.io/chocolatey/v/lxrunoffline.svg)](https://chocolatey.org/packages/lxrunoffline)
 
-A full-featured utility for *Windows Subsystem for Linux (WSL)*.
+A full-featured utility for managing *Windows Subsystem for Linux (WSL)*.
+
+# Donation
+
+It would be greatly appreciated if you could make a donation to cover the cost of my dev machine hosted on Vultr.
+
+PayPal [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.me/ddosolitaryorz)
+
+Alipay
+
+![Alipay](https://image.ibb.co/kkxV99/1537608529099_20180922174914623.jpg)
 
 # Features
 
-- No Internet access required when installing.
-- Install any Linux distros to any location on your disk.
-- Moving existing installations to other locations.
-- Register existing installation directories. (For portable usage.)
-- Running arbitrary Linux commands on installations.
-- Configure default user, environment variables and various configuration flags.
+- Install any Linux distro to any directory on your computer.
+- Move an existing installation to another directory.
+- Duplicate(copy) an existing installation.
+- Register an existing installation directory. This enables you to install to a USB stick and use it on different computers.
+- Run arbitrary Linux commands in a specified installation.
+- Configure default user, environment variables and [various flags](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags).
+- Export configuration to an XML file and import from the file.
+- Export an installation to a tar file.
 
 # Install
 
-You can install via Chocolatey `choco install lxrunoffline`, or download the binaries directly:
+You can install via Chocolatey `choco install lxrunoffline`, Scoop `scoop install lxrunoffline`, or download the binaries directly:
 - Latest releases: https://github.com/DDoSolitary/LxRunOffline/releases
-- Development builds: https://ci.appveyor.com/project/DDoSolitary/lxrunoffline/build/artifacts
+- Development builds: https://ci.appveyor.com/project/DDoSolitary/lxrunoffline > choose the first job > ARTIFACTS
 
 # Usage
 
-See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) for ways to create the ".tar.gz" files for different distros, which is required by the `LxRunOffline install` command.
+See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) to download tar files for different distros, which are used by the `LxRunOffline install` command.
 
-Run `LxRunOffline help` for the command line interface.
+Run `LxRunOffline` for available actions and run `LxRunOffline <action-name>` for available arguments/flags.
 
-Set the environment variable `LXRUNOFFLINE_PROMPT_ANSWER` to `y` or `n` to answer confirmations automatically. Set `LXRUNOFFLINE_VERBOSE` to `1` to enable verbose output.
+# Build
+
+### Visual Studio
+
+Visual Studio 2017 and Windows SDK 10.0.17134 are required.
+
+Install [vcpkg and its VS integration](https://github.com/Microsoft/vcpkg) (if you haven't) and install dependencies.
+
+```
+vcpkg install --triplet x64-windows libarchive boost-program-options boost-format tinyxml2
+```
+
+Then build with Visual Studio or MSBuild.
+
+### MSYS2
+
+Open the "MSYS2 MinGW 64-bit" shell, and install necessary packages.
+
+```
+pacman -Sy --needed --noconfirm base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2
+```
+
+Then run `make`.
 
 # Compatibility
 
 - **v1.x**: All Windows 10 versions with the Linux subsystem support.
-- **v2.x**: Only Windows 10 Fall Creators Update or later.
+- **v2.x**: Only Windows 10 Fall Creators Update (v1709) or later.
+- **v3.x**: Only Windows 10 April 2018 Update (v1803) or later.
 
-It is strongly recommended to install the Creators Update and use v2.x releases.
+It is strongly recommended to install the April 2018 Update and use v3.x releases.

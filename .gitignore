@@ -1,4 +1,7 @@
-﻿bin/
-obj/
-packages/
-paket-files/
+﻿Debug/
+Release/
+.vs/
+*.user
+*.log
+*.o
+*.exe

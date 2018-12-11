@@ -1,0 +1,27 @@
+﻿1 ID_MANIFEST "app.manifest"
+
+1 VERSIONINFO
+#ifdef LXRUNOFFLINE_FILE_VERSION
+FILEVERSION LXRUNOFFLINE_FILE_VERSION
+PRODUCTVERSION LXRUNOFFLINE_FILE_VERSION
+#endif
+BEGIN
+	BLOCK "StringFileInfo"
+	BEGIN
+		BLOCK "040904B0"
+		BEGIN
+			VALUE "CompanyName", "DDoSolitary"
+			VALUE "FileDescription", "A full-featured utility for managing Windows Subsystem for Linux."
+			VALUE "LegalCopyright", "Copyright (c) 2016-2018 DDoSolitary"
+			VALUE "ProductName", "LxRunOffline"
+#ifdef LXRUNOFFLINE_FILE_VERSION_STR
+			VALUE "FileVersion", LXRUNOFFLINE_FILE_VERSION_STR
+			VALUE "ProductVersion", LXRUNOFFLINE_FILE_VERSION_STR
+#endif
+		END
+	END
+	BLOCK "VarFileInfo"
+	BEGIN
+		VALUE "Translation", 0x409, 1200
+	END
+END

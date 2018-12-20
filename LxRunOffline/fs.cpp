@@ -454,11 +454,25 @@ void archive_reader::run(fs_writer &writer) {
 	archive_entry *pe;
 	while (check_archive(pa.get(), archive_read_next_header(pa.get(), &pe))) {
 		print_progress((double)archive_filter_bytes(pa.get(), -1) / as);
-		auto p = from_utf8(archive_entry_pathname(pe));
+		wstr p;
+		auto up = archive_entry_pathname(pe);
+		if (up) p = from_utf8(up);
+		else {
+			auto wp = archive_entry_pathname_w(pe);
+			if (wp) p = wp;
+			else throw error_other(err_convert_encoding, {});
+		}
 		if (!normalize_linux_path(p, rp)) continue;
+		wstr tp;
+		bool hl = true;
 		auto utp = archive_entry_hardlink(pe);
-		if (utp) {
-			auto tp = from_utf8(utp);
+		if (utp) tp = from_utf8(utp);
+		else {
+			auto wtp = archive_entry_hardlink_w(pe);
+			if (wtp) tp = wtp;
+			else hl = false;
+		}
+		if (hl) {
 			if (normalize_linux_path(tp, rp)) {
 				writer.write_hard_link(p, tp);
 			}
@@ -491,6 +505,11 @@ void archive_reader::run(fs_writer &writer) {
 			writer.write_file_data(nullptr, 0);
 		} else if (type == AE_IFLNK) {
 			auto tp = archive_entry_symlink(pe);
+			std::unique_ptr<char[]> ptp = nullptr;
+			if (!tp) {
+				ptp = to_utf8(archive_entry_symlink_w(pe));
+				tp = ptp.get();
+			}
 			writer.write_symlink(p, attr, tp);
 		} else { // AE_IFDIR
 			writer.write_directory(p, attr);

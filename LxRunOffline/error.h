@@ -49,7 +49,8 @@ enum err_msg {
 	err_env_exists,
 	err_env_not_found,
 	err_config_file,
-	err_fs_version
+	err_fs_version,
+	err_root_dir
 };
 
 struct err {

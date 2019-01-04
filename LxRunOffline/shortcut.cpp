@@ -14,7 +14,7 @@ void create_shortcut(crwstr distro_name, crwstr file_path, crwstr icon_path) {
 	}
 	psl->SetPath(ep);
 	psl->SetDescription((L"Launch the WSL distribution " + distro_name + L'.').c_str());
-	psl->SetArguments((L"run -w -n " + distro_name).c_str());
+	psl->SetArguments((L"run -w -n \"" + distro_name + L"\"").c_str());
 	if (!icon_path.empty()) psl->SetIconLocation(get_full_path(icon_path).c_str(), 0);
 	IPersistFile *ppf;
 	hr = psl->QueryInterface(IID_IPersistFile, (void **)&ppf);

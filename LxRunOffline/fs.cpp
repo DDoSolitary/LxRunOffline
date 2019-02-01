@@ -548,10 +548,9 @@ void wsl_reader::run(fs_writer &writer) {
 		else {
 			if ((attr.mode & AE_IFLNK) == AE_IFLNK) {
 				auto tb = read_symlink_data(hf.get());
-				if (tb) {
-					writer.write_symlink(lp, attr, tb.get());
-					return;
-				}
+				if (tb) writer.write_symlink(lp, attr, tb.get());
+				else log_warning((boost::wformat(L"Ignoring an invalid symlink \"%1%\".") % path).str());
+				return;
 			}
 			writer.write_new_file(lp, attr);
 			DWORD rc;

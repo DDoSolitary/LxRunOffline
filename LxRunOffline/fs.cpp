@@ -546,20 +546,22 @@ void wsl_reader::run(fs_writer &writer) {
 		auto attr = read_attr(hf.get());
 		if (dir) writer.write_directory(lp, attr);
 		else {
-			if ((attr.mode & AE_IFLNK) == AE_IFLNK) {
+			auto type = attr.mode & AE_IFMT;
+			if (type == AE_IFLNK) {
 				auto tb = read_symlink_data(hf.get());
 				if (tb) writer.write_symlink(lp, attr, tb.get());
 				else log_warning((boost::wformat(L"Ignoring an invalid symlink \"%1%\".") % path).str());
 				return;
-			}
-			writer.write_new_file(lp, attr);
-			DWORD rc;
-			do {
-				if (!ReadFile(hf.get(), buf, BUFSIZ, &rc, nullptr)) {
-					throw error_win32_last(err_read_file, { path });
-				}
-				writer.write_file_data(buf, rc);
-			} while (rc);
+			} else if (type == AE_IFREG) {
+				writer.write_new_file(lp, attr);
+				DWORD rc;
+				do {
+					if (!ReadFile(hf.get(), buf, BUFSIZ, &rc, nullptr)) {
+						throw error_win32_last(err_read_file, { path });
+					}
+					writer.write_file_data(buf, rc);
+				} while (rc);
+			} else log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2%.") % path % type).str());
 		}
 	});
 }

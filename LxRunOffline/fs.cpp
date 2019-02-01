@@ -480,7 +480,7 @@ void archive_reader::run(fs_writer &writer) {
 		}
 		auto type = archive_entry_filetype(pe);
 		if (type != AE_IFREG && type != AE_IFDIR && type != AE_IFLNK) {
-			log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2%.") % p % type).str());
+			log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % p % type).str());
 			continue;
 		}
 		auto pst = archive_entry_stat(pe);
@@ -561,7 +561,7 @@ void wsl_reader::run(fs_writer &writer) {
 					}
 					writer.write_file_data(buf, rc);
 				} while (rc);
-			} else log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2%.") % path % type).str());
+			} else log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % path % type).str());
 		}
 	});
 }

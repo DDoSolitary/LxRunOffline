@@ -28,7 +28,7 @@ Alipay
 
 # Install
 
-You can install via Chocolatey `choco install lxrunoffline`, Scoop `scoop install lxrunoffline`, or download the binaries directly:
+You can install via Chocolatey `choco install lxrunoffline`, Scoop `scoope bucket add extras`, `scoop install lxrunoffline`, or download the binaries directly:
 - Latest releases: https://github.com/DDoSolitary/LxRunOffline/releases
 - Development builds: https://ci.appveyor.com/project/DDoSolitary/lxrunoffline > choose the first job > ARTIFACTS
 

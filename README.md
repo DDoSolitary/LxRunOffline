@@ -64,7 +64,7 @@ Then run `make`.
 
 # Compatibility
 
-- **v1.x**: All Windows 10 versions with the Linux subsystem support.
+- **v1.x**: Only Windows 10 Fall Creators Update (v1709) or earlier.
 - **v2.x**: Only Windows 10 Fall Creators Update (v1709) or later.
 - **v3.x**: Only Windows 10 April 2018 Update (v1803) or later.
 

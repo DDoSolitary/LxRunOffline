@@ -670,13 +670,13 @@ uint32_t detect_version(crwstr path) {
 }
 
 std::unique_ptr<wsl_writer> select_wsl_writer(uint32_t version, crwstr path) {
-	if (version == 1) return std::unique_ptr<wsl_writer>(new wsl_v1_writer(path));
+	if (version <= 1) return std::unique_ptr<wsl_writer>(new wsl_v1_writer(path));
 	else if (version == 2) return std::unique_ptr<wsl_writer>(new wsl_v2_writer(path));
 	else throw error_other(err_fs_version, { std::to_wstring(version) });
 }
 
 std::unique_ptr<wsl_reader> select_wsl_reader(uint32_t version, crwstr path) {
-	if (version == 1) return std::unique_ptr<wsl_reader>(new wsl_v1_reader(path));
+	if (version <= 1) return std::unique_ptr<wsl_reader>(new wsl_v1_reader(path));
 	else if (version == 2) return std::unique_ptr<wsl_reader>(new wsl_v2_reader(path));
 	else throw error_other(err_fs_version, { std::to_wstring(version) });
 }

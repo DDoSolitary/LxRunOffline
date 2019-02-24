@@ -16,7 +16,7 @@ $(PROJ)/%.o: $(PROJ)/%.cpp $(PROJ)/stdafx.h.gch
 	$(CC) $(CPPFLAGS) -c -o $@ $<
 
 $(PROJ)/stdafx.h.gch: $(PROJ)/stdafx.h
-	$(CC) $(CPPFLAGS) -o $@ %<
+	$(CC) $(CPPFLAGS) -o $@ $<
 
 $(PROJ)/resources.o: $(PROJ)/resources.rc $(PROJ)/app.manifest
 	windres $< $@

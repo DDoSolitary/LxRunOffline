@@ -104,6 +104,7 @@ int wmain(int argc, wchar_t **argv) {
 				auto ver = get_distro_version(name);
 				auto writer = select_wsl_writer(ver, dir);
 				select_wsl_reader(ver, sp)->run(*writer);
+				delete_directory(sp);
 			}
 			set_distro_dir(name, dir);
 		} else if (!wcscmp(argv[1], L"d") || !wcscmp(argv[1], L"duplicate")) {

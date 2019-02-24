@@ -11,11 +11,14 @@ TARGET := $(PROJ).exe
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS)
 
-$(PROJ)/%.o: $(PROJ)/%.cpp
+$(PROJ)/%.o: $(PROJ)/%.cpp $(PROJ)/stdafx.h.gch
 	$(CC) $(CPPFLAGS) -c -o $@ $<
+
+$(PROJ)/stdafx.h.gch: $(PROJ)/stdafx.h
+	$(CC) $(CPPFLAGS) -o $@ %<
 
 $(PROJ)/resources.o: $(PROJ)/resources.rc $(PROJ)/app.manifest
 	windres $(PROJ)/resources.rc $(PROJ)/resources.o
 
 clean:
-	rm -rf $(OBJS) $(TARGET)
+	rm -rf $(OBJS) $(TARGET) $(PROJ)/stdafx.h.gch

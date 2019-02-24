@@ -10,7 +10,7 @@ TARGET := $(PROJ).exe
 OUTPUT := $(OBJS) $(PROJ)/stdafx.h.gch $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $< $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(PROJ)/%.o: $(PROJ)/%.cpp $(PROJ)/stdafx.h.gch
 	$(CC) $(CPPFLAGS) -c -o $@ $<

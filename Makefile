@@ -7,9 +7,10 @@ PROJ := LxRunOffline
 SRCS := $(wildcard $(PROJ)/*.cpp)
 OBJS := $(patsubst $(PROJ)/%.cpp, $(PROJ)/%.o, $(SRCS)) $(PROJ)/resources.o
 TARGET := $(PROJ).exe
+OUTPUT := $(OBJS) $(PROJ)/stdafx.h.gch $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(LDFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $< $(LDLIBS)
 
 $(PROJ)/%.o: $(PROJ)/%.cpp $(PROJ)/stdafx.h.gch
 	$(CC) $(CPPFLAGS) -c -o $@ $<
@@ -18,7 +19,7 @@ $(PROJ)/stdafx.h.gch: $(PROJ)/stdafx.h
 	$(CC) $(CPPFLAGS) -o $@ %<
 
 $(PROJ)/resources.o: $(PROJ)/resources.rc $(PROJ)/app.manifest
-	windres $(PROJ)/resources.rc $(PROJ)/resources.o
+	windres $< $@
 
 clean:
-	rm -rf $(OBJS) $(TARGET) $(PROJ)/stdafx.h.gch
+	rm -rf $(OUTPUT)

@@ -28,11 +28,11 @@ class archive_writer : public fs_writer {
 	void write_entry(crwstr, const file_attr &);
 public:
 	archive_writer(crwstr);
-	void write_new_file(crwstr, const file_attr &);
-	void write_file_data(const char *, uint32_t);
-	void write_directory(crwstr, const file_attr &);
-	void write_symlink(crwstr, const file_attr &, const char *);
-	void write_hard_link(crwstr, crwstr);
+	void write_new_file(crwstr, const file_attr &) override;
+	void write_file_data(const char *, uint32_t) override;
+	void write_directory(crwstr, const file_attr &) override;
+	void write_symlink(crwstr, const file_attr &, const char *) override;
+	void write_hard_link(crwstr, crwstr) override;
 };
 
 class wsl_writer : public fs_writer {
@@ -47,18 +47,18 @@ protected:
 public:
 	wsl_writer(crwstr);
 	virtual ~wsl_writer() = default;
-	void write_new_file(crwstr, const file_attr &);
-	void write_file_data(const char *, uint32_t);
-	void write_directory(crwstr, const file_attr &);
-	void write_symlink(crwstr, const file_attr &, const char *);
-	void write_hard_link(crwstr, crwstr);
+	void write_new_file(crwstr, const file_attr &) override;
+	void write_file_data(const char *, uint32_t) override;
+	void write_directory(crwstr, const file_attr &) override;
+	void write_symlink(crwstr, const file_attr &, const char *) override;
+	void write_hard_link(crwstr, crwstr) override;
 };
 
 class wsl_v1_writer : public wsl_writer {
 protected:
-	void set_path(crwstr);
-	void write_attr(HANDLE, const file_attr &);
-	void write_symlink_data(HANDLE, const char *) const;
+	void set_path(crwstr) override;
+	void write_attr(HANDLE, const file_attr &) override;
+	void write_symlink_data(HANDLE, const char *) override const;
 public:
 	using wsl_writer::wsl_writer;
 };
@@ -67,12 +67,12 @@ class wsl_v2_writer : public wsl_writer {
 	std::stack<std::pair<wstr, file_attr>> dir_attr;
 	void real_write_attr(HANDLE, const file_attr &, crwstr) const;
 protected:
-	void set_path(crwstr);
-	void write_attr(HANDLE, const file_attr &);
-	void write_symlink_data(HANDLE, const char *) const;
+	void set_path(crwstr) override;
+	void write_attr(HANDLE, const file_attr &) override;
+	void write_symlink_data(HANDLE, const char *) override const;
 public:
 	using wsl_writer::wsl_writer;
-	~wsl_v2_writer();
+	~wsl_v2_writer() override;
 };
 
 class fs_reader {
@@ -84,7 +84,7 @@ class archive_reader : public fs_reader {
 	const wstr archive_path, root_path;
 public:
 	archive_reader(crwstr, crwstr);
-	void run(fs_writer &);
+	void run(fs_writer &) override;
 };
 
 class wsl_reader : public fs_reader {
@@ -96,23 +96,23 @@ protected:
 	virtual std::unique_ptr<char[]> read_symlink_data(HANDLE) const = 0;
 public:
 	wsl_reader(crwstr);
-	void run(fs_writer &);
+	void run(fs_writer &) override;
 };
 
 class wsl_v1_reader : public wsl_reader {
 protected:
-	wstr convert_path(crwstr) const;
-	file_attr read_attr(HANDLE) const;
-	std::unique_ptr<char[]> read_symlink_data(HANDLE) const;
+	wstr convert_path(crwstr) override const;
+	file_attr read_attr(HANDLE) override const;
+	std::unique_ptr<char[]> read_symlink_data(HANDLE) override const;
 public:
 	using wsl_reader::wsl_reader;
 };
 
 class wsl_v2_reader : public wsl_reader {
 protected:
-	wstr convert_path(crwstr) const;
-	file_attr read_attr(HANDLE) const;
-	std::unique_ptr<char[]> read_symlink_data(HANDLE) const;
+	wstr convert_path(crwstr) override const;
+	file_attr read_attr(HANDLE) override const;
+	std::unique_ptr<char[]> read_symlink_data(HANDLE) override const;
 public:
 	using wsl_reader::wsl_reader;
 };

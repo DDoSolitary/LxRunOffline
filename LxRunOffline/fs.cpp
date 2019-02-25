@@ -543,7 +543,14 @@ void wsl_reader::run(fs_writer &writer) {
 				} else id_map[id] = lp;
 			}
 		}
-		auto attr = read_attr(hf.get());
+		file_attr attr;
+		try {
+			attr = read_attr(hf.get());
+		} catch (const err &e) {
+			if (e.msg_code == err_invalid_ea && dir && rp.empty()) {
+				attr = { 0040755,0,0,0,{},{},{} };
+			} else throw;
+		}
 		if (dir) writer.write_directory(lp, attr);
 		else {
 			auto type = attr.mode & AE_IFMT;

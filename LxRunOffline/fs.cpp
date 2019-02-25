@@ -343,6 +343,9 @@ void wsl_writer::write_hard_link(crwstr linux_path, crwstr target_linux_path) {
 	}
 }
 
+wsl_v1_writer::wsl_v1_writer(crwstr base_path)
+	: wsl_writer(base_path) {}
+
 void wsl_v1_writer::set_path(crwstr linux_path) {
 	path.resize(blen);
 	for (auto c : linux_path) {
@@ -371,6 +374,9 @@ void wsl_v1_writer::write_attr(HANDLE hf, const file_attr &attr) {
 void wsl_v1_writer::write_symlink_data(HANDLE hf, const char *target_path) const {
 	write_data(hf, target_path, (uint32_t)strlen(target_path));
 }
+
+wsl_v2_writer::wsl_v2_writer(crwstr base_path)
+	: wsl_writer(base_path) {}
 
 void wsl_v2_writer::real_write_attr(HANDLE hf, const file_attr &attr, crwstr path) const {
 	try {
@@ -573,6 +579,9 @@ void wsl_reader::run(fs_writer &writer) {
 	});
 }
 
+wsl_v1_reader::wsl_v1_reader(crwstr base_path)
+	: wsl_reader(base_path) {}
+
 wstr wsl_v1_reader::convert_path(crwstr path) const {
 	wstr s;
 	for (size_t i = 0; i < path.size(); i++) {
@@ -618,6 +627,9 @@ std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(HANDLE hf) const {
 	buf[sz] = 0;
 	return buf;
 }
+
+wsl_v2_reader::wsl_v2_reader(crwstr base_path)
+	: wsl_reader(base_path) {}
 
 wstr wsl_v2_reader::convert_path(crwstr path) const {
 	wstr s;

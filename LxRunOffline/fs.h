@@ -44,8 +44,8 @@ protected:
 	virtual void set_path(crwstr) = 0;
 	virtual void write_attr(HANDLE, const file_attr &) = 0;
 	virtual void write_symlink_data(HANDLE, const char *) const = 0;
-public:
 	wsl_writer(crwstr);
+public:
 	virtual ~wsl_writer() = default;
 	void write_new_file(crwstr, const file_attr &) override;
 	void write_file_data(const char *, uint32_t) override;
@@ -58,9 +58,9 @@ class wsl_v1_writer : public wsl_writer {
 protected:
 	void set_path(crwstr) override;
 	void write_attr(HANDLE, const file_attr &) override;
-	void write_symlink_data(HANDLE, const char *) override const;
+	void write_symlink_data(HANDLE, const char *) const override;
 public:
-	using wsl_writer::wsl_writer;
+	wsl_v1_writer(crwstr);
 };
 
 class wsl_v2_writer : public wsl_writer {
@@ -69,9 +69,9 @@ class wsl_v2_writer : public wsl_writer {
 protected:
 	void set_path(crwstr) override;
 	void write_attr(HANDLE, const file_attr &) override;
-	void write_symlink_data(HANDLE, const char *) override const;
+	void write_symlink_data(HANDLE, const char *) const override;
 public:
-	using wsl_writer::wsl_writer;
+	wsl_v2_writer(crwstr);
 	~wsl_v2_writer() override;
 };
 
@@ -94,27 +94,27 @@ protected:
 	virtual wstr convert_path(crwstr) const = 0;
 	virtual file_attr read_attr(HANDLE) const = 0;
 	virtual std::unique_ptr<char[]> read_symlink_data(HANDLE) const = 0;
-public:
 	wsl_reader(crwstr);
+public:
 	void run(fs_writer &) override;
 };
 
 class wsl_v1_reader : public wsl_reader {
 protected:
-	wstr convert_path(crwstr) override const;
-	file_attr read_attr(HANDLE) override const;
-	std::unique_ptr<char[]> read_symlink_data(HANDLE) override const;
+	wstr convert_path(crwstr) const override;
+	file_attr read_attr(HANDLE) const override;
+	std::unique_ptr<char[]> read_symlink_data(HANDLE) const override;
 public:
-	using wsl_reader::wsl_reader;
+	wsl_v1_reader(crwstr);
 };
 
 class wsl_v2_reader : public wsl_reader {
 protected:
-	wstr convert_path(crwstr) override const;
-	file_attr read_attr(HANDLE) override const;
-	std::unique_ptr<char[]> read_symlink_data(HANDLE) override const;
+	wstr convert_path(crwstr) const override;
+	file_attr read_attr(HANDLE) const override;
+	std::unique_ptr<char[]> read_symlink_data(HANDLE) const override;
 public:
-	using wsl_reader::wsl_reader;
+	wsl_v2_reader(crwstr);
 };
 
 uint32_t detect_version(crwstr path);

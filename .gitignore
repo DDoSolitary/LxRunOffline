@@ -1,7 +1,9 @@
 ﻿Debug/
 Release/
 .vs/
+.vscode/
 *.user
 *.log
 *.o
+*.gch
 *.exe

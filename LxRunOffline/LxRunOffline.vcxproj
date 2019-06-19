@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" 
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -91,6 +92,7 @@
     <ClInclude Include="error.h" />
     <ClInclude Include="fs.h" />
     <ClInclude Include="ntdll.h" />
+    <ClInclude Include="path.h" />
     <ClInclude Include="reg.h" />
     <ClInclude Include="shortcut.h" />
     <ClInclude Include="stdafx.h" />
@@ -100,6 +102,7 @@
     <ClCompile Include="error.cpp" />
     <ClCompile Include="fs.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="path.cpp" />
     <ClCompile Include="reg.cpp" />
     <ClCompile Include="shortcut.cpp" />
     <ClCompile Include="stdafx.cpp">

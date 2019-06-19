@@ -51,6 +51,7 @@ const wstr msg_table[] = {
 	L"Environment variable \"%1%\" not found.",
 	L"Error occurred while processing the config file: %1%",
 	L"Filesystem version %1% is not recognized.",
+	L"Failed to detect filesystem version of the directory \"%1%\".",
 	L"Installing to the root directory \"%1%\" is known to cause issues."
 };
 

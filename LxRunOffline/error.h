@@ -50,6 +50,7 @@ enum err_msg {
 	err_env_not_found,
 	err_config_file,
 	err_fs_version,
+	err_fs_detect,
 	err_root_dir
 };
 

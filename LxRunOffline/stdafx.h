@@ -28,6 +28,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <stack>
 #include <string>

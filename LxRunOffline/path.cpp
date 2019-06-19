@@ -93,6 +93,7 @@ linux_path::linux_path(crwstr path, crwstr root_path) : linux_path() {
 		cb = path[pos] == L'/';
 		data += path[pos++];
 	}
+	skip = data.empty();
 }
 
 bool linux_path::append(wchar_t c) {

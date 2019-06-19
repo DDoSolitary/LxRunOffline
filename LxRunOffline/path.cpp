@@ -11,10 +11,9 @@ prefix_matcher::prefix_matcher(std::initializer_list<wstr> patterns)
 			auto &m = trie[p];
 			auto it = m.find(s[i]);
 			if (it == m.end()) {
-				it = m.insert(std::make_pair(s[i], trie.size())).first;
+				p = m[s[i]] = trie.size();
 				trie.resize(trie.size() + 1);
-			}
-			p = it->second;
+			} else p = it->second;
 		}
 		trie[p][s.back()] = 0;
 	}

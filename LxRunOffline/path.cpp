@@ -221,6 +221,7 @@ bool wsl_legacy_path::append(wchar_t c) {
 
 bool wsl_legacy_path::convert(file_path &output) const {
 	if (!data.compare(base_len, 12, L"rootfs\\root\\") || !data.compare(base_len, 12, L"rootfs\\home\\") || !data.compare(base_len, 11, L"rootfs\\mnt\\")) {
+		// Maybe add warning
 		return false;
 	}
 	output.reset();

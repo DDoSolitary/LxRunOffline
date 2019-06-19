@@ -320,12 +320,6 @@ void wsl_v1_writer::write_symlink_data(HANDLE hf, const char *target) const {
 	write_data(hf, target, (uint32_t)strlen(target));
 }
 
-wsl_legacy_writer::wsl_legacy_writer(crwstr base_path) {
-	path = std::make_unique<wsl_legacy_path>(base_path);
-	target_path = std::make_unique<wsl_legacy_path>(base_path);
-	create_recursive(path->data);
-}
-
 wsl_v2_writer::wsl_v2_writer(crwstr base_path) {
 	path = std::make_unique<wsl_v2_path>(base_path);
 	target_path = std::make_unique<wsl_v2_path>(base_path);
@@ -388,6 +382,12 @@ wsl_v2_writer::~wsl_v2_writer() {
 		dir_attr.pop();
 		real_write_attr(open_file(p.first, true, false).get(), p.second, p.first);
 	}
+}
+
+wsl_legacy_writer::wsl_legacy_writer(crwstr base_path) {
+	path = std::make_unique<wsl_legacy_path>(base_path);
+	target_path = std::make_unique<wsl_legacy_path>(base_path);
+	create_recursive(path->data);
 }
 
 archive_reader::archive_reader(crwstr archive_path, crwstr root_path)

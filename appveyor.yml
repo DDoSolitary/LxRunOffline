@@ -9,6 +9,11 @@ cache:
   - C:\tools\vcpkg\installed
 configuration: Release
 before_build:
+  - ps: |
+      if ($env:enable_rdp -eq "true") {
+          $blockRdp = $true;
+          iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+      }
   - ps: $version = (git describe --tags).Substring(1)
   - ps: |
       if ($Env:APPVEYOR_REPO_TAG -ne 'true' -and -not ($version -match '-')) {

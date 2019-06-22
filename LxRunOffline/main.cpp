@@ -55,7 +55,7 @@ int wmain(int argc, wchar_t **argv) {
 			bool shortcut;
 			desc.add_options()
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to install the distribution into.")
-				(",f", po::wvalue<wstr>(&file)->required(), "The tar file containing the root filesystem of the distribution to be installed.")
+				(",f", po::wvalue<wstr>(&file)->required(), "The tar file containing the root filesystem of the distribution to be installed. If a file of the same name with a .xml extension exists and \"-c\" isn't specified, that file will be imported as a config file.")
 				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
 				(",v", po::wvalue<uint32_t>(&ver)->default_value(win_build >= 17763 ? 2 : 1), "The version of filesystem to use, latest available one if not specified.")
@@ -63,6 +63,17 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			reg_config conf;
 			if (!conf_path.empty()) conf.load_file(conf_path);
+			else {
+				try {
+					conf.load_file(file + L".xml");
+				} catch (const err &e) {
+					if (e.msg_code == err_open_file) {
+						if (e.err_code != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
+							log_warning(format_error(e));
+						}
+					} else throw;
+				}
+			}
 			register_distro(name, dir, ver);
 			conf.configure_distro(name, config_all);
 			auto writer = select_wsl_writer(ver, dir);
@@ -127,10 +138,13 @@ int wmain(int argc, wchar_t **argv) {
 			select_wsl_reader(ov, get_distro_dir(name))->run(*writer);
 		} else if (!wcscmp(argv[1], L"e") || !wcscmp(argv[1], L"export")) {
 			wstr file;
-			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to.");
+			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to. A config file will also be exported to this file name with a .xml extension.");
 			parse_args();
 			auto writer = archive_writer(file);
 			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
+			reg_config conf;
+			conf.load_distro(name, config_all);
+			conf.save_file(file + L".xml");
 		} else if (!wcscmp(argv[1], L"r") || !wcscmp(argv[1], L"run")) {
 			wstr cmd;
 			bool no_cwd;

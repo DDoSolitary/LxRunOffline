@@ -262,6 +262,22 @@ int wmain(int argc, wchar_t **argv) {
 			reg_config conf;
 			conf.load_file(file);
 			conf.configure_distro(name, config_all);
+		} else if (!wcscmp(argv[1], L"sm") || !wcscmp(argv[1], L"summary")) {
+			parse_args();
+			reg_config conf;
+			conf.load_distro(name, config_all);
+			std::wcout
+				<< L"                        Name: " << name << std::endl
+				<< L"          Filesystem version: " << get_distro_version(name) << std::endl
+				<< L"      Installation directory: " << get_distro_dir(name) << std::endl
+				<< L"     UID of the default user: " << conf.uid << std::endl
+				<< L"         Configuration flags: " << conf.flags << std::endl
+				<< L" Default kernel command line: " << conf.kernel_cmd << std::endl
+				<< L"       Environment variables: ";
+				for (size_t i = 0; i < conf.env.size(); i++) {
+					if (i > 0) std::wcout << L"                              ";
+					std::wcout << conf.env[i] << std::endl;
+				}
 		} else {
 			throw error_other(err_invalid_action, { argv[1] });
 		}
@@ -295,7 +311,8 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    sf, set-flags      Set some flags of a distribution. See https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags for details." << std::endl
 				<< L"    s, shortcut        Create a shortcut to launch a distribution." << std::endl
 				<< L"    ec, export-config  Export configuration of a distribution to an XML file." << std::endl
-				<< L"    ic, import-config  Import configuration of a distribution from an XML file." << std::endl;
+				<< L"    ic, import-config  Import configuration of a distribution from an XML file." << std::endl
+				<< L"    sm, summary           Get general information of a distribution." << std::endl;
 #ifdef LXRUNOFFLINE_VERSION
 			std::wcerr << L"    version        Get version information about this LxRunOffline.exe." << std::endl;
 #endif

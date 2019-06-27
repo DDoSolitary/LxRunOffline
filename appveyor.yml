@@ -72,12 +72,10 @@ deploy:
     artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
-      - Support PAX headers in tar files. (#68)
-      - Refuse to install to root directories to avoid problems.
-      - Allow spaces in distro names when creating shortcuts. (#73)
-      - Handle invalid v2 symlinks (without proper reparse point info) correctly.
-      - Ignore unsupported files when exporting. (#75)
-      - Improve file type output for warnings of unsupported files.
+      - Fix support for legacy distros. (#81)
+      - Fix source directory not deleted after moving.
+      - Automatically process config files on import/export.
+      - Add new command `summary`.
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

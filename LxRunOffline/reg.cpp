@@ -240,7 +240,7 @@ uint32_t get_distro_version(crwstr name) {
 	return get_value<uint32_t>(get_distro_key(name), vn_version);
 }
 
-reg_config::reg_config() {
+reg_config::reg_config(bool is_wsl2) {
 	env = {
 		L"HOSTTYPE=x86_64",
 		L"LANG=en_US.UTF-8",
@@ -250,6 +250,7 @@ reg_config::reg_config() {
 	uid = 0;
 	kernel_cmd = L"BOOT_IMAGE=/kernel init=/init ro";
 	flags = 7;
+	if (is_wsl2) flags |= flag_wsl2;
 }
 
 err error_xml(tx::XMLError e) {

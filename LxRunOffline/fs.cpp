@@ -648,6 +648,17 @@ uint32_t detect_version(crwstr path) {
 	throw error_other(err_fs_detect, { path });
 }
 
+bool detect_wsl2(crwstr path) {
+	wsl_v2_path p(path);
+	try {
+		open_file(p.data + L"ext4.vhdx", false, false);
+		return true;
+	} catch (const err &e) {
+		if (e.msg_code == err_open_file && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) return false;
+		throw;
+	}
+}
+
 std::unique_ptr<wsl_writer> select_wsl_writer(uint32_t version, crwstr path) {
 	if (version == 0) return std::make_unique<wsl_legacy_writer>(path);
 	else if (version == 1) return std::make_unique<wsl_v1_writer>(path);

@@ -128,6 +128,7 @@ public:
 };
 
 uint32_t detect_version(crwstr path);
+bool detect_wsl2(crwstr path);
 std::unique_ptr<wsl_writer> select_wsl_writer(uint32_t version, crwstr path);
 std::unique_ptr<wsl_reader> select_wsl_reader(uint32_t version, crwstr path);
 bool move_directory(crwstr source_path, crwstr target_path);

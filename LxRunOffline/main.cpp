@@ -98,9 +98,10 @@ int wmain(int argc, wchar_t **argv) {
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory containing the distribution.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.");
 			parse_args();
-			reg_config conf;
+			bool is_wsl2 = detect_wsl2(dir);
+			reg_config conf(is_wsl2);
 			if (!conf_path.empty()) conf.load_file(conf_path);
-			register_distro(name, dir, detect_version(dir));
+			register_distro(name, dir, is_wsl2 ? 2 : detect_version(dir));
 			conf.configure_distro(name, config_all);
 		} else if (!wcscmp(argv[1], L"ur") || !wcscmp(argv[1], L"unregister")) {
 			parse_args();

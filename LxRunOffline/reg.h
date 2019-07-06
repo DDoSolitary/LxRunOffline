@@ -26,7 +26,7 @@ public:
 	wstr kernel_cmd;
 	uint32_t uid;
 
-	reg_config();
+	reg_config(bool is_wsl2 = false);
 	void load_file(crwstr path);
 	void save_file(crwstr path) const;
 	void load_distro(crwstr name, config_item_flags desired);

@@ -207,7 +207,7 @@ std::unique_ptr<file_path> wsl_v2_path::clone() const {
 }
 
 wsl_legacy_path::wsl_legacy_path(crwstr base)
-	: wsl_v1_path(base), matcher1({ L"home/",L"root/",L"mnt/"}), matcher2({ L"rootfs/home/",L"rootfs/root/",L"rootfs/mnt/" }) {}
+	: wsl_v1_path(base), matcher1({ L"home/", L"root/", L"mnt/" }), matcher2({ L"rootfs/home/", L"rootfs/root/", L"rootfs/mnt/" }) {}
 
 bool wsl_legacy_path::append(wchar_t c) {
 	if (!wsl_v1_path::append(c)) return false;

@@ -35,7 +35,7 @@ std::unique_ptr<char[]> get_dynamic(crwstr path, crwstr value_name, uint32_t typ
 			HKEY_CURRENT_USER, path.c_str(),
 			value_name.c_str(), type, nullptr, buf, &len
 		);
-		if (code) throw error_win32(err_get_key_value, { path,value_name }, code);
+		if (code) throw error_win32(err_get_key_value, { path, value_name }, code);
 		return len;
 	}).first;
 }
@@ -45,7 +45,7 @@ void set_dynamic(crwstr path, crwstr value_name, uint32_t type, const void *valu
 		HKEY_CURRENT_USER, path.c_str(),
 		value_name.c_str(), type, value, len
 	);
-	if (code) throw error_win32(err_set_key_value, { path,value_name }, code);
+	if (code) throw error_win32(err_set_key_value, { path, value_name }, code);
 }
 
 template<typename T> T get_value(crwstr, crwstr);
@@ -74,7 +74,7 @@ uint32_t get_value<uint32_t>(crwstr path, crwstr value_name) {
 		HKEY_CURRENT_USER, path.c_str(),
 		value_name.c_str(), RRF_RT_REG_DWORD, nullptr, &res, &rlen
 	);
-	if (code) throw error_win32(err_get_key_value, { path,value_name }, code);
+	if (code) throw error_win32(err_get_key_value, { path, value_name }, code);
 	return res;
 }
 
@@ -218,7 +218,7 @@ void unregister_distro(crwstr name) {
 			auto l = list_distro_id();
 			if (l.empty()) {
 				auto code = RegDeleteKeyValue(HKEY_CURRENT_USER, reg_base_path.c_str(), vn_default_distro.c_str());
-				if (code) throw error_win32(err_delete_key_value, { reg_base_path,vn_default_distro }, code);
+				if (code) throw error_win32(err_delete_key_value, { reg_base_path, vn_default_distro }, code);
 			} else {
 				set_value(reg_base_path, vn_default_distro, l.front());
 			}

@@ -59,7 +59,7 @@ const wstr msg_table[] = {
 };
 
 err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {
-	return err{ msg_code,msg_args,err_code };
+	return err{ msg_code, msg_args, err_code };
 }
 
 err error_win32(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code) {

@@ -313,7 +313,7 @@ void wsl_writer::write_symlink(const file_attr *attr, const char *target) {
 
 void wsl_writer::write_hard_link() {
 	if (!CreateHardLink(path->data.c_str(), target_path->data.c_str(), nullptr)) {
-		throw error_win32_last(err_hard_link, { path->data,target_path->data });
+		throw error_win32_last(err_hard_link, { path->data, target_path->data });
 	}
 }
 
@@ -327,11 +327,11 @@ void wsl_v1_writer::write_attr(HANDLE hf, const file_attr *attr) {
 	if (!attr) return;
 	try {
 		set_ea(hf, "LXATTRB", lxattrb{
-			0,1,
-			attr->mode,attr->uid,attr->gid,
+			0, 1,
+			attr->mode, attr->uid, attr->gid,
 			0,
-			attr->at.nsec,attr->mt.nsec,attr->ct.nsec,
-			attr->at.sec,attr->mt.sec,attr->ct.sec
+			attr->at.nsec, attr->mt.nsec, attr->ct.nsec,
+			attr->at.sec, attr->mt.sec, attr->ct.sec
 		});
 	} catch (err &e) {
 		e.msg_args.push_back(path->data);
@@ -425,7 +425,7 @@ void archive_reader::run(fs_writer &writer) {
 	check_archive(pa.get(), archive_read_open_filename_w(pa.get(), archive_path.c_str(), BUFSIZ));
 	linux_path p;
 	if (p.convert(*writer.path)) {
-		file_attr attr{ 0040755,0,0,0,{},{},{} };
+		file_attr attr{ 0040755, 0, 0, 0, {}, {}, {} };
 		writer.write_directory(&attr);
 	}
 	archive_entry *pe;
@@ -457,10 +457,10 @@ void archive_reader::run(fs_writer &writer) {
 			(uint32_t)archive_entry_mtime_nsec(pe)
 		};
 		auto attr = file_attr{
-			(uint32_t)pst->st_mode,(uint32_t)pst->st_uid,(uint32_t)pst->st_gid,(uint64_t)pst->st_size,
-			archive_entry_atime_is_set(pe) ? unix_time{ (uint64_t)pst->st_atime,(uint32_t)archive_entry_atime_nsec(pe) } : mt,
+			(uint32_t)pst->st_mode, (uint32_t)pst->st_uid, (uint32_t)pst->st_gid, (uint64_t)pst->st_size,
+			archive_entry_atime_is_set(pe) ? unix_time{ (uint64_t)pst->st_atime, (uint32_t)archive_entry_atime_nsec(pe) } : mt,
 			mt,
-			archive_entry_ctime_is_set(pe) ? unix_time{ (uint64_t)pst->st_ctime,(uint32_t)archive_entry_ctime_nsec(pe) } : mt
+			archive_entry_ctime_is_set(pe) ? unix_time{ (uint64_t)pst->st_ctime, (uint32_t)archive_entry_ctime_nsec(pe) } : mt
 		};
 		if (type == AE_IFREG) {
 			if (!writer.write_new_file(&attr)) continue;
@@ -546,10 +546,10 @@ std::unique_ptr<file_attr> wsl_v1_reader::read_attr(HANDLE hf) const {
 	try {
 		auto ea = get_ea<lxattrb>(hf, "LXATTRB");
 		return std::unique_ptr<file_attr>(new file_attr{
-			ea.mode,ea.uid,ea.gid,get_file_size(hf),
-			{ ea.atime,ea.atime_nsec },
-			{ ea.mtime,ea.mtime_nsec },
-			{ ea.ctime,ea.ctime_nsec }
+			ea.mode, ea.uid, ea.gid, get_file_size(hf),
+			{ ea.atime, ea.atime_nsec },
+			{ ea.mtime, ea.mtime_nsec },
+			{ ea.ctime, ea.ctime_nsec }
 		});
 	} catch (err &e) {
 		if (e.msg_code == err_invalid_ea) return nullptr;
@@ -565,7 +565,7 @@ std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(HANDLE hf) const {
 	} catch (err &e) {
 		e.msg_args.push_back(path->data);
 	}
-	if (sz > 65536) throw error_other(err_symlink_length, { path->data,std::to_wstring(sz) });
+	if (sz > 65536) throw error_other(err_symlink_length, { path->data, std::to_wstring(sz) });
 	auto buf = std::make_unique<char[]>(sz + 1);
 	DWORD rc;
 	for (uint32_t off = 0; off < sz; off += rc) {

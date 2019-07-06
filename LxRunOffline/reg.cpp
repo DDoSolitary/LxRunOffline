@@ -327,7 +327,7 @@ void try_get_value(crwstr path, crwstr value_name, T &value) {
 	}
 }
 
-void reg_config::load_distro(crwstr name, config_mask desired) {
+void reg_config::load_distro(crwstr name, config_item_flags desired) {
 	auto p = get_distro_key(name);
 	if (desired & config_env) try_get_value(p, vn_env, env);
 	if (desired & config_uid) try_get_value(p, vn_uid, uid);
@@ -335,10 +335,23 @@ void reg_config::load_distro(crwstr name, config_mask desired) {
 	if (desired & config_flags) try_get_value(p, vn_flags, flags);
 }
 
-void reg_config::configure_distro(crwstr name, config_mask desired) const {
+void reg_config::configure_distro(crwstr name, config_item_flags desired) const {
 	auto p = get_distro_key(name);
 	if (desired & config_env) set_value(p, vn_env, env);
 	if (desired & config_uid) set_value(p, vn_uid, uid);
 	if (desired & config_kernel_cmd) set_value(p, vn_kernel_cmd, kernel_cmd);
 	if (desired & config_flags) set_value(p, vn_flags, flags);
+}
+
+uint32_t reg_config::get_flags() const {
+	return flags & flags_mask;
+}
+
+void reg_config::set_flags(uint32_t value) {
+	if (value & ~flags_mask) throw error_other(err_invalid_flags, {});
+	flags = (flags & flag_wsl2) | (value & flags_mask);
+}
+
+bool reg_config::is_wsl2() const {
+	return flags & flag_wsl2;
 }

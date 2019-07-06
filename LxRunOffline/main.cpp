@@ -235,11 +235,14 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_flags);
-			std::wcout << conf.flags;
+			std::wcout << conf.get_flags();
 		} else if (!wcscmp(argv[1], L"sf") || !wcscmp(argv[1], L"set-flags")) {
-			reg_config conf;
-			desc.add_options()(",v", po::wvalue<uint32_t>(&conf.flags)->required(), "Flags to be set.");
+			uint32_t flags;
+			desc.add_options()(",v", po::wvalue<uint32_t>(&flags)->required(), "Flags to be set.");
 			parse_args();
+			reg_config conf;
+			conf.load_distro(name, config_flags);
+			conf.set_flags(flags);
 			conf.configure_distro(name, config_flags);
 		} else if (!wcscmp(argv[1], L"s") || !wcscmp(argv[1], L"shortcut")) {
 			wstr fp, ip;
@@ -268,10 +271,11 @@ int wmain(int argc, wchar_t **argv) {
 			conf.load_distro(name, config_all);
 			std::wcout
 				<< L"                        Name: " << name << std::endl
+				<< L"                 WSL version: " << (conf.is_wsl2() ? 2 : 1) << std::endl
 				<< L"          Filesystem version: " << get_distro_version(name) << std::endl
 				<< L"      Installation directory: " << get_distro_dir(name) << std::endl
 				<< L"     UID of the default user: " << conf.uid << std::endl
-				<< L"         Configuration flags: " << conf.flags << std::endl
+				<< L"         Configuration flags: " << conf.get_flags() << std::endl
 				<< L" Default kernel command line: " << conf.kernel_cmd << std::endl
 				<< L"       Environment variables: ";
 				for (size_t i = 0; i < conf.env.size(); i++) {

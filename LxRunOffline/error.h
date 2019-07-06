@@ -51,7 +51,8 @@ enum err_msg {
 	err_config_file,
 	err_fs_version,
 	err_fs_detect,
-	err_root_dir
+	err_root_dir,
+	err_invalid_flags
 };
 
 struct err {

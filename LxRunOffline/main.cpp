@@ -32,7 +32,7 @@ int wmain(int argc, wchar_t **argv) {
 
 	try {
 		if (win_build < 17134) {
-			throw error_other(err_version_old, { L"1803",L"17134" });
+			throw error_other(err_version_old, { L"1803", L"17134" });
 		}
 		if (argc < 2) {
 			throw error_other(err_no_action, {});
@@ -278,10 +278,10 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"         Configuration flags: " << conf.get_flags() << std::endl
 				<< L" Default kernel command line: " << conf.kernel_cmd << std::endl
 				<< L"       Environment variables: ";
-				for (size_t i = 0; i < conf.env.size(); i++) {
-					if (i > 0) std::wcout << L"                              ";
-					std::wcout << conf.env[i] << std::endl;
-				}
+			for (size_t i = 0; i < conf.env.size(); i++) {
+				if (i > 0) std::wcout << L"                              ";
+				std::wcout << conf.env[i] << std::endl;
+			}
 		} else {
 			throw error_other(err_invalid_action, { argv[1] });
 		}

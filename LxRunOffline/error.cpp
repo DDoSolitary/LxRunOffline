@@ -53,7 +53,8 @@ const wstr msg_table[] = {
 	L"Filesystem version %1% is not recognized.",
 	L"Failed to detect filesystem version of the directory \"%1%\".",
 	L"Installing to the root directory \"%1%\" is known to cause issues.",
-	L"The configuration flags are invalid."
+	L"The configuration flags are invalid.",
+	L"The action/argument \"%1%\" doesn't support WSL2."
 };
 
 err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {

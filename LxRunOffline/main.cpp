@@ -126,13 +126,16 @@ int wmain(int argc, wchar_t **argv) {
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to copy the distribution to.")
 				(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
-				(",v", po::wvalue<uint32_t>(&ver)->default_value(0), "The version of filesystem to use, same as source if not specified.");
+				(",v", po::wvalue<uint32_t>(&ver)->default_value(-1), "The version of filesystem to use, same as source if not specified.");
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_all);
+			bool is_wsl2 = conf.is_wsl2();
 			if (!conf_path.empty()) conf.load_file(conf_path);
+			is_wsl2 |= conf.is_wsl2();
+			if (is_wsl2 && ~ver) throw error_other(err_wsl2_unsupported, { L"-v" });
 			auto ov = get_distro_version(name);
-			auto nv = ver ? ver : ov;
+			auto nv = ~ver ? ver : ov;
 			register_distro(new_name, dir, nv);
 			conf.configure_distro(new_name, config_all);
 			auto writer = select_wsl_writer(nv, dir);
@@ -141,10 +144,11 @@ int wmain(int argc, wchar_t **argv) {
 			wstr file;
 			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to. A config file will also be exported to this file name with a .xml extension.");
 			parse_args();
-			auto writer = archive_writer(file);
-			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
 			reg_config conf;
 			conf.load_distro(name, config_all);
+			if (conf.is_wsl2()) throw error_other(err_wsl2_unsupported, { L"export" });
+			auto writer = archive_writer(file);
+			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
 			conf.save_file(file + L".xml");
 		} else if (!wcscmp(argv[1], L"r") || !wcscmp(argv[1], L"run")) {
 			wstr cmd;

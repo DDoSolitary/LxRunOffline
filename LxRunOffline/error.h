@@ -52,7 +52,8 @@ enum err_msg {
 	err_fs_version,
 	err_fs_detect,
 	err_root_dir,
-	err_invalid_flags
+	err_invalid_flags,
+	err_wsl2_unsupported
 };
 
 struct err {

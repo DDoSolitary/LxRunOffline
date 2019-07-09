@@ -17,7 +17,6 @@
 #include <AclAPI.h>
 #include <io.h>
 #include <fcntl.h>
-#include <atlbase.h>
 
 #undef _CRT_SECURE_NO_WARNINGS
 

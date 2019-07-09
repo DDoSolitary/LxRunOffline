@@ -74,12 +74,12 @@ void grant_delete_child(HANDLE hf) {
 	PACL pa;
 	PSECURITY_DESCRIPTOR pdb;
 	if (GetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, &pa, nullptr, &pdb)) return;
-	auto pd = unique_ptr_del<PSECURITY_DESCRIPTOR>(pdb, &LocalFree);
+	unique_ptr_del<PSECURITY_DESCRIPTOR> pd(pdb, &LocalFree);
 	EXPLICIT_ACCESS ea;
 	BuildExplicitAccessWithName(&ea, (wchar_t *)L"CURRENT_USER", FILE_DELETE_CHILD, GRANT_ACCESS, CONTAINER_INHERIT_ACE);
 	PACL pnab;
 	if (SetEntriesInAcl(1, &ea, pa, &pnab)) return;
-	auto pna = unique_ptr_del<PACL>(pnab, &LocalFree);
+	unique_ptr_del<PACL> pna(pnab, &LocalFree);
 	SetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, pna.get(), nullptr);
 }
 
@@ -156,7 +156,7 @@ void enum_directory(file_path &path, bool rootfs_first, std::function<void(enum_
 		}
 		WIN32_FIND_DATA data;
 		path.data += L'*';
-		auto hs = unique_ptr_del<HANDLE>(FindFirstFile(path.data.c_str(), &data), &FindClose);
+		unique_ptr_del<HANDLE> hs(FindFirstFile(path.data.c_str(), &data), &FindClose);
 		path.data.resize(os);
 		if (hs.get() == INVALID_HANDLE_VALUE) {
 			hs.release();
@@ -326,7 +326,7 @@ wsl_v1_writer::wsl_v1_writer(crwstr base_path) {
 void wsl_v1_writer::write_attr(HANDLE hf, const file_attr *attr) {
 	if (!attr) return;
 	try {
-		set_ea(hf, "LXATTRB", lxattrb{
+		set_ea(hf, "LXATTRB", lxattrb {
 			0, 1,
 			attr->mode, attr->uid, attr->gid,
 			0,
@@ -419,13 +419,13 @@ archive_reader::archive_reader(crwstr archive_path, crwstr root_path)
 
 void archive_reader::run(fs_writer &writer) {
 	auto as = get_file_size(open_file(archive_path, false, false).get());
-	auto pa = unique_ptr_del<archive *>(archive_read_new(), &archive_read_free);
+	unique_ptr_del<archive *> pa(archive_read_new(), &archive_read_free);
 	check_archive(pa.get(), archive_read_support_filter_all(pa.get()));
 	check_archive(pa.get(), archive_read_support_format_all(pa.get()));
 	check_archive(pa.get(), archive_read_open_filename_w(pa.get(), archive_path.c_str(), BUFSIZ));
 	linux_path p;
 	if (p.convert(*writer.path)) {
-		file_attr attr{ 0040755, 0, 0, 0, {}, {}, {} };
+		file_attr attr { 0040755, 0, 0, 0, {}, {}, {} };
 		writer.write_directory(&attr);
 	}
 	archive_entry *pe;
@@ -452,15 +452,15 @@ void archive_reader::run(fs_writer &writer) {
 			continue;
 		}
 		auto pst = archive_entry_stat(pe);
-		auto mt = unix_time{
+		unix_time mt {
 			(uint64_t)pst->st_mtime,
 			(uint32_t)archive_entry_mtime_nsec(pe)
 		};
-		auto attr = file_attr{
+		file_attr attr {
 			(uint32_t)pst->st_mode, (uint32_t)pst->st_uid, (uint32_t)pst->st_gid, (uint64_t)pst->st_size,
-			archive_entry_atime_is_set(pe) ? unix_time{ (uint64_t)pst->st_atime, (uint32_t)archive_entry_atime_nsec(pe) } : mt,
+			archive_entry_atime_is_set(pe) ? unix_time { (uint64_t)pst->st_atime, (uint32_t)archive_entry_atime_nsec(pe) } : mt,
 			mt,
-			archive_entry_ctime_is_set(pe) ? unix_time{ (uint64_t)pst->st_ctime, (uint32_t)archive_entry_ctime_nsec(pe) } : mt
+			archive_entry_ctime_is_set(pe) ? unix_time { (uint64_t)pst->st_ctime, (uint32_t)archive_entry_ctime_nsec(pe) } : mt
 		};
 		if (type == AE_IFREG) {
 			if (!writer.write_new_file(&attr)) continue;
@@ -545,7 +545,7 @@ wsl_v1_reader::wsl_v1_reader(crwstr base) {
 std::unique_ptr<file_attr> wsl_v1_reader::read_attr(HANDLE hf) const {
 	try {
 		auto ea = get_ea<lxattrb>(hf, "LXATTRB");
-		return std::unique_ptr<file_attr>(new file_attr{
+		return std::unique_ptr<file_attr>(new file_attr {
 			ea.mode, ea.uid, ea.gid, get_file_size(hf),
 			{ ea.atime, ea.atime_nsec },
 			{ ea.mtime, ea.mtime_nsec },

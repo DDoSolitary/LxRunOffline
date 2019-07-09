@@ -258,7 +258,7 @@ err error_xml(tx::XMLError e) {
 }
 
 void reg_config::load_file(crwstr path) {
-	auto f = unique_ptr_del<FILE *>(_wfopen(path.c_str(), L"rb"), &fclose);
+	unique_ptr_del<FILE *> f(_wfopen(path.c_str(), L"rb"), &fclose);
 	if (!f.get()) {
 		f.release();
 		throw error_win32_last(err_open_file, { path });
@@ -292,7 +292,7 @@ void reg_config::load_file(crwstr path) {
 }
 
 void reg_config::save_file(crwstr path) const {
-	auto f = unique_ptr_del<FILE *>(_wfopen(path.c_str(), L"wb"), &fclose);
+	unique_ptr_del<FILE *> f(_wfopen(path.c_str(), L"wb"), &fclose);
 	if (!f.get()) {
 		f.release();
 		throw error_win32_last(err_create_file, { path });

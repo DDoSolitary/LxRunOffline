@@ -2,7 +2,6 @@
 #include "stdafx.h"
 
 std::vector<wstr> list_distros();
-wstr get_distro_id(crwstr name);
 wstr get_default_distro();
 void set_default_distro(crwstr name);
 void register_distro(crwstr name, crwstr path, uint32_t version);

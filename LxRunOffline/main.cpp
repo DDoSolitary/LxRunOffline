@@ -4,24 +4,14 @@
 #include "reg.h"
 #include "shortcut.h"
 #include "utils.h"
-#include "WslReverse/common/LxssUserSession.h"
 
 namespace po = boost::program_options;
 
-void terminate_distro(crwstr name) {
-	auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-	if (FAILED(hr)) throw error_hresult(err_terminate_distro, { name }, hr);
-	hr = CoInitializeSecurity(nullptr, -1, nullptr, nullptr, RPC_C_AUTHN_LEVEL_DEFAULT, SecurityDelegation, nullptr, EOAC_STATIC_CLOAKING, nullptr);
-	if (FAILED(hr)) throw error_hresult(err_terminate_distro, { name }, hr);
-	ILxssUserSession *ps;
-	hr = CoCreateInstance(CLSID_LxssUserSession, nullptr, CLSCTX_LOCAL_SERVER, IID_ILxssUserSession, (void **)&ps);
-	if (FAILED(hr)) throw error_hresult(err_terminate_distro, { name }, hr);
-	GUID id;
-	hr = IIDFromString(get_distro_id(name).c_str(), &id);
-	if (FAILED(hr)) throw error_hresult(err_terminate_distro, { name }, hr);
-	hr = ps->lpVtbl->TerminateDistribution(ps, &id);
-	if (FAILED(hr)) throw error_hresult(err_terminate_distro, { name }, hr);
-	ps->lpVtbl->Release(ps);
+void check_running(crwstr name) {
+	auto p = get_distro_dir(name) + L"\\rootfs\\init";
+	auto h = CreateFile(p.c_str(), DELETE, 0, nullptr, OPEN_ALWAYS, 0, nullptr);
+	if (GetLastError() == ERROR_SHARING_VIOLATION) throw error_other(err_distro_running, { name });
+	if (h != INVALID_HANDLE_VALUE) CloseHandle(h);
 }
 
 #ifdef __MINGW32__
@@ -98,7 +88,7 @@ int wmain(int argc, wchar_t **argv) {
 			log_warning(L"Love this tool? Would you like to make a donation: https://github.com/DDoSolitary/LxRunOffline/blob/master/README.md#donation");
 		} else if (!wcscmp(argv[1], L"ui") || !wcscmp(argv[1], L"uninstall")) {
 			parse_args();
-			terminate_distro(name);
+			check_running(name);
 			auto dir = get_distro_dir(name);
 			unregister_distro(name);
 			delete_directory(dir);
@@ -115,13 +105,12 @@ int wmain(int argc, wchar_t **argv) {
 			conf.configure_distro(name, config_all);
 		} else if (!wcscmp(argv[1], L"ur") || !wcscmp(argv[1], L"unregister")) {
 			parse_args();
-			terminate_distro(name);
 			unregister_distro(name);
 		} else if (!wcscmp(argv[1], L"m") || !wcscmp(argv[1], L"move")) {
 			wstr dir;
 			desc.add_options()(",d", po::wvalue<wstr>(&dir)->required(), "The directory to move the distribution to.");
 			parse_args();
-			terminate_distro(name);
+			check_running(name);
 			auto sp = get_distro_dir(name);
 			if (!move_directory(sp, dir)) {
 				auto ver = get_distro_version(name);
@@ -139,7 +128,6 @@ int wmain(int argc, wchar_t **argv) {
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
 				(",v", po::wvalue<uint32_t>(&ver)->default_value(-1), "The version of filesystem to use, same as source if not specified.");
 			parse_args();
-			terminate_distro(name);
 			reg_config conf;
 			conf.load_distro(name, config_all);
 			bool is_wsl2 = conf.is_wsl2();

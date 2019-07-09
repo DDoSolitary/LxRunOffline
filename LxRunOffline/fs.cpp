@@ -41,10 +41,10 @@ bool check_archive(archive *pa, int stat) {
 	throw error_other(err_archive, { ss.str() });
 }
 
-unique_ptr_del<HANDLE> open_file(crwstr path, bool is_dir, bool create) {
+unique_ptr_del<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool no_share = false) {
 	auto h = CreateFile(
 		path.c_str(),
-		MAXIMUM_ALLOWED, FILE_SHARE_READ, nullptr,
+		MAXIMUM_ALLOWED, no_share ? 0 : FILE_SHARE_READ, nullptr,
 		create ? CREATE_NEW : OPEN_EXISTING,
 		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : FILE_FLAG_OPEN_REPARSE_POINT, 0
 	);
@@ -686,4 +686,15 @@ void delete_directory(crwstr path) {
 			throw error_win32_last(dir ? err_delete_dir : err_delete_file, { p.data });
 		}
 	});
+}
+
+bool check_in_use(crwstr path) {
+	try {
+		open_file(path, false, false, true);
+	} catch (const err &e) {
+		if (e.msg_code == err_open_file && e.err_code == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)) {
+			return true;
+		}
+	}
+	return false;
 }

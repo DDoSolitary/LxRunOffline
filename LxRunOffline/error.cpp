@@ -39,7 +39,7 @@ const wstr msg_table[] = {
 	L"Couldn't convert a GUID to a string.",
 	L"Couldn't find the distro \"%1%\".",
 	L"The distro \"%1%\" already exists.",
-	L"The distro \"%1%\" has running processes and can't be operated.",
+	L"The distro \"%1%\" has running processes and can't be operated. \"wsl -t <name>\" or \"wsl --shutdown\" might help.",
 	L"Couldn't find a valid default distribution.",
 	L"No action is specified.",
 	L"The action \"%1%\" is not recognized.",

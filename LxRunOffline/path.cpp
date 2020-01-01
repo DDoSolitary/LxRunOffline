@@ -135,7 +135,7 @@ wstr wsl_path::normalize_path(wstr path) {
 }
 
 bool wsl_path::is_special_input(wchar_t c) const {
-	return (c >= 1 && c <= 31) || c == L'<' || c == L'>' || c == L':' || c == L'"' || c == L'\\' || c == L'|' || c == L'*';
+	return c >= 1 && c <= 31 || c == L'<' || c == L'>' || c == L':' || c == L'"' || c == L'\\' || c == L'|' || c == L'*' || c == L'?';
 }
 
 bool wsl_path::real_convert(file_path &output) const {

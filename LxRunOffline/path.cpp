@@ -20,19 +20,19 @@ prefix_matcher::prefix_matcher(std::initializer_list<wstr> patterns)
 }
 
 match_result prefix_matcher::move(wchar_t c) {
-	if (done) return match_unknown;
+	if (done) return match_result::unknown;
 	auto &m = trie[pos];
 	auto it = m.find(c);
 	if (it == m.end()) {
 		done = true;
-		return match_failed;
+		return match_result::failed;
 	}
 	if (it->second == 0) {
 		done = true;
-		return match_succeeded;
+		return match_result::succeeded;
 	}
 	pos = it->second;
-	return match_unknown;
+	return match_result::unknown;
 }
 
 void prefix_matcher::reset() {
@@ -98,13 +98,13 @@ linux_path::linux_path(crwstr path, crwstr root_path) : linux_path() {
 
 bool linux_path::append(wchar_t c) {
 	switch (matcher.move(c)) {
-	case match_failed:
+	case match_result::failed:
 		return false;
 		break;
-	case match_succeeded:
+	case match_result::succeeded:
 		data.clear();
 		break;
-	case match_unknown:
+	case match_result::unknown:
 		data += c;
 		break;
 	}
@@ -211,10 +211,10 @@ wsl_legacy_path::wsl_legacy_path(crwstr base)
 
 bool wsl_legacy_path::append(wchar_t c) {
 	if (!wsl_v1_path::append(c)) return false;
-	if (matcher1.move(c) == match_succeeded) {
+	if (matcher1.move(c) == match_result::succeeded) {
 		// Maybe add warning
 		return false;
-	} else if (matcher2.move(c) == match_succeeded) {
+	} else if (matcher2.move(c) == match_result::succeeded) {
 		data.erase(base_len, 7);
 	}
 	return true;

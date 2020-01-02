@@ -1,10 +1,10 @@
 #pragma once
 #include "stdafx.h"
 
-enum match_result {
-	match_failed,
-	match_succeeded,
-	match_unknown
+enum class match_result {
+	failed,
+	succeeded,
+	unknown
 };
 
 // A pattern can't be a substring of another one

@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "stdafx.h"
 
-enum err_msg {
+enum class err_msg {
 	err_open_file,
 	err_open_dir,
 	err_create_file,

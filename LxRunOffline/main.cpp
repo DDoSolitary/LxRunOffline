@@ -10,7 +10,7 @@ namespace po = boost::program_options;
 void check_running(crwstr name) {
 	auto p = get_distro_dir(name);
 	if (check_in_use(p + L"\\rootfs\\init") || check_in_use(p + L"\\ext4.vhdx")) {
-		throw lro_error::from_other(err_distro_running, { name });
+		throw lro_error::from_other(err_msg::err_distro_running, { name });
 	}
 }
 
@@ -32,10 +32,10 @@ int wmain(int argc, wchar_t **argv) {
 
 	try {
 		if (win_build < 17134) {
-			throw lro_error::from_other(err_version_old, { L"1803", L"17134" });
+			throw lro_error::from_other(err_msg::err_version_old, { L"1803", L"17134" });
 		}
 		if (argc < 2) {
-			throw lro_error::from_other(err_no_action, {});
+			throw lro_error::from_other(err_msg::err_no_action, {});
 #ifdef LXRUNOFFLINE_VERSION
 		} else if (!wcscmp(argv[1], L"version")) {
 			std::wcout << L"LxRunOffline " << LXRUNOFFLINE_VERSION << std::endl;
@@ -67,7 +67,7 @@ int wmain(int argc, wchar_t **argv) {
 				try {
 					conf.load_file(file + L".xml");
 				} catch (const lro_error &e) {
-					if (e.msg_code == err_open_file) {
+					if (e.msg_code == err_msg::err_open_file) {
 						if (e.err_code != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
 							log_warning(e.format());
 						}
@@ -81,7 +81,7 @@ int wmain(int argc, wchar_t **argv) {
 			if (shortcut) {
 				wchar_t *s;
 				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
-				if (FAILED(hr)) throw lro_error::from_hresult(err_create_shortcut, {}, hr);
+				if (FAILED(hr)) throw lro_error::from_hresult(err_msg::err_create_shortcut, {}, hr);
 				unique_ptr_del<wchar_t *> dp(s, &CoTaskMemFree);
 				create_shortcut(name, dp.get() + (L'\\' + name + L".lnk"), L"");
 			}
@@ -133,7 +133,7 @@ int wmain(int argc, wchar_t **argv) {
 			bool is_wsl2 = conf.is_wsl2();
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			is_wsl2 |= conf.is_wsl2();
-			if (is_wsl2 && ~ver) throw lro_error::from_other(err_wsl2_unsupported, { L"-v" });
+			if (is_wsl2 && ~ver) throw lro_error::from_other(err_msg::err_wsl2_unsupported, { L"-v" });
 			auto ov = get_distro_version(name);
 			auto nv = ~ver ? ver : ov;
 			register_distro(new_name, dir, nv);
@@ -146,7 +146,7 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_all);
-			if (conf.is_wsl2()) throw lro_error::from_other(err_wsl2_unsupported, { L"export" });
+			if (conf.is_wsl2()) throw lro_error::from_other(err_msg::err_wsl2_unsupported, { L"export" });
 			auto writer = archive_writer(file);
 			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
 			conf.save_file(file + L".xml");
@@ -158,12 +158,12 @@ int wmain(int argc, wchar_t **argv) {
 				(",w", po::bool_switch(&no_cwd), "Don't use the working directory in Windows for the Linux process.");
 			parse_args();
 			auto hw = LoadLibraryEx(L"wslapi.dll", 0, LOAD_LIBRARY_SEARCH_SYSTEM32);
-			if (hw == INVALID_HANDLE_VALUE) throw lro_error::from_win32_last(err_no_wslapi, {});
+			if (hw == INVALID_HANDLE_VALUE) throw lro_error::from_win32_last(err_msg::err_no_wslapi, {});
 			auto launch = (HRESULT(__stdcall *)(PCWSTR, PCWSTR, BOOL, DWORD *))GetProcAddress(hw, "WslLaunchInteractive");
-			if (!launch) throw lro_error::from_win32_last(err_no_wslapi, {});
+			if (!launch) throw lro_error::from_win32_last(err_msg::err_no_wslapi, {});
 			DWORD code;
 			auto hr = launch(name.c_str(), cmd.empty() ? nullptr : cmd.c_str(), !no_cwd, &code);
-			if (FAILED(hr)) throw lro_error::from_hresult(err_launch_distro, { name }, hr);
+			if (FAILED(hr)) throw lro_error::from_hresult(err_msg::err_launch_distro, { name }, hr);
 			return code;
 		} else if (!wcscmp(argv[1], L"di") || !wcscmp(argv[1], L"get-dir")) {
 			parse_args();
@@ -191,7 +191,7 @@ int wmain(int argc, wchar_t **argv) {
 				(",f", po::bool_switch(&force), "Overwrite if the environment variable already exists.");
 			parse_args();
 			auto p = env.find(L'=');
-			if (p == wstr::npos) throw lro_error::from_other(err_invalid_env, { env });
+			if (p == wstr::npos) throw lro_error::from_other(err_msg::err_invalid_env, { env });
 			auto env_name = env.substr(0, p + 1);
 			reg_config conf;
 			conf.load_distro(name, config_env);
@@ -200,7 +200,7 @@ int wmain(int argc, wchar_t **argv) {
 			});
 			if (it != conf.env.end()) {
 				if (force) conf.env.erase(it);
-				else throw lro_error::from_other(err_env_exists, { *it });
+				else throw lro_error::from_other(err_msg::err_env_exists, { *it });
 			}
 			conf.env.push_back(env);
 			conf.configure_distro(name, config_env);
@@ -213,7 +213,7 @@ int wmain(int argc, wchar_t **argv) {
 			auto it = std::find_if(conf.env.begin(), conf.env.end(), [&](crwstr s) {
 				return !s.compare(0, env_name.size() + 1, env_name + L"=");
 			});
-			if (it == conf.env.end()) throw lro_error::from_other(err_env_not_found, { env_name });
+			if (it == conf.env.end()) throw lro_error::from_other(err_msg::err_env_not_found, { env_name });
 			conf.env.erase(it);
 			conf.configure_distro(name, config_env);
 		} else if (!wcscmp(argv[1], L"gu") || !wcscmp(argv[1], L"get-uid")) {
@@ -288,11 +288,11 @@ int wmain(int argc, wchar_t **argv) {
 				std::wcout << conf.env[i] << std::endl;
 			}
 		} else {
-			throw lro_error::from_other(err_invalid_action, { argv[1] });
+			throw lro_error::from_other(err_msg::err_invalid_action, { argv[1] });
 		}
 	} catch (const lro_error &e) {
 		log_error(e.format());
-		if (e.msg_code == err_no_action || e.msg_code == err_invalid_action) {
+		if (e.msg_code == err_msg::err_no_action || e.msg_code == err_msg::err_invalid_action) {
 			std::wcerr
 				<< L"Supported actions are:" << std::endl
 				<< L"    l, list            List all installed distributions." << std::endl

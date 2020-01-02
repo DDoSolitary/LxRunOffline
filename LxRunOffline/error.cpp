@@ -81,7 +81,7 @@ lro_error lro_error::from_other(err_msg msg_code, std::vector<wstr> msg_args) {
 wstr lro_error::format() const {
 	std::wstringstream ss;
 
-	auto fmt = boost::wformat(msg_table[msg_code]);
+	auto fmt = boost::wformat(msg_table[size_t(msg_code)]);
 	for (crwstr s : msg_args) fmt = fmt % s;
 	ss << fmt << std::endl;
 

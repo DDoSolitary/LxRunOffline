@@ -8,7 +8,7 @@ const uint32_t win_build = []() {
 #pragma warning(disable:4996)
 	if (!GetVersionEx(&ver)) {
 #pragma warning(default:4996)
-		throw lro_error::from_other(err_get_version, {});
+		throw lro_error::from_other(err_msg::err_get_version, {});
 	}
 	return ver.dwBuildNumber;
 }();
@@ -61,7 +61,7 @@ wstr from_utf8(const char *s) {
 	auto res = probe_and_call<wchar_t, int>([&](wchar_t *buf, int len) {
 		return MultiByteToWideChar(CP_UTF8, 0, s, -1, buf, len);
 	});
-	if (!res.second) throw lro_error::from_win32_last(err_convert_encoding, {});
+	if (!res.second) throw lro_error::from_win32_last(err_msg::err_convert_encoding, {});
 	return res.first.get();
 }
 
@@ -69,7 +69,7 @@ std::unique_ptr<char[]> to_utf8(wstr s) {
 	auto res = probe_and_call<char, int>([&](char *buf, int len) {
 		return WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, buf, len, nullptr, nullptr);
 	});
-	if (!res.second) throw lro_error::from_win32_last(err_convert_encoding, {});
+	if (!res.second) throw lro_error::from_win32_last(err_msg::err_convert_encoding, {});
 	return std::move(res.first);
 }
 
@@ -78,7 +78,7 @@ wstr get_full_path(crwstr path) {
 		return GetFullPathName(path.c_str(), len, buf, nullptr);
 	});
 	if (!fp.second) {
-		throw lro_error::from_win32_last(err_transform_path, { path });
+		throw lro_error::from_win32_last(err_msg::err_transform_path, { path });
 	}
 	return fp.first.get();
 }

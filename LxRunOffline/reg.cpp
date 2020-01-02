@@ -21,10 +21,10 @@ const auto guid_len = 38;
 wstr new_guid() {
 	GUID guid;
 	auto hr = CoCreateGuid(&guid);
-	if (FAILED(hr)) throw error_hresult(err_create_guid, {}, hr);
+	if (FAILED(hr)) throw lro_error::from_hresult(err_create_guid, {}, hr);
 	auto buf = std::make_unique<wchar_t[]>(guid_len + 1);
 	if (!StringFromGUID2(guid, buf.get(), guid_len + 1)) {
-		throw error_other(err_convert_guid, {});
+		throw lro_error::from_other(err_convert_guid, {});
 	}
 	return buf.get();
 }
@@ -35,7 +35,7 @@ std::unique_ptr<char[]> get_dynamic(crwstr path, crwstr value_name, uint32_t typ
 			HKEY_CURRENT_USER, path.c_str(),
 			value_name.c_str(), type, nullptr, buf, &len
 		);
-		if (code) throw error_win32(err_get_key_value, { path, value_name }, code);
+		if (code) throw lro_error::from_win32(err_get_key_value, { path, value_name }, code);
 		return len;
 	}).first;
 }
@@ -45,7 +45,7 @@ void set_dynamic(crwstr path, crwstr value_name, uint32_t type, const void *valu
 		HKEY_CURRENT_USER, path.c_str(),
 		value_name.c_str(), type, value, len
 	);
-	if (code) throw error_win32(err_set_key_value, { path, value_name }, code);
+	if (code) throw lro_error::from_win32(err_set_key_value, { path, value_name }, code);
 }
 
 template<typename T> T get_value(crwstr, crwstr);
@@ -74,7 +74,7 @@ uint32_t get_value<uint32_t>(crwstr path, crwstr value_name) {
 		HKEY_CURRENT_USER, path.c_str(),
 		value_name.c_str(), RRF_RT_REG_DWORD, nullptr, &res, &rlen
 	);
-	if (code) throw error_win32(err_get_key_value, { path, value_name }, code);
+	if (code) throw lro_error::from_win32(err_get_key_value, { path, value_name }, code);
 	return res;
 }
 
@@ -114,7 +114,7 @@ unique_ptr_del<HKEY> create_key(crwstr path) {
 		HKEY_CURRENT_USER, path.c_str(),
 		0, nullptr, 0, KEY_READ, nullptr, &hk, nullptr
 	);
-	if (code) throw error_win32(err_open_key, { path }, code);
+	if (code) throw lro_error::from_win32(err_open_key, { path }, code);
 	return unique_ptr_del<HKEY>(hk, &RegCloseKey);
 }
 
@@ -126,7 +126,7 @@ std::vector<wstr> list_distro_id() {
 		DWORD bs = guid_len + 1;
 		auto code = RegEnumKeyEx(hk.get(), i, ib.get(), &bs, 0, nullptr, nullptr, nullptr);
 		if (code == ERROR_NO_MORE_ITEMS) break;
-		else if (code) throw error_win32(err_enum_key, { reg_base_path }, code);
+		else if (code) throw lro_error::from_win32(err_enum_key, { reg_base_path }, code);
 		res.push_back(ib.get());
 	}
 	return res;
@@ -146,7 +146,7 @@ wstr get_distro_id(crwstr name) {
 		auto cn = get_value<wstr>(reg_base_path + id, vn_distro_name);
 		if (name == cn) return id;
 	}
-	throw error_other(err_distro_not_found, { name });
+	throw lro_error::from_other(err_distro_not_found, { name });
 }
 
 wstr get_distro_key(crwstr name) {
@@ -157,9 +157,9 @@ wstr get_default_distro() {
 	try {
 		auto p = reg_base_path + get_value<wstr>(reg_base_path, vn_default_distro);
 		return get_value<wstr>(p, vn_distro_name);
-	} catch (const err &e) {
+	} catch (const lro_error &e) {
 		if (e.msg_code == err_get_key_value && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
-			throw error_other(err_no_default_distro, {});
+			throw lro_error::from_other(err_no_default_distro, {});
 		} else throw;
 	}
 }
@@ -171,12 +171,12 @@ void set_default_distro(crwstr name) {
 void register_distro(crwstr name, crwstr path, uint32_t version) {
 	auto l = list_distros();
 	if (count(l.begin(), l.end(), name)) {
-		throw error_other(err_distro_exists, { name });
+		throw lro_error::from_other(err_distro_exists, { name });
 	}
 
 	auto fp = get_full_path(path);
 	if (fp.size() == 3 && fp == fp.substr(0, 1) + L":\\") {
-		throw error_other(err_root_dir, { fp });
+		throw lro_error::from_other(err_root_dir, { fp });
 	}
 
 	auto p = reg_base_path + new_guid();
@@ -188,15 +188,15 @@ void register_distro(crwstr name, crwstr path, uint32_t version) {
 
 	try {
 		get_default_distro();
-	} catch (const err &e) {
+	} catch (const lro_error &e) {
 		if (e.msg_code == err_no_default_distro) {
 			try {
 				set_default_distro(name);
-			} catch (const err &e) {
-				log_warning(format_error(e));
+			} catch (const lro_error &e) {
+				log_warning(e.format());
 			}
 		} else {
-			log_warning(format_error(e));
+			log_warning(e.format());
 		}
 	}
 }
@@ -205,25 +205,25 @@ void unregister_distro(crwstr name) {
 	bool d;
 	try {
 		d = get_default_distro() == name;
-	} catch (const err &e) {
-		log_warning(format_error(e));
+	} catch (const lro_error &e) {
+		log_warning(e.format());
 	}
 
 	auto p = get_distro_key(name);
 	auto code = RegDeleteTree(HKEY_CURRENT_USER, p.c_str());
-	if (code) throw error_win32(err_delete_key, { p }, code);
+	if (code) throw lro_error::from_win32(err_delete_key, { p }, code);
 
 	if (d) {
 		try {
 			auto l = list_distro_id();
 			if (l.empty()) {
 				auto code = RegDeleteKeyValue(HKEY_CURRENT_USER, reg_base_path.c_str(), vn_default_distro.c_str());
-				if (code) throw error_win32(err_delete_key_value, { reg_base_path, vn_default_distro }, code);
+				if (code) throw lro_error::from_win32(err_delete_key_value, { reg_base_path, vn_default_distro }, code);
 			} else {
 				set_value(reg_base_path, vn_default_distro, l.front());
 			}
-		} catch (const err &e) {
-			log_warning(format_error(e));
+		} catch (const lro_error &e) {
+			log_warning(e.format());
 		}
 	}
 }
@@ -253,21 +253,21 @@ reg_config::reg_config(bool is_wsl2) {
 	if (is_wsl2) flags |= flag_wsl2;
 }
 
-err error_xml(tx::XMLError e) {
-	return error_other(err_config_file, { from_utf8(tx::XMLDocument::ErrorIDToName(e)) });
+lro_error error_xml(tx::XMLError e) {
+	return lro_error::from_other(err_config_file, { from_utf8(tx::XMLDocument::ErrorIDToName(e)) });
 }
 
 void reg_config::load_file(crwstr path) {
 	unique_ptr_del<FILE *> f(_wfopen(path.c_str(), L"rb"), &fclose);
 	if (!f.get()) {
 		f.release();
-		throw error_win32_last(err_open_file, { path });
+		throw lro_error::from_win32_last(err_open_file, { path });
 	}
 	tx::XMLDocument doc;
 	auto e = doc.LoadFile(f.get());
 	if (e) throw error_xml(e);
 	tx::XMLElement *ele, *rt = doc.FirstChildElement("config");
-	if (!rt) throw error_other(err_config_file, { L"Root element \"config\" not found." });
+	if (!rt) throw lro_error::from_other(err_config_file, { L"Root element \"config\" not found." });
 	if (ele = rt->FirstChildElement("envs")) {
 		env.clear();
 		for (auto ee = ele->FirstChildElement("env"); ee; ee = ee->NextSiblingElement("env")) {
@@ -295,7 +295,7 @@ void reg_config::save_file(crwstr path) const {
 	unique_ptr_del<FILE *> f(_wfopen(path.c_str(), L"wb"), &fclose);
 	if (!f.get()) {
 		f.release();
-		throw error_win32_last(err_create_file, { path });
+		throw lro_error::from_win32_last(err_create_file, { path });
 	}
 	tx::XMLDocument doc;
 	doc.SetBOM(true);
@@ -321,7 +321,7 @@ template<typename T>
 void try_get_value(crwstr path, crwstr value_name, T &value) {
 	try {
 		value = get_value<T>(path, value_name);
-	} catch (const err &e) {
+	} catch (const lro_error &e) {
 		if (e.msg_code != err_get_key_value || e.err_code != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
 			throw;
 		}
@@ -349,7 +349,7 @@ uint32_t reg_config::get_flags() const {
 }
 
 void reg_config::set_flags(uint32_t value) {
-	if (value & ~flags_mask) throw error_other(err_invalid_flags, {});
+	if (value & ~flags_mask) throw lro_error::from_other(err_invalid_flags, {});
 	flags = (flags & flag_wsl2) | (value & flags_mask);
 }
 

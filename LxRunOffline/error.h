@@ -56,15 +56,19 @@ enum err_msg {
 	err_wsl2_unsupported
 };
 
-struct err {
+class lro_error : public std::exception {
+	lro_error(err_msg msg_code, std::vector<wstr> msg_args, HRESULT err_code)
+		: msg_code(msg_code), msg_args(std::move(msg_args)), err_code(err_code) {}
+public:
 	err_msg msg_code;
 	std::vector<wstr> msg_args;
 	HRESULT err_code;
-};
 
-err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code);
-err error_win32(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code);
-err error_win32_last(err_msg msg_code, const std::vector<wstr> &msg_args);
-err error_nt(err_msg msg_code, const std::vector<wstr> &msg_args, NTSTATUS err_code);
-err error_other(err_msg msg_code, const std::vector<wstr> &msg_args);
-wstr format_error(const err &e);
+	static lro_error from_hresult(err_msg msg_code, std::vector<wstr> msg_args, HRESULT err_code);
+	static lro_error from_win32(err_msg msg_code, std::vector<wstr> msg_args, uint32_t err_code);
+	static lro_error from_win32_last(err_msg msg_code, std::vector<wstr> msg_args);
+	static lro_error from_nt(err_msg msg_code, std::vector<wstr> msg_args, NTSTATUS err_code);
+	static lro_error from_other(err_msg msg_code, std::vector<wstr> msg_args);
+
+	wstr format() const;
+};

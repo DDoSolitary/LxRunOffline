@@ -57,37 +57,38 @@ const wstr msg_table[] = {
 	L"The action/argument \"%1%\" doesn't support WSL2."
 };
 
-err error_hresult(err_msg msg_code, const std::vector<wstr> &msg_args, HRESULT err_code) {
-	return err{ msg_code, msg_args, err_code };
+lro_error lro_error::from_hresult(err_msg msg_code, std::vector<wstr> msg_args, HRESULT err_code) {
+	return lro_error(msg_code, std::move(msg_args), err_code);
+
 }
 
-err error_win32(err_msg msg_code, const std::vector<wstr> &msg_args, uint32_t err_code) {
-	return error_hresult(msg_code, msg_args, HRESULT_FROM_WIN32(err_code));
+lro_error lro_error::from_win32(err_msg msg_code, std::vector<wstr> msg_args, uint32_t err_code) {
+	return from_hresult(msg_code, std::move(msg_args), HRESULT_FROM_WIN32(err_code));
 }
 
-err error_win32_last(err_msg msg_code, const std::vector<wstr> &msg_args) {
-	return error_win32(msg_code, msg_args, GetLastError());
+lro_error lro_error::from_win32_last(err_msg msg_code, std::vector<wstr> msg_args) {
+	return from_win32(msg_code, std::move(msg_args), GetLastError());
 }
 
-err error_nt(err_msg msg_code, const std::vector<wstr> &msg_args, NTSTATUS err_code) {
-	return error_hresult(msg_code, msg_args, HRESULT_FROM_NT(err_code));
+lro_error lro_error::from_nt(err_msg msg_code, std::vector<wstr> msg_args, NTSTATUS err_code) {
+	return from_hresult(msg_code, std::move(msg_args), HRESULT_FROM_NT(err_code));
 }
 
-err error_other(err_msg msg_code, const std::vector<wstr> &msg_args) {
-	return error_hresult(msg_code, msg_args, S_OK);
+lro_error lro_error::from_other(err_msg msg_code, std::vector<wstr> msg_args) {
+	return from_hresult(msg_code, std::move(msg_args), S_OK);
 }
 
-wstr format_error(const err &e) {
+wstr lro_error::format() const {
 	std::wstringstream ss;
 
-	auto fmt = boost::wformat(msg_table[e.msg_code]);
-	for (crwstr s : e.msg_args) fmt = fmt % s;
+	auto fmt = boost::wformat(msg_table[msg_code]);
+	for (crwstr s : msg_args) fmt = fmt % s;
 	ss << fmt << std::endl;
 
-	if (e.err_code) {
+	if (err_code) {
 		ss << L"Reason: ";
-		if (e.err_code & FACILITY_NT_BIT) {
-			auto stat = e.err_code & ~FACILITY_NT_BIT;
+		if (err_code & FACILITY_NT_BIT) {
+			auto stat = err_code & ~FACILITY_NT_BIT;
 			wchar_t *buf = nullptr;
 			auto f = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS;
 			auto hm = LoadLibrary(L"ntdll.dll");
@@ -100,7 +101,7 @@ wstr format_error(const err &e) {
 				ss << L"Unknown NTSTATUS: " << L"0x" << std::setfill(L'0') << std::setw(8) << std::hex << stat;
 			}
 		} else {
-			_com_error ce(e.err_code);
+			_com_error ce(err_code);
 			ss << ce.ErrorMessage();
 		}
 	}

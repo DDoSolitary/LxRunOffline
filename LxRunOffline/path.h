@@ -21,9 +21,10 @@ public:
 class file_path {
 protected:
 	size_t base_len;
-	file_path(crwstr);
+	explicit file_path(crwstr);
 public:
 	wstr data;
+	virtual ~file_path() = default;
 	virtual bool append(wchar_t) = 0;
 	bool append(crwstr);
 	virtual bool convert(file_path &) const = 0;
@@ -44,9 +45,9 @@ public:
 };
 
 class wsl_path : public file_path {
-	static wstr normalize_path(wstr);
+	static wstr normalize_path(crwstr);
 protected:
-	wsl_path(crwstr);
+	explicit wsl_path(crwstr);
 	virtual void append_special(wchar_t) = 0;
 	virtual bool convert_special(file_path &, size_t &) const = 0;
 	virtual bool is_special_input(wchar_t) const;
@@ -64,7 +65,7 @@ protected:
 	bool is_special_input(wchar_t) const override;
 	bool is_special_output(wchar_t c) const override;
 public:
-	wsl_v1_path(crwstr);
+	explicit wsl_v1_path(crwstr);
 	std::unique_ptr<file_path> clone() const override;
 };
 
@@ -81,7 +82,7 @@ public:
 class wsl_legacy_path : public wsl_v1_path {
 	prefix_matcher matcher1, matcher2;
 public:
-	wsl_legacy_path(crwstr);
+	explicit wsl_legacy_path(crwstr);
 	bool append(wchar_t) override;
 	bool convert(file_path &) const override;
 	void reset() override;

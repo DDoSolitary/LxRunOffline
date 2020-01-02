@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "stdafx.h"
 #include "path.h"
-#include "utils.h"
 
 struct unix_time {
 	uint64_t sec;
@@ -17,6 +16,7 @@ struct file_attr {
 class fs_writer {
 public:
 	std::unique_ptr<file_path> path, target_path;
+	virtual ~fs_writer() = default;
 	virtual bool write_new_file(const file_attr *) = 0;
 	virtual void write_file_data(const char *, uint32_t) = 0;
 	virtual void write_directory(const file_attr *) = 0;
@@ -32,7 +32,7 @@ class archive_writer : public fs_writer {
 	bool check_attr(const file_attr *);
 	static void warn_ignored(crwstr);
 public:
-	archive_writer(crwstr);
+	explicit archive_writer(crwstr);
 	bool write_new_file(const file_attr *) override;
 	void write_file_data(const char *, uint32_t) override;
 	void write_directory(const file_attr *) override;
@@ -48,7 +48,6 @@ protected:
 	virtual void write_symlink_data(HANDLE, const char *) const = 0;
 	wsl_writer();
 public:
-	virtual ~wsl_writer() = default;
 	bool write_new_file(const file_attr *) override;
 	void write_file_data(const char *, uint32_t) override;
 	void write_directory(const file_attr *) override;
@@ -62,7 +61,7 @@ protected:
 	void write_attr(HANDLE, const file_attr *) override;
 	void write_symlink_data(HANDLE, const char *) const override;
 public:
-	wsl_v1_writer(crwstr);
+	explicit wsl_v1_writer(crwstr);
 };
 
 class wsl_v2_writer : public wsl_writer {
@@ -72,24 +71,25 @@ protected:
 	void write_attr(HANDLE, const file_attr *) override;
 	void write_symlink_data(HANDLE, const char *) const override;
 public:
-	wsl_v2_writer(crwstr);
+	explicit wsl_v2_writer(crwstr);
 	~wsl_v2_writer() override;
 };
 
 class wsl_legacy_writer : public wsl_v1_writer {
 public:
-	wsl_legacy_writer(crwstr);
+	explicit wsl_legacy_writer(crwstr);
 };
 
 class fs_reader {
 public:
+	virtual ~fs_reader() = default;
 	virtual void run(fs_writer &writer) = 0;
 };
 
 class archive_reader : public fs_reader {
 	const wstr archive_path, root_path;
 public:
-	archive_reader(crwstr, crwstr);
+	archive_reader(wstr, wstr);
 	void run(fs_writer &) override;
 };
 
@@ -109,7 +109,7 @@ protected:
 	std::unique_ptr<file_attr> read_attr(HANDLE) const override;
 	std::unique_ptr<char[]> read_symlink_data(HANDLE) const override;
 public:
-	wsl_v1_reader(crwstr);
+	explicit wsl_v1_reader(crwstr);
 };
 
 class wsl_v2_reader : public wsl_reader {
@@ -117,14 +117,14 @@ protected:
 	std::unique_ptr<file_attr> read_attr(HANDLE) const override;
 	std::unique_ptr<char[]> read_symlink_data(HANDLE) const override;
 public:
-	wsl_v2_reader(crwstr);
+	explicit wsl_v2_reader(crwstr);
 };
 
 class wsl_legacy_reader : public wsl_v1_reader {
 protected:
 	bool is_legacy() const override;
 public:
-	wsl_legacy_reader(crwstr);
+	explicit wsl_legacy_reader(crwstr);
 };
 
 uint32_t detect_version(crwstr path);

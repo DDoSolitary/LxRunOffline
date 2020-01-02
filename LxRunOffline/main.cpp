@@ -8,7 +8,7 @@
 namespace po = boost::program_options;
 
 void check_running(crwstr name) {
-	auto p = get_distro_dir(name);
+	const auto p = get_distro_dir(name);
 	if (check_in_use(p + L"\\rootfs\\init") || check_in_use(p + L"\\ext4.vhdx")) {
 		throw lro_error::from_other(err_msg::err_distro_running, { name });
 	}
@@ -80,7 +80,7 @@ int wmain(int argc, wchar_t **argv) {
 			archive_reader(file, root).run(*writer);
 			if (shortcut) {
 				wchar_t *s;
-				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, 0, &s);
+				auto hr = SHGetKnownFolderPath(FOLDERID_Desktop, 0, nullptr, &s);
 				if (FAILED(hr)) throw lro_error::from_hresult(err_msg::err_create_shortcut, {}, hr);
 				unique_ptr_del<wchar_t *> dp(s, &CoTaskMemFree);
 				create_shortcut(name, dp.get() + (L'\\' + name + L".lnk"), L"");
@@ -98,7 +98,7 @@ int wmain(int argc, wchar_t **argv) {
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory containing the distribution.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.");
 			parse_args();
-			bool is_wsl2 = detect_wsl2(dir);
+			const auto is_wsl2 = detect_wsl2(dir);
 			reg_config conf(is_wsl2);
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			register_distro(name, dir, is_wsl2 ? 2 : detect_version(dir));
@@ -130,7 +130,7 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_all);
-			bool is_wsl2 = conf.is_wsl2();
+			auto is_wsl2 = conf.is_wsl2();
 			if (!conf_path.empty()) conf.load_file(conf_path);
 			is_wsl2 |= conf.is_wsl2();
 			if (is_wsl2 && ~ver) throw lro_error::from_other(err_msg::err_wsl2_unsupported, { L"-v" });
@@ -147,7 +147,7 @@ int wmain(int argc, wchar_t **argv) {
 			reg_config conf;
 			conf.load_distro(name, config_all);
 			if (conf.is_wsl2()) throw lro_error::from_other(err_msg::err_wsl2_unsupported, { L"export" });
-			auto writer = archive_writer(file);
+			archive_writer writer(file);
 			select_wsl_reader(get_distro_version(name), get_distro_dir(name))->run(writer);
 			conf.save_file(file + L".xml");
 		} else if (!wcscmp(argv[1], L"r") || !wcscmp(argv[1], L"run")) {
@@ -157,9 +157,9 @@ int wmain(int argc, wchar_t **argv) {
 				(",c", po::wvalue<wstr>(&cmd), "The command to run. Launch default shell if not specified.")
 				(",w", po::bool_switch(&no_cwd), "Don't use the working directory in Windows for the Linux process.");
 			parse_args();
-			auto hw = LoadLibraryEx(L"wslapi.dll", 0, LOAD_LIBRARY_SEARCH_SYSTEM32);
+			auto hw = LoadLibraryEx(L"wslapi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 			if (hw == INVALID_HANDLE_VALUE) throw lro_error::from_win32_last(err_msg::err_no_wslapi, {});
-			auto launch = (HRESULT(__stdcall *)(PCWSTR, PCWSTR, BOOL, DWORD *))GetProcAddress(hw, "WslLaunchInteractive");
+			auto launch = reinterpret_cast<HRESULT(__stdcall *)(PCWSTR, PCWSTR, BOOL, DWORD *)>(GetProcAddress(hw, "WslLaunchInteractive"));
 			if (!launch) throw lro_error::from_win32_last(err_msg::err_no_wslapi, {});
 			DWORD code;
 			auto hr = launch(name.c_str(), cmd.empty() ? nullptr : cmd.c_str(), !no_cwd, &code);

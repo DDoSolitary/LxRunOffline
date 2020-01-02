@@ -27,10 +27,10 @@ struct lxattrb {
 
 IO_STATUS_BLOCK iostat;
 
-bool check_archive(archive *pa, int stat) {
+bool check_archive(archive *pa, const int stat) {
 	if (stat == ARCHIVE_OK) return true;
 	if (stat == ARCHIVE_EOF) return false;
-	auto es = archive_error_string(pa);
+	const auto es = archive_error_string(pa);
 	std::wstringstream ss;
 	if (es) ss << es;
 	else ss << L"Unknown error " << archive_errno(pa);
@@ -41,12 +41,12 @@ bool check_archive(archive *pa, int stat) {
 	throw lro_error::from_other(err_msg::err_archive, { ss.str() });
 }
 
-unique_ptr_del<HANDLE> open_file(crwstr path, bool is_dir, bool create, bool no_share = false) {
-	auto h = CreateFile(
+unique_ptr_del<HANDLE> open_file(crwstr path, const bool is_dir, const bool create, const bool no_share = false) {
+	const auto h = CreateFile(
 		path.c_str(),
 		MAXIMUM_ALLOWED, no_share ? 0 : FILE_SHARE_READ, nullptr,
 		create ? CREATE_NEW : OPEN_EXISTING,
-		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : FILE_FLAG_OPEN_REPARSE_POINT, 0
+		is_dir ? FILE_FLAG_BACKUP_SEMANTICS : FILE_FLAG_OPEN_REPARSE_POINT, nullptr
 	);
 	if (h == INVALID_HANDLE_VALUE) {
 		if (is_dir) throw lro_error::from_win32_last(err_msg::err_open_dir, { path });
@@ -76,39 +76,39 @@ void grant_delete_child(HANDLE hf) {
 	if (GetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, &pa, nullptr, &pdb)) return;
 	unique_ptr_del<PSECURITY_DESCRIPTOR> pd(pdb, &LocalFree);
 	EXPLICIT_ACCESS ea;
-	BuildExplicitAccessWithName(&ea, (wchar_t *)L"CURRENT_USER", FILE_DELETE_CHILD, GRANT_ACCESS, CONTAINER_INHERIT_ACE);
+	BuildExplicitAccessWithName(&ea, const_cast<wchar_t *>(L"CURRENT_USER"), FILE_DELETE_CHILD, GRANT_ACCESS, CONTAINER_INHERIT_ACE);
 	PACL pnab;
 	if (SetEntriesInAcl(1, &ea, pa, &pnab)) return;
-	unique_ptr_del<PACL> pna(pnab, &LocalFree);
+	const unique_ptr_del<PACL> pna(pnab, &LocalFree);
 	SetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, pna.get(), nullptr);
 }
 
 void set_cs_info(HANDLE hd) {
-	FILE_CASE_SENSITIVE_INFORMATION info;
-	auto stat = NtQueryInformationFile(hd, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
+	FILE_CASE_SENSITIVE_INFORMATION info = {};
+	auto stat = NtQueryInformationFile(hd, &iostat, &info, sizeof info, FileCaseSensitiveInformation);
 	if (!stat && (info.Flags & FILE_CS_FLAG_CASE_SENSITIVE_DIR)) return;
 	info.Flags = FILE_CS_FLAG_CASE_SENSITIVE_DIR;
-	stat = NtSetInformationFile(hd, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
+	stat = NtSetInformationFile(hd, &iostat, &info, sizeof info, FileCaseSensitiveInformation);
 	if (stat == STATUS_ACCESS_DENIED) {
 		grant_delete_child(hd);
-		stat = NtSetInformationFile(hd, &iostat, &info, sizeof(info), FileCaseSensitiveInformation);
+		stat = NtSetInformationFile(hd, &iostat, &info, sizeof info, FileCaseSensitiveInformation);
 	}
 	if (stat) throw lro_error::from_nt(err_msg::err_set_cs, {}, stat);
 }
 
 template<typename T>
 T get_ea(HANDLE hf, const char *name) {
-	auto nl = (uint8_t)strlen(name);
-	auto gil = (uint32_t)(FIELD_OFFSET(FILE_GET_EA_INFORMATION, EaName) + nl + 1);
-	auto bgi = std::make_unique<char[]>(gil);
-	auto pgi = (FILE_GET_EA_INFORMATION *)bgi.get();
-	auto il = (uint32_t)(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + nl + 1 + sizeof(T));
-	auto bi = std::make_unique<char[]>(il);
-	auto pi = (FILE_FULL_EA_INFORMATION *)bi.get();
+	const auto nl = static_cast<uint8_t>(strlen(name));
+	const auto gil = static_cast<uint32_t>((FIELD_OFFSET(FILE_GET_EA_INFORMATION, EaName) + nl + 1));
+	const auto bgi = std::make_unique<char[]>(gil);
+	const auto pgi = reinterpret_cast<FILE_GET_EA_INFORMATION *>(bgi.get());
+	const auto il = static_cast<uint32_t>(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + nl + 1 + sizeof(T));
+	const auto bi = std::make_unique<char[]>(il);
+	const auto pi = reinterpret_cast<FILE_FULL_EA_INFORMATION *>(bi.get());
 	pgi->NextEntryOffset = 0;
 	pgi->EaNameLength = nl;
 	strcpy(pgi->EaName, name);
-	auto stat = NtQueryEaFile(
+	const auto stat = NtQueryEaFile(
 		hf, &iostat,
 		pi, il, true,
 		pgi, gil, nullptr, true
@@ -117,30 +117,34 @@ T get_ea(HANDLE hf, const char *name) {
 	if (pi->EaValueLength != sizeof(T)) {
 		throw lro_error::from_other(err_msg::err_invalid_ea, { from_utf8(name) });
 	}
-	T t;
+	T t = {};
 	memcpy(&t, pi->EaName + nl + 1, sizeof(T));
 	return t;
 }
 
 template<typename T>
 void set_ea(HANDLE hf, const char *name, const T &data) {
-	auto nl = (uint8_t)strlen(name);
-	auto il = (uint32_t)(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + nl + 1 + sizeof(T));
-	auto bi = std::make_unique<char[]>(il);
-	auto pi = (FILE_FULL_EA_INFORMATION *)bi.get();
+	const auto nl = static_cast<uint8_t>(strlen(name));
+	const auto il = static_cast<uint32_t>(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + nl + 1 + sizeof(T));
+	const auto bi = std::make_unique<char[]>(il);
+	const auto pi = reinterpret_cast<FILE_FULL_EA_INFORMATION *>(bi.get());
 	pi->NextEntryOffset = 0;
 	pi->Flags = 0;
 	pi->EaNameLength = nl;
 	pi->EaValueLength = sizeof(T);
 	strcpy(pi->EaName, name);
 	memcpy(pi->EaName + nl + 1, &data, sizeof(T));
-	auto stat = NtSetEaFile(hf, &iostat, pi, il);
+	const auto stat = NtSetEaFile(hf, &iostat, pi, il);
 	if (stat) throw lro_error::from_nt(err_msg::err_set_ea, { from_utf8(name) }, stat);
 }
 
-void enum_directory(file_path &path, bool rootfs_first, std::function<void(enum_dir_type)> action) {
+void find_close_safe(HANDLE hs) {
+	if (hs != INVALID_HANDLE_VALUE) FindClose(hs);
+}
+
+void enum_directory(file_path &path, const bool rootfs_first, std::function<void(enum_dir_type)> action) {
 	std::function<void(bool)> enum_rec;
-	enum_rec = [&](bool is_root) {
+	enum_rec = [&](const bool is_root) {
 		try {
 			set_cs_info(open_file(path.data, true, false).get());
 		} catch (lro_error &e) {
@@ -148,7 +152,7 @@ void enum_directory(file_path &path, bool rootfs_first, std::function<void(enum_
 			throw;
 		}
 		action(enum_dir_type::enter);
-		auto os = path.data.size();
+		const auto os = path.data.size();
 		if (is_root) {
 			path.data += L"rootfs\\";
 			enum_rec(false);
@@ -156,14 +160,13 @@ void enum_directory(file_path &path, bool rootfs_first, std::function<void(enum_
 		}
 		WIN32_FIND_DATA data;
 		path.data += L'*';
-		unique_ptr_del<HANDLE> hs(FindFirstFile(path.data.c_str(), &data), &FindClose);
+		const unique_ptr_del<HANDLE> hs(FindFirstFile(path.data.c_str(), &data), &find_close_safe);
 		path.data.resize(os);
 		if (hs.get() == INVALID_HANDLE_VALUE) {
-			hs.release();
 			throw lro_error::from_win32_last(err_msg::err_enum_dir, { path.data });
 		}
 		while (true) {
-			if (wcscmp(data.cFileName, L".") && wcscmp(data.cFileName, L"..") && (!is_root || wcscmp(data.cFileName, L"rootfs"))) {
+			if (wcscmp(data.cFileName, L".") != 0 && wcscmp(data.cFileName, L"..") != 0 && (!is_root || wcscmp(data.cFileName, L"rootfs") != 0)) {
 				path.data += data.cFileName;
 				if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 					path.data += L'\\';
@@ -190,13 +193,13 @@ void time_u2f(const unix_time &ut, LARGE_INTEGER &ft) {
 }
 
 void time_f2u(const LARGE_INTEGER &ft, unix_time &ut) {
-	auto t = ft.QuadPart - 116444736000000000;
-	ut.sec = (uint64_t)(t / 10000000);
-	ut.nsec = (uint32_t)(t % 10000000 * 100);
+	const auto t = ft.QuadPart - 116444736000000000;
+	ut.sec = static_cast<uint64_t>(t / 10000000);
+	ut.nsec = static_cast<uint32_t>(t % 10000000 * 100);
 }
 
 archive_writer::archive_writer(crwstr archive_path)
-	: pa(archive_write_new(), &archive_write_free), pe(archive_entry_new(), &archive_entry_free), ignored_files() {
+	: pa(archive_write_new(), &archive_write_free), pe(archive_entry_new(), &archive_entry_free) {
 	path = std::make_unique<linux_path>();
 	target_path = std::make_unique<linux_path>();
 	check_archive(pa.get(), archive_write_set_format_gnutar(pa.get()));
@@ -261,9 +264,9 @@ void archive_writer::write_hard_link() {
 		warn_ignored(path->data);
 		return;
 	}
-	auto up = to_utf8(path->data);
+	const auto up = to_utf8(path->data);
 	archive_entry_set_pathname(pe.get(), up.get());
-	auto ut = to_utf8(target_path->data);
+	const auto ut = to_utf8(target_path->data);
 	archive_entry_set_hardlink(pe.get(), ut.get());
 	check_archive(pa.get(), archive_write_header(pa.get(), pe.get()));
 	archive_entry_clear(pe.get());
@@ -271,7 +274,7 @@ void archive_writer::write_hard_link() {
 
 wsl_writer::wsl_writer() : hf_data(nullptr) {}
 
-void wsl_writer::write_data(HANDLE hf, const char *buf, uint32_t size) const {
+void wsl_writer::write_data(HANDLE hf, const char *buf, const uint32_t size) const {
 	DWORD wc;
 	if (!WriteFile(hf, buf, size, &wc, nullptr)) {
 		throw lro_error::from_win32_last(err_msg::err_write_file, { path->data });
@@ -284,18 +287,18 @@ bool wsl_writer::write_new_file(const file_attr *attr) {
 	return true;
 }
 
-void wsl_writer::write_file_data(const char *buf, uint32_t size) {
+void wsl_writer::write_file_data(const char *buf, const uint32_t size) {
 	if (size) write_data(hf_data.get(), buf, size);
 	else hf_data.reset();
 }
 
 void wsl_writer::write_directory(const file_attr *attr) {
 	if (!CreateDirectory(path->data.c_str(), nullptr)) {
-		auto e = lro_error::from_win32_last(err_msg::err_create_dir, { path->data });
-		if (GetLastError() != ERROR_ALREADY_EXISTS) throw e;
+		const auto e = lro_error::from_win32_last(err_msg::err_create_dir, { path->data });
+		if (GetLastError() != ERROR_ALREADY_EXISTS) throw lro_error(e);
 		log_warning(e.format());
 	}
-	auto hf = open_file(path->data, true, false);
+	const auto hf = open_file(path->data, true, false);
 	write_attr(hf.get(), attr);
 	try {
 		set_cs_info(hf.get());
@@ -306,7 +309,7 @@ void wsl_writer::write_directory(const file_attr *attr) {
 }
 
 void wsl_writer::write_symlink(const file_attr *attr, const char *target) {
-	auto hf = open_file(path->data, false, true);
+	const auto hf = open_file(path->data, false, true);
 	write_attr(hf.get(), attr);
 	write_symlink_data(hf.get(), target);
 }
@@ -340,7 +343,7 @@ void wsl_v1_writer::write_attr(HANDLE hf, const file_attr *attr) {
 }
 
 void wsl_v1_writer::write_symlink_data(HANDLE hf, const char *target) const {
-	write_data(hf, target, (uint32_t)strlen(target));
+	write_data(hf, target, static_cast<uint32_t>(strlen(target)));
 }
 
 wsl_v2_writer::wsl_v2_writer(crwstr base_path) {
@@ -383,11 +386,11 @@ void wsl_v2_writer::write_attr(HANDLE hf, const file_attr *attr) {
 }
 
 void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target) const {
-	auto pl = strlen(target);
-	auto dl = (uint16_t)(pl + 4);
-	auto bl = (uint32_t)(FIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer) + dl);
-	auto buf = std::make_unique<char[]>(bl);
-	auto pb = (REPARSE_DATA_BUFFER *)buf.get();
+	const auto pl = strlen(target);
+	const auto dl = static_cast<uint16_t>(pl + 4);
+	const auto bl = static_cast<uint32_t>(FIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer) + dl);
+	const auto buf = std::make_unique<char[]>(bl);
+	const auto pb = reinterpret_cast<REPARSE_DATA_BUFFER *>(buf.get());
 	pb->ReparseTag = IO_REPARSE_TAG_LX_SYMLINK;
 	pb->ReparseDataLength = dl;
 	pb->Reserved = 0;
@@ -420,8 +423,8 @@ wsl_legacy_writer::wsl_legacy_writer(crwstr base_path) {
 	create_recursive(path->data);
 }
 
-archive_reader::archive_reader(crwstr archive_path, crwstr root_path)
-	: archive_path(archive_path), root_path(root_path) {}
+archive_reader::archive_reader(wstr archive_path, wstr root_path)
+	: archive_path(std::move(archive_path)), root_path(std::move(root_path)) {}
 
 void archive_reader::run(fs_writer &writer) {
 	auto as = get_file_size(open_file(archive_path, false, false).get());
@@ -436,7 +439,7 @@ void archive_reader::run(fs_writer &writer) {
 	}
 	archive_entry *pe;
 	while (check_archive(pa.get(), archive_read_next_header(pa.get(), &pe))) {
-		print_progress((double)archive_filter_bytes(pa.get(), -1) / as);
+		print_progress(static_cast<double>(archive_filter_bytes(pa.get(), -1)) / as);
 		auto up = archive_entry_pathname(pe);
 		auto wp = archive_entry_pathname_w(pe);
 		if (up) p = linux_path(from_utf8(up), root_path);
@@ -459,14 +462,14 @@ void archive_reader::run(fs_writer &writer) {
 		}
 		auto pst = archive_entry_stat(pe);
 		unix_time mt {
-			(uint64_t)pst->st_mtime,
-			(uint32_t)archive_entry_mtime_nsec(pe)
+			static_cast<uint64_t>(pst->st_mtime),
+			static_cast<uint32_t>(archive_entry_mtime_nsec(pe))
 		};
 		file_attr attr {
-			(uint32_t)pst->st_mode, (uint32_t)pst->st_uid, (uint32_t)pst->st_gid, (uint64_t)pst->st_size,
-			archive_entry_atime_is_set(pe) ? unix_time { (uint64_t)pst->st_atime, (uint32_t)archive_entry_atime_nsec(pe) } : mt,
+			static_cast<uint32_t>(pst->st_mode), static_cast<uint32_t>(pst->st_uid), static_cast<uint32_t>(pst->st_gid), static_cast<uint64_t>(pst->st_size),
+			archive_entry_atime_is_set(pe) ? unix_time { static_cast<uint64_t>(pst->st_atime), static_cast<uint32_t>(archive_entry_atime_nsec(pe)) } : mt,
 			mt,
-			archive_entry_ctime_is_set(pe) ? unix_time { (uint64_t)pst->st_ctime, (uint32_t)archive_entry_ctime_nsec(pe) } : mt
+			archive_entry_ctime_is_set(pe) ? unix_time { static_cast<uint64_t>(pst->st_ctime), static_cast<uint32_t>(archive_entry_ctime_nsec(pe)) } : mt
 		};
 		if (type == AE_IFREG) {
 			if (!writer.write_new_file(&attr)) continue;
@@ -474,7 +477,7 @@ void archive_reader::run(fs_writer &writer) {
 			size_t cnt;
 			int64_t off;
 			while (check_archive(pa.get(), archive_read_data_block(pa.get(), &buf, &cnt, &off))) {
-				writer.write_file_data((const char *)buf, (uint32_t)cnt);
+				writer.write_file_data(reinterpret_cast<const char *>(buf), static_cast<uint32_t>(cnt));
 			}
 			writer.write_file_data(nullptr, 0);
 		} else if (type == AE_IFLNK) {
@@ -498,7 +501,7 @@ bool wsl_reader::is_legacy() const {
 void wsl_reader::run(fs_writer &writer) {
 	std::map<uint64_t, std::unique_ptr<file_path>> id_map;
 	char buf[BUFSIZ];
-	bool is_root = true;
+	auto is_root = true;
 	enum_directory(*path, is_legacy(), [&](enum_dir_type t) {
 		if (t == enum_dir_type::exit) return;
 		if (t == enum_dir_type::enter && is_root) {
@@ -506,27 +509,27 @@ void wsl_reader::run(fs_writer &writer) {
 			return;
 		}
 		if (!path->convert(*writer.path)) return;
-		bool dir = t == enum_dir_type::enter;
-		auto hf = open_file(path->data, dir, false);
+		const auto dir = t == enum_dir_type::enter;
+		const auto hf = open_file(path->data, dir, false);
 		if (!dir) {
 			BY_HANDLE_FILE_INFORMATION info;
 			if (!GetFileInformationByHandle(hf.get(), &info)) {
 				throw lro_error::from_win32_last(err_msg::err_file_info, { path->data });
 			}
 			if (info.nNumberOfLinks > 1) {
-				auto id = info.nFileIndexLow + ((uint64_t)info.nFileIndexHigh << 32);
+				const auto id = info.nFileIndexLow + (static_cast<uint64_t>(info.nFileIndexHigh) << 32);
 				if (id_map.count(id)) {
 					if (id_map[id]->convert(*writer.target_path)) writer.write_hard_link();
 					return;
 				} else id_map[id] = path->clone();
 			}
 		}
-		auto attr = read_attr(hf.get());
+		const auto attr = read_attr(hf.get());
 		if (dir) writer.write_directory(attr.get());
 		else {
-			auto type = attr ? attr->mode & AE_IFMT : AE_IFREG;
+			const auto type = attr ? attr->mode & AE_IFMT : AE_IFREG;
 			if (type == AE_IFLNK) {
-				auto tb = read_symlink_data(hf.get());
+				const auto tb = read_symlink_data(hf.get());
 				if (tb) writer.write_symlink(attr.get(), tb.get());
 				else log_warning((boost::wformat(L"Ignoring an invalid symlink \"%1%\".") % path->data).str());
 				return;
@@ -541,7 +544,7 @@ void wsl_reader::run(fs_writer &writer) {
 				} while (rc);
 			} else log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % path->data % type).str());
 		}
-	});
+		});
 }
 
 wsl_v1_reader::wsl_v1_reader(crwstr base) {
@@ -550,8 +553,8 @@ wsl_v1_reader::wsl_v1_reader(crwstr base) {
 
 std::unique_ptr<file_attr> wsl_v1_reader::read_attr(HANDLE hf) const {
 	try {
-		auto ea = get_ea<lxattrb>(hf, "LXATTRB");
-		return std::unique_ptr<file_attr>(new file_attr {
+		const auto ea = get_ea<lxattrb>(hf, "LXATTRB");
+		return std::make_unique<file_attr>(file_attr {
 			ea.mode, ea.uid, ea.gid, get_file_size(hf),
 			{ ea.atime, ea.atime_nsec },
 			{ ea.mtime, ea.mtime_nsec },
@@ -576,7 +579,7 @@ std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(HANDLE hf) const {
 	auto buf = std::make_unique<char[]>(sz + 1);
 	DWORD rc;
 	for (uint32_t off = 0; off < sz; off += rc) {
-		if (!ReadFile(hf, buf.get() + off, (uint32_t)(sz - off), &rc, nullptr)) {
+		if (!ReadFile(hf, buf.get() + off, static_cast<uint32_t>(sz - off), &rc, nullptr)) {
 			throw lro_error::from_win32_last(err_msg::err_read_file, { path->data });
 		}
 	}
@@ -601,7 +604,7 @@ std::unique_ptr<file_attr> wsl_v2_reader::read_attr(HANDLE hf) const {
 		throw;
 	}
 	FILE_BASIC_INFO info;
-	if (!GetFileInformationByHandleEx(hf, FileBasicInfo, &info, sizeof(info))) {
+	if (!GetFileInformationByHandleEx(hf, FileBasicInfo, &info, sizeof info)) {
 		throw lro_error::from_win32_last(err_msg::err_get_ft, { path->data });
 	}
 	time_f2u(info.LastAccessTime, attr->at);
@@ -611,16 +614,16 @@ std::unique_ptr<file_attr> wsl_v2_reader::read_attr(HANDLE hf) const {
 }
 
 std::unique_ptr<char[]> wsl_v2_reader::read_symlink_data(HANDLE hf) const {
-	char buf[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+	const auto buf = std::make_unique<char[]>(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
 	DWORD cnt;
-	if (!DeviceIoControl(hf, FSCTL_GET_REPARSE_POINT, nullptr, 0, buf, sizeof(buf), &cnt, nullptr)) {
+	if (!DeviceIoControl(hf, FSCTL_GET_REPARSE_POINT, nullptr, 0, buf.get(), MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &cnt, nullptr)) {
 		if (GetLastError() == ERROR_NOT_A_REPARSE_POINT) return nullptr;
 		throw lro_error::from_win32_last(err_msg::err_get_reparse, { path->data });
 	}
-	auto pb = (REPARSE_DATA_BUFFER *)&buf;
+	const auto pb = reinterpret_cast<REPARSE_DATA_BUFFER *>(buf.get());
 	if (pb->ReparseTag != IO_REPARSE_TAG_LX_SYMLINK) return nullptr;
-	auto pl = pb->ReparseDataLength - 4;
-	auto s = std::make_unique<char[]>(pl + 1);
+	const auto pl = pb->ReparseDataLength - 4;
+	auto s = std::make_unique<char[]>(static_cast<size_t>(pl) + 1);
 	memcpy(s.get(), pb->DataBuffer + 4, pl);
 	s[pl] = 0;
 	return s;
@@ -635,7 +638,7 @@ wsl_legacy_reader::wsl_legacy_reader(crwstr base) {
 }
 
 template<typename T>
-bool has_ea(crwstr path, const char *name, bool ignore_error) {
+bool has_ea(crwstr path, const char *name, const bool ignore_error) {
 	try {
 		get_ea<T>(open_file(path, true, false).get(), name);
 		return true;
@@ -656,7 +659,7 @@ uint32_t detect_version(crwstr path) {
 }
 
 bool detect_wsl2(crwstr path) {
-	wsl_v2_path p(path);
+	const wsl_v2_path p(path);
 	try {
 		open_file(p.data + L"ext4.vhdx", false, false);
 		return true;
@@ -666,18 +669,18 @@ bool detect_wsl2(crwstr path) {
 	}
 }
 
-std::unique_ptr<wsl_writer> select_wsl_writer(uint32_t version, crwstr path) {
+std::unique_ptr<wsl_writer> select_wsl_writer(const uint32_t version, crwstr path) {
 	if (version == 0) return std::make_unique<wsl_legacy_writer>(path);
-	else if (version == 1) return std::make_unique<wsl_v1_writer>(path);
-	else if (version == 2) return std::make_unique<wsl_v2_writer>(path);
-	else throw lro_error::from_other(err_msg::err_fs_version, { std::to_wstring(version) });
+	if (version == 1) return std::make_unique<wsl_v1_writer>(path);
+	if (version == 2) return std::make_unique<wsl_v2_writer>(path);
+	throw lro_error::from_other(err_msg::err_fs_version, { std::to_wstring(version) });
 }
 
-std::unique_ptr<wsl_reader> select_wsl_reader(uint32_t version, crwstr path) {
+std::unique_ptr<wsl_reader> select_wsl_reader(const uint32_t version, crwstr path) {
 	if (version == 0) return std::make_unique<wsl_legacy_reader>(path);
-	else if (version == 1) return std::make_unique<wsl_v1_reader>(path);
-	else if (version == 2) return std::make_unique<wsl_v2_reader>(path);
-	else throw lro_error::from_other(err_msg::err_fs_version, { std::to_wstring(version) });
+	if (version == 1) return std::make_unique<wsl_v1_reader>(path);
+	if (version == 2) return std::make_unique<wsl_v2_reader>(path);
+	throw lro_error::from_other(err_msg::err_fs_version, { std::to_wstring(version) });
 }
 
 bool move_directory(crwstr source_path, crwstr target_path) {
@@ -686,13 +689,13 @@ bool move_directory(crwstr source_path, crwstr target_path) {
 
 void delete_directory(crwstr path) {
 	wsl_v2_path p(path);
-	enum_directory(p, false, [&](enum_dir_type t) {
+	enum_directory(p, false, [&](const enum_dir_type t) {
 		if (t == enum_dir_type::enter) return;
-		bool dir = t == enum_dir_type::exit;
+		const auto dir = t == enum_dir_type::exit;
 		if (!(dir ? RemoveDirectory : DeleteFile)(p.data.c_str())) {
 			throw lro_error::from_win32_last(dir ? err_msg::err_delete_dir : err_msg::err_delete_file, { p.data });
 		}
-	});
+		});
 }
 
 bool check_in_use(crwstr path) {

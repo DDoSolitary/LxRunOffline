@@ -15,8 +15,8 @@ void create_shortcut(crwstr distro_name, crwstr file_path, crwstr icon_path) {
 	if (FAILED(hr)) throw lro_error::from_hresult(err_msg::err_create_shortcut, {}, hr);
 	unique_ptr_del<IShellLink *> upsl(psl, release_interface<IShellLink>);
 	wchar_t ep[MAX_PATH];
-	if (!GetModuleFileName(0, ep, MAX_PATH)) {
-		lro_error::from_win32_last(err_msg::err_create_shortcut, {});
+	if (!GetModuleFileName(nullptr, ep, MAX_PATH)) {
+		throw lro_error::from_win32_last(err_msg::err_create_shortcut, {});
 	}
 	upsl->SetPath(ep);
 	upsl->SetDescription((L"Launch the WSL distribution " + distro_name + L'.').c_str());

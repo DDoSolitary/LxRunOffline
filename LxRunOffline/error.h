@@ -57,8 +57,7 @@ enum class err_msg {
 };
 
 class lro_error : public std::exception {
-	lro_error(err_msg msg_code, std::vector<wstr> msg_args, HRESULT err_code)
-		: msg_code(msg_code), msg_args(std::move(msg_args)), err_code(err_code) {}
+	lro_error(const err_msg msg_code, std::vector<wstr> msg_args, HRESULT err_code);
 public:
 	err_msg msg_code;
 	std::vector<wstr> msg_args;

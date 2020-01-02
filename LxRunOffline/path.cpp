@@ -3,7 +3,7 @@
 #include "utils.h"
 
 prefix_matcher::prefix_matcher(std::initializer_list<wstr> patterns)
-	: trie(), done(false), pos(0) {
+	: done(false), pos(0) {
 	trie.resize(1);
 	for (crwstr s : patterns) {
 		size_t p = 0;
@@ -19,10 +19,10 @@ prefix_matcher::prefix_matcher(std::initializer_list<wstr> patterns)
 	}
 }
 
-match_result prefix_matcher::move(wchar_t c) {
+match_result prefix_matcher::move(const wchar_t c) {
 	if (done) return match_result::unknown;
 	auto &m = trie[pos];
-	auto it = m.find(c);
+	const auto it = m.find(c);
 	if (it == m.end()) {
 		done = true;
 		return match_result::failed;
@@ -41,7 +41,7 @@ void prefix_matcher::reset() {
 }
 
 file_path::file_path(crwstr path)
-	: data(path), base_len(path.size()) {}
+	: base_len(path.size()), data(path) {}
 
 bool file_path::append(crwstr s) {
 	for (auto c : s) {
@@ -55,7 +55,7 @@ void file_path::reset() {
 }
 
 linux_path::linux_path()
-	: file_path(L""), matcher({ L"rootfs/" }), skip(false) {}
+	: file_path(L""), skip(false), matcher({ L"rootfs/" }) {}
 
 linux_path::linux_path(crwstr path, crwstr root_path) : linux_path() {
 	size_t pos = 0;
@@ -69,7 +69,7 @@ linux_path::linux_path(crwstr path, crwstr root_path) : linux_path() {
 		}
 		if (skip) return;
 	}
-	bool cb = true;
+	auto cb = true;
 	while (pos < path.size()) {
 		if (cb) {
 			if (path[pos] == L'/') {
@@ -82,8 +82,8 @@ linux_path::linux_path(crwstr path, crwstr root_path) : linux_path() {
 			}
 			if (!path.compare(pos, 3, L"../")) {
 				pos += 3;
-				if (data.size()) {
-					auto sp = data.rfind(L'/', data.size() - 2);
+				if (!data.empty()) {
+					const auto sp = data.rfind(L'/', data.size() - 2);
 					if (sp == wstr::npos) data.clear();
 					else data.resize(sp + 1);
 				}
@@ -96,11 +96,10 @@ linux_path::linux_path(crwstr path, crwstr root_path) : linux_path() {
 	skip = data.empty();
 }
 
-bool linux_path::append(wchar_t c) {
+bool linux_path::append(const wchar_t c) {
 	switch (matcher.move(c)) {
 	case match_result::failed:
 		return false;
-		break;
 	case match_result::succeeded:
 		data.clear();
 		break;
@@ -128,13 +127,13 @@ std::unique_ptr<file_path> linux_path::clone() const {
 
 wsl_path::wsl_path(crwstr base) : file_path(normalize_path(base)) {}
 
-wstr wsl_path::normalize_path(wstr path) {
+wstr wsl_path::normalize_path(crwstr path) {
 	auto o = L"\\\\?\\" + get_full_path(path);
 	if (o.back() != L'\\') o += L'\\';
 	return o;
 }
 
-bool wsl_path::is_special_input(wchar_t c) const {
+bool wsl_path::is_special_input(const wchar_t c) const {
 	return c >= 1 && c <= 31 || c == L'<' || c == L'>' || c == L':' || c == L'"' || c == L'\\' || c == L'|' || c == L'*' || c == L'?';
 }
 
@@ -152,7 +151,7 @@ bool wsl_path::real_convert(file_path &output) const {
 	return true;
 }
 
-bool wsl_path::append(wchar_t c) {
+bool wsl_path::append(const wchar_t c) {
 	if (is_special_input(c)) append_special(c);
 	else if (c == L'/') data += L'\\';
 	else data += c;
@@ -166,21 +165,21 @@ bool wsl_path::convert(file_path &output) const {
 
 wsl_v1_path::wsl_v1_path(crwstr base) : wsl_path(base) {}
 
-void wsl_v1_path::append_special(wchar_t c) {
-	data += (boost::wformat(L"#%04X") % (uint16_t)c).str();
+void wsl_v1_path::append_special(const wchar_t c) {
+	data += (boost::wformat(L"#%04X") % static_cast<uint16_t>(c)).str();
 }
 
 bool wsl_v1_path::convert_special(file_path &output, size_t &i) const {
-	bool res = output.append((wchar_t)stoi(data.substr(i + 1, 4), nullptr, 16));
+	const auto res = output.append(static_cast<wchar_t>(stoi(data.substr(i + 1, 4), nullptr, 16)));
 	i += 4;
 	return res;
 }
 
-bool wsl_v1_path::is_special_input(wchar_t c) const {
+bool wsl_v1_path::is_special_input(const wchar_t c) const {
 	return wsl_path::is_special_input(c) || c == L'#';
 }
 
-bool wsl_v1_path::is_special_output(wchar_t c) const {
+bool wsl_v1_path::is_special_output(const wchar_t c) const {
 	return c == L'#';
 }
 
@@ -190,7 +189,7 @@ std::unique_ptr<file_path> wsl_v1_path::clone() const {
 
 wsl_v2_path::wsl_v2_path(crwstr base) : wsl_path(base) {}
 
-void wsl_v2_path::append_special(wchar_t c) {
+void wsl_v2_path::append_special(const wchar_t c) {
 	data += c | 0xf000;
 }
 
@@ -198,7 +197,7 @@ bool wsl_v2_path::convert_special(file_path &output, size_t &i) const {
 	return output.append(data[i] ^ 0xf000);
 }
 
-bool wsl_v2_path::is_special_output(wchar_t c) const {
+bool wsl_v2_path::is_special_output(const wchar_t c) const {
 	return is_special_input(c ^ 0xf000);
 }
 
@@ -209,7 +208,7 @@ std::unique_ptr<file_path> wsl_v2_path::clone() const {
 wsl_legacy_path::wsl_legacy_path(crwstr base)
 	: wsl_v1_path(base), matcher1({ L"home/", L"root/", L"mnt/" }), matcher2({ L"rootfs/home/", L"rootfs/root/", L"rootfs/mnt/" }) {}
 
-bool wsl_legacy_path::append(wchar_t c) {
+bool wsl_legacy_path::append(const wchar_t c) {
 	if (!wsl_v1_path::append(c)) return false;
 	if (matcher1.move(c) == match_result::succeeded) {
 		// Maybe add warning

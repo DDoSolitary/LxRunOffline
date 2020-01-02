@@ -570,6 +570,7 @@ std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(HANDLE hf) const {
 		sz = get_file_size(hf);
 	} catch (lro_error &e) {
 		e.msg_args.push_back(path->data);
+		throw;
 	}
 	if (sz > 65536) throw lro_error::from_other(err_msg::err_symlink_length, { path->data, std::to_wstring(sz) });
 	auto buf = std::make_unique<char[]>(sz + 1);

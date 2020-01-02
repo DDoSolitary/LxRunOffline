@@ -18,8 +18,11 @@ void check_running(crwstr name) {
 extern "C"
 #endif
 int wmain(int argc, wchar_t **argv) {
-	_setmode(_fileno(stdout), _O_U16TEXT);
-	_setmode(_fileno(stderr), _O_U16TEXT);
+	const auto out_mode = _setmode(_fileno(stdout), _O_U16TEXT);
+	const auto err_mode = _setmode(_fileno(stderr), _O_U16TEXT);
+	if (out_mode == -1 || err_mode == -1) {
+		log_warning(L"Failed to set output mode to UTF-16.");
+	}
 
 	wstr name;
 	po::options_description desc("Options");

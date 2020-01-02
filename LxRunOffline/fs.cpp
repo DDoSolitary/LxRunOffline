@@ -401,10 +401,14 @@ void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target) const {
 }
 
 wsl_v2_writer::~wsl_v2_writer() {
-	while (!dir_attr.empty()) {
-		auto p = dir_attr.top();
-		dir_attr.pop();
-		real_write_attr(open_file(p.first, true, false).get(), p.second, p.first);
+	try {
+		while (!dir_attr.empty()) {
+			auto p = dir_attr.top();
+			dir_attr.pop();
+			real_write_attr(open_file(p.first, true, false).get(), p.second, p.first);
+		}
+	} catch (const err &e) {
+		log_error(format_error(e));
 	}
 }
 

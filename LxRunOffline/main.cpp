@@ -41,14 +41,14 @@ int wmain(int argc, wchar_t **argv) {
 			throw lro_error::from_other(err_msg::err_no_action, {});
 #ifdef LXRUNOFFLINE_VERSION
 		} else if (!wcscmp(argv[1], L"version")) {
-			std::wcout << L"LxRunOffline " << LXRUNOFFLINE_VERSION << std::endl;
+			std::wcout << L"LxRunOffline " << LXRUNOFFLINE_VERSION << '\n';
 #endif
 		} else if (!wcscmp(argv[1], L"l") || !wcscmp(argv[1], L"list")) {
 			for (crwstr s : list_distros()) {
-				std::wcout << s << std::endl;
+				std::wcout << s << '\n';
 			}
 		} else if (!wcscmp(argv[1], L"gd") || !wcscmp(argv[1], L"get-default")) {
-			std::wcout << get_default_distro() << std::endl;
+			std::wcout << get_default_distro() << '\n';
 		} else if (!wcscmp(argv[1], L"sd") || !wcscmp(argv[1], L"set-default")) {
 			parse_args();
 			set_default_distro(name);
@@ -179,7 +179,7 @@ int wmain(int argc, wchar_t **argv) {
 			reg_config conf;
 			conf.load_distro(name, config_env);
 			for (crwstr s : conf.env) {
-				std::wcout << s << std::endl;
+				std::wcout << s << '\n';
 			}
 		} else if (!wcscmp(argv[1], L"se") || !wcscmp(argv[1], L"set-env")) {
 			reg_config conf;
@@ -278,17 +278,17 @@ int wmain(int argc, wchar_t **argv) {
 			reg_config conf;
 			conf.load_distro(name, config_all);
 			std::wcout
-				<< L"                        Name: " << name << std::endl
-				<< L"                 WSL version: " << (conf.is_wsl2() ? 2 : 1) << std::endl
-				<< L"          Filesystem version: " << get_distro_version(name) << std::endl
-				<< L"      Installation directory: " << get_distro_dir(name) << std::endl
-				<< L"     UID of the default user: " << conf.uid << std::endl
-				<< L"         Configuration flags: " << conf.get_flags() << std::endl
-				<< L" Default kernel command line: " << conf.kernel_cmd << std::endl
+				<< L"                        Name: " << name << '\n'
+				<< L"                 WSL version: " << (conf.is_wsl2() ? 2 : 1) << '\n'
+				<< L"          Filesystem version: " << get_distro_version(name) << '\n'
+				<< L"      Installation directory: " << get_distro_dir(name) << '\n'
+				<< L"     UID of the default user: " << conf.uid << '\n'
+				<< L"         Configuration flags: " << conf.get_flags() << '\n'
+				<< L" Default kernel command line: " << conf.kernel_cmd << '\n'
 				<< L"       Environment variables: ";
 			for (size_t i = 0; i < conf.env.size(); i++) {
 				if (i > 0) std::wcout << L"                              ";
-				std::wcout << conf.env[i] << std::endl;
+				std::wcout << conf.env[i] <<'\n';
 			}
 		} else {
 			throw lro_error::from_other(err_msg::err_invalid_action, { argv[1] });
@@ -297,36 +297,36 @@ int wmain(int argc, wchar_t **argv) {
 		log_error(e.format());
 		if (e.msg_code == err_msg::err_no_action || e.msg_code == err_msg::err_invalid_action) {
 			std::wcerr
-				<< L"Supported actions are:" << std::endl
-				<< L"    l, list            List all installed distributions." << std::endl
-				<< L"    gd, get-default    Get the default distribution, which is used by bash.exe." << std::endl
-				<< L"    sd, set-default    Set the default distribution, which is used by bash.exe." << std::endl
-				<< L"    i, install         Install a new distribution." << std::endl
-				<< L"    ui, uninstall      Uninstall a distribution." << std::endl
-				<< L"    rg, register       Register an existing installation directory." << std::endl
-				<< L"    ur, unregister     Unregister a distribution but not delete the installation directory." << std::endl
-				<< L"    m, move            Move a distribution to a new directory." << std::endl
-				<< L"    d, duplicate       Duplicate an existing distribution in a new directory." << std::endl
-				<< L"    e, export          Export a distribution's filesystem to a .tar.gz file, which can be imported by the \"install\" command." << std::endl
-				<< L"    r, run             Run a command in a distribution." << std::endl
-				<< L"    di, get-dir        Get the installation directory of a distribution." << std::endl
-				<< L"    gv, get-version    Get the filesystem version of a distribution." << std::endl
-				<< L"    ge, get-env        Get the default environment variables of a distribution." << std::endl
-				<< L"    se, set-env        Set the default environment variables of a distribution." << std::endl
-				<< L"    ae, add-env        Add to the default environment variables of a distribution." << std::endl
-				<< L"    re, remove-env     Remove from the default environment variables of a distribution." << std::endl
-				<< L"    gu, get-uid        Get the UID of the default user of a distribution." << std::endl
-				<< L"    su, set-uid        Set the UID of the default user of a distribution." << std::endl
-				<< L"    gk, get-kernelcmd  Get the default kernel command line of a distribution." << std::endl
-				<< L"    sk, set-kernelcmd  Set the default kernel command line of a distribution." << std::endl
-				<< L"    gf, get-flags      Get some flags of a distribution. See https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags for details." << std::endl
-				<< L"    sf, set-flags      Set some flags of a distribution. See https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags for details." << std::endl
-				<< L"    s, shortcut        Create a shortcut to launch a distribution." << std::endl
-				<< L"    ec, export-config  Export configuration of a distribution to an XML file." << std::endl
-				<< L"    ic, import-config  Import configuration of a distribution from an XML file." << std::endl
-				<< L"    sm, summary        Get general information of a distribution." << std::endl;
+				<< L"Supported actions are:\n"
+				<< L"    l, list            List all installed distributions.\n"
+				<< L"    gd, get-default    Get the default distribution, which is used by bash.exe.\n"
+				<< L"    sd, set-default    Set the default distribution, which is used by bash.exe.\n"
+				<< L"    i, install         Install a new distribution.\n"
+				<< L"    ui, uninstall      Uninstall a distribution.\n"
+				<< L"    rg, register       Register an existing installation directory.\n"
+				<< L"    ur, unregister     Unregister a distribution but not delete the installation directory.\n"
+				<< L"    m, move            Move a distribution to a new directory.\n"
+				<< L"    d, duplicate       Duplicate an existing distribution in a new directory.\n"
+				<< L"    e, export          Export a distribution's filesystem to a .tar.gz file, which can be imported by the \"install\" command.\n"
+				<< L"    r, run             Run a command in a distribution.\n"
+				<< L"    di, get-dir        Get the installation directory of a distribution.\n"
+				<< L"    gv, get-version    Get the filesystem version of a distribution.\n"
+				<< L"    ge, get-env        Get the default environment variables of a distribution.\n"
+				<< L"    se, set-env        Set the default environment variables of a distribution.\n"
+				<< L"    ae, add-env        Add to the default environment variables of a distribution.\n"
+				<< L"    re, remove-env     Remove from the default environment variables of a distribution.\n"
+				<< L"    gu, get-uid        Get the UID of the default user of a distribution.\n"
+				<< L"    su, set-uid        Set the UID of the default user of a distribution.\n"
+				<< L"    gk, get-kernelcmd  Get the default kernel command line of a distribution.\n"
+				<< L"    sk, set-kernelcmd  Set the default kernel command line of a distribution.\n"
+				<< L"    gf, get-flags      Get some flags of a distribution. See https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags for details.\n"
+				<< L"    sf, set-flags      Set some flags of a distribution. See https://docs.microsoft.com/en-us/previous-versions/windows/desktop/api/wslapi/ne-wslapi-wsl_distribution_flags for details.\n"
+				<< L"    s, shortcut        Create a shortcut to launch a distribution.\n"
+				<< L"    ec, export-config  Export configuration of a distribution to an XML file.\n"
+				<< L"    ic, import-config  Import configuration of a distribution from an XML file.\n"
+				<< L"    sm, summary        Get general information of a distribution.\n";
 #ifdef LXRUNOFFLINE_VERSION
-			std::wcerr << L"    version            Get version information about this LxRunOffline.exe." << std::endl;
+			std::wcerr << L"    version            Get version information about this LxRunOffline.exe.\n";
 #endif
 		}
 		return 1;
@@ -334,7 +334,7 @@ int wmain(int argc, wchar_t **argv) {
 		log_error(from_utf8(e.what()));
 		std::stringstream ss;
 		ss << desc;
-		std::wcout << std::endl << from_utf8(ss.str().c_str());
+		std::wcout << '\n' << from_utf8(ss.str().c_str());
 	}
 	return 0;
 }

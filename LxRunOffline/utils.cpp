@@ -26,7 +26,7 @@ void write(crwstr output, const uint16_t color) {
 		}
 		SetConsoleTextAttribute(hcon, color);
 	}
-	std::wcerr << output << std::endl;
+	std::wcerr << output << '\n';
 	if (ok) SetConsoleTextAttribute(hcon, ci.wAttributes);
 	progress_printed = false;
 }

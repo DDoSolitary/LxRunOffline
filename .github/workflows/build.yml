@@ -1,0 +1,24 @@
+on: push
+jobs:
+  build-mingw:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+      - env:
+          MSYSTEM: MINGW64
+        run: |
+          $ErrorActionPreference = "Continue"
+          $msys2_filename = "msys2-base-x86_64-20190524"
+          Invoke-WebRequest -Uri "http://repo.msys2.org/distrib/x86_64/$($msys2_filename).tar.xz" -OutFile "$Env:TEMP\$($msys2_filename).tar.xz"
+          7z x -o"$Env:TEMP" "$Env:TEMP\$($msys2_filename).tar.xz"
+          7z x -oC:\ "$Env:TEMP\$($msys2_filename).tar"
+          C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm --noprogressbar"
+          C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --needed --noconfirm --noprogressbar base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2"
+          git fetch --unshallow --tags
+          $version = (git describe --tags).Substring(1)
+          C:\msys64\usr\bin\bash.exe -l -c "cd /d/a/LxRunOffline/LxRunOffline && make"
+          $host.SetShouldExit($LASTEXITCODE)
+          C:\msys64\mingw64\bin\strip.exe LxRunOffline.exe
+          7z a release.zip .\LxRunOffline.exe .\LICENSE
+          curl.exe -fsS -T release.zip -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/LxRunOffline-v$version-mingw.zip
+          curl.exe -fsS -X POST -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish

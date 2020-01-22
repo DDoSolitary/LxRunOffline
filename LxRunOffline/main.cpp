@@ -324,9 +324,9 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"    s, shortcut        Create a shortcut to launch a distribution." << std::endl
 				<< L"    ec, export-config  Export configuration of a distribution to an XML file." << std::endl
 				<< L"    ic, import-config  Import configuration of a distribution from an XML file." << std::endl
-				<< L"    sm, summary           Get general information of a distribution." << std::endl;
+				<< L"    sm, summary        Get general information of a distribution." << std::endl;
 #ifdef LXRUNOFFLINE_VERSION
-			std::wcerr << L"    version        Get version information about this LxRunOffline.exe." << std::endl;
+			std::wcerr << L"    version            Get version information about this LxRunOffline.exe." << std::endl;
 #endif
 		}
 		return 1;

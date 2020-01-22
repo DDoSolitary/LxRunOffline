@@ -73,10 +73,9 @@ deploy:
     artifact: /.*\.zip/,sha256.txt
     description: |
       **Release Notes**
-      - Fix support for legacy distros. (#81)
-      - Fix source directory not deleted after moving.
-      - Automatically process config files on import/export.
-      - Add new command `summary`.
+      - Added basic support for WSL2.
+      - Fixed incorrect behavior with paths containing "?".
+      - Fixed some bugs related to exception handling.
     auth_token:
       secure: 26bYTa3iIxBxle/n6T9sou88hpnz7mK5HoXqSPECwyu7LVI0F28Fl3/Z+T1Y/2Kj
     on:

@@ -13,7 +13,7 @@
     <description>A full-featured utility for managing Windows Subsystem for Linux (WSL).</description>
     <summary>A full-featured utility for managing Windows Subsystem for Linux (WSL).</summary>
     <releaseNotes>https://github.com/DDoSolitary/LxRunOffline/releases/tag/v{VERSION}</releaseNotes>
-    <copyright>2016-2019 LxRunOffline DDoSolitary</copyright>
+    <copyright>2016-2020 LxRunOffline DDoSolitary</copyright>
     <tags>lxrunoffline wsl bash bash-on-windows windows-subsystem-linux</tags>
   </metadata>
 </package>

@@ -14,6 +14,7 @@ BEGIN
 			VALUE "FileDescription", "A full-featured utility for managing Windows Subsystem for Linux."
 			VALUE "LegalCopyright", "Copyright (c) 2016-2020 DDoSolitary"
 			VALUE "ProductName", "LxRunOffline"
+			VALUE "OriginalFilename", "LxRunOffline.exe"
 #ifdef LXRUNOFFLINE_FILE_VERSION_STR
 			VALUE "FileVersion", LXRUNOFFLINE_FILE_VERSION_STR
 			VALUE "ProductVersion", LXRUNOFFLINE_FILE_VERSION_STR

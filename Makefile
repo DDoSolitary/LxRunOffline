@@ -1,7 +1,7 @@
 ﻿CC := g++
 CPPFLAGS := -std=c++17 -DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0A00
-LDFLAGS := -municode
-LDLIBS := -lntdll -lole32 -luuid -larchive -lboost_program_options-mt -ltinyxml2
+LDFLAGS := -municode -static -static-libgcc -static-libstdc++
+LDLIBS := -lntdll -lole32 -luuid -larchive -lboost_program_options-mt -ltinyxml2 -lexpat -lbz2 -llz4 -liconv -llzma -lz -lnettle -lzstd -lbcrypt
 
 PROJ := LxRunOffline
 SRCS := $(filter-out $(PROJ)/stdafx.cpp, $(wildcard $(PROJ)/*.cpp))

@@ -9,17 +9,20 @@ OBJS := $(patsubst $(PROJ)/%.cpp, $(PROJ)/%.o, $(SRCS)) $(PROJ)/resources.o
 TARGET := $(PROJ).exe
 OUTPUT := $(OBJS) $(PROJ)/stdafx.h.gch $(TARGET)
 
+VERSION := $(shell git describe --tags | cut -c 2-)
+FILE_VERSION := $(shell echo $(VERSION) | grep -o "^[^-]*" | tr . ,),0
+
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(PROJ)/%.o: $(PROJ)/%.cpp $(PROJ)/stdafx.h.gch
-	$(CC) $(CPPFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) -DLXRUNOFFLINE_VERSION='"'v$(VERSION)'"' -c -o $@ $<
 
 $(PROJ)/stdafx.h.gch: $(PROJ)/stdafx.cpp $(PROJ)/stdafx.h
 	$(CC) $(CPPFLAGS) -x c++-header -o $@ $<
 
 $(PROJ)/resources.o: $(PROJ)/resources.rc $(PROJ)/app.manifest
-	windres $< $@
+	windres -DLXRUNOFFLINE_FILE_VERSION=$(FILE_VERSION) -DLXRUNOFFLINE_FILE_VERSION_STR='\"'$(VERSION)'\"' $< $@
 
 clean:
 	rm -rf $(OUTPUT)

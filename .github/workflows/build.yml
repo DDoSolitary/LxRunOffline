@@ -13,7 +13,7 @@ jobs:
           7z x -o"$Env:TEMP" "$Env:TEMP\$($msys2_filename).tar.xz"
           7z x -oC:\ "$Env:TEMP\$($msys2_filename).tar"
           C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm --noprogressbar"
-          C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --needed --noconfirm --noprogressbar base-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2"
+          C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --needed --noconfirm --noprogressbar base-devel git mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2"
           git fetch --unshallow --tags
           $version = (git describe --tags).Substring(1)
           C:\msys64\usr\bin\bash.exe -l -c "cd /d/a/LxRunOffline/LxRunOffline && make"

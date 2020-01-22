@@ -17,8 +17,26 @@ jobs:
           git fetch --unshallow --tags
           $version = (git describe --tags).Substring(1)
           C:\msys64\usr\bin\bash.exe -l -c "cd /d/a/LxRunOffline/LxRunOffline && make"
-          $host.SetShouldExit($LASTEXITCODE)
+          if ($LASTEXITCODE -ne 0) { Exit 1 }
           C:\msys64\mingw64\bin\strip.exe LxRunOffline.exe
           7z a release.zip .\LxRunOffline.exe .\LICENSE
           curl.exe -fsS -T release.zip -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/LxRunOffline-v$version-mingw.zip
+          curl.exe -fsS -X POST -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish
+  build-msvc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+      - env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows-static
+        run: |
+          $ErrorActionPreference = "Continue"
+          git -C $Env:VCPKG_INSTALLATION_ROOT pull
+          vcpkg install libarchive boost-program-options boost-format tinyxml2
+          $version = (git describe --tags).Substring(1)
+          $slashIndex = $version.IndexOf('-')
+          $fileVersion = $(if ($slashIndex -ne -1) { $version.Substring(0, $slashIndex) } else { $version }).Replace('.', ',') + ",0"
+          msbuild /p:Configuration=Release /p:DefineVersion=LXRUNOFFLINE_VERSION=\`"v$version\`" /p:DefineFileVersion=`"LXRUNOFFLINE_FILE_VERSION=$fileVersion`;LXRUNOFFLINE_FILE_VERSION_STR=\\\`"$version\\\`"`"
+          if ($LASTEXITCODE -ne 0) { Exit 1 }
+          7z a release.zip .\x64\Release\LxRunOffline.exe .\LICENSE
+          curl.exe -fsS -T release.zip -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/LxRunOffline-v$version-msvc.zip
           curl.exe -fsS -X POST -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish

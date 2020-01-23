@@ -2,17 +2,17 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>lxrunoffline</id>
-    <version>{VERSION}</version>
+    <version>3.4.1</version>
     <title>LxRunOffline</title>
     <authors>DDoSolitary</authors>
     <owners>DDoSolitary</owners>
-    <licenseUrl>https://github.com/DDoSolitary/LxRunOffline/blob/v{VERSION}/LICENSE</licenseUrl>
+    <licenseUrl>https://github.com/DDoSolitary/LxRunOffline/blob/v3.4.1/LICENSE</licenseUrl>
     <projectUrl>https://github.com/DDoSolitary/LxRunOffline</projectUrl>
     <bugTrackerUrl>https://github.com/DDoSolitary/LxRunOffline/issues</bugTrackerUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A full-featured utility for managing Windows Subsystem for Linux (WSL).</description>
     <summary>A full-featured utility for managing Windows Subsystem for Linux (WSL).</summary>
-    <releaseNotes>https://github.com/DDoSolitary/LxRunOffline/releases/tag/v{VERSION}</releaseNotes>
+    <releaseNotes>https://github.com/DDoSolitary/LxRunOffline/releases/tag/v3.4.1</releaseNotes>
     <copyright>2016-2020 LxRunOffline DDoSolitary</copyright>
     <tags>lxrunoffline wsl bash bash-on-windows windows-subsystem-linux</tags>
   </metadata>

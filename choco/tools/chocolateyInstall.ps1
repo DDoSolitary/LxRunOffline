@@ -10,10 +10,10 @@ if (-not [Environment]::Is64BitOperatingSystem) {
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
 $packageName = 'lxrunoffline'
-$url = 'https://github.com/DDoSolitary/LxRunOffline/releases/download/v{VERSION}/LxRunOffline-v{VERSION}.zip'
+$url = 'https://github.com/DDoSolitary/LxRunOffline/releases/download/v3.4.1/LxRunOffline-v3.4.1-msvc.zip'
 $unzipLocation = Join-Path (Get-ToolsLocation) $packageName
 if (Test-Path $unzipLocation) {
 	rm -Recurse $unzipLocation
 }
-Install-ChocolateyZipPackage -PackageName $packageName -Url $url -UnzipLocation $unzipLocation -Checksum '{CHECKSUM}' -ChecksumType 'sha256'
+Install-ChocolateyZipPackage -PackageName $packageName -Url $url -UnzipLocation $unzipLocation -Checksum '56015afe2cb1ed0e5daa935fd1142c44f8837b4b0e0c7f1ff9f5aa184767b480' -ChecksumType 'sha256'
 Install-ChocolateyPath -PathToInstall $unzipLocation -PathType 'Machine'

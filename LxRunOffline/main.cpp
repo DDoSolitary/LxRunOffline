@@ -118,7 +118,7 @@ int wmain(int argc, wchar_t **argv) {
 			if (!move_directory(sp, dir)) {
 				auto ver = get_distro_version(name);
 				auto writer = select_wsl_writer(ver, dir);
-				select_wsl_reader(ver, sp)->run(*writer);
+				select_wsl_reader(ver, sp)->run_checked(*writer);
 				delete_directory(sp);
 			}
 			set_distro_dir(name, dir);
@@ -142,7 +142,7 @@ int wmain(int argc, wchar_t **argv) {
 			register_distro(new_name, dir, nv);
 			conf.configure_distro(new_name, config_all);
 			auto writer = select_wsl_writer(nv, dir);
-			select_wsl_reader(ov, get_distro_dir(name))->run(*writer);
+			select_wsl_reader(ov, get_distro_dir(name))->run_checked(*writer);
 		} else if (!wcscmp(argv[1], L"e") || !wcscmp(argv[1], L"export")) {
 			wstr file;
 			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to. A config file will also be exported to this file name with a .xml extension.");

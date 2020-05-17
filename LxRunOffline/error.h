@@ -53,7 +53,8 @@ enum class err_msg {
 	err_fs_detect,
 	err_root_dir,
 	err_invalid_flags,
-	err_wsl2_unsupported
+	err_wsl2_unsupported,
+	err_copy_subdir
 };
 
 class lro_error : public std::exception {

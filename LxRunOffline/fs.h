@@ -22,6 +22,7 @@ public:
 	virtual void write_directory(const file_attr *) = 0;
 	virtual void write_symlink(const file_attr *, const char *) = 0;
 	virtual void write_hard_link() = 0;
+	virtual bool check_source_path(const file_path &) const = 0;
 };
 
 class archive_writer : public fs_writer {
@@ -38,6 +39,7 @@ public:
 	void write_directory(const file_attr *) override;
 	void write_symlink(const file_attr *, const char *) override;
 	void write_hard_link() override;
+	bool check_source_path(const file_path &) const override;
 };
 
 class wsl_writer : public fs_writer {
@@ -53,6 +55,7 @@ public:
 	void write_directory(const file_attr *) override;
 	void write_symlink(const file_attr *, const char *) override;
 	void write_hard_link() override;
+	bool check_source_path(const file_path &) const override;
 };
 
 class wsl_v1_writer : public wsl_writer {
@@ -101,6 +104,7 @@ protected:
 	virtual bool is_legacy() const;
 public:
 	void run(fs_writer &) override;
+	void run_checked(fs_writer &);
 };
 
 class wsl_v1_reader : public wsl_reader {

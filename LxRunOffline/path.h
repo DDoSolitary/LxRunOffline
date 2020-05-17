@@ -20,9 +20,9 @@ public:
 
 class file_path {
 protected:
-	size_t base_len;
 	explicit file_path(crwstr);
 public:
+	size_t base_len;
 	wstr data;
 	virtual ~file_path() = default;
 	virtual bool append(wchar_t) = 0;

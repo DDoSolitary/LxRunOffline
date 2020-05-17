@@ -1,15 +1,22 @@
 ﻿#pragma once
 
 #define _CRT_SECURE_NO_WARNINGS
-
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#undef _CRT_SECURE_NO_WARNINGS
 
 #define WIN32_NO_STATUS
+#ifdef _MSC_VER
+#define NOMINMAX
+#endif
 #include <Windows.h>
+#ifdef _MSC_VER
+#undef MOMINMAX
+#endif
 #undef WIN32_NO_STATUS
+
 #include <winternl.h>
 #include <ntstatus.h>
 #include <comdef.h>
@@ -17,8 +24,6 @@
 #include <AclAPI.h>
 #include <io.h>
 #include <fcntl.h>
-
-#undef _CRT_SECURE_NO_WARNINGS
 
 #include <algorithm>
 #include <functional>

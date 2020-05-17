@@ -544,7 +544,7 @@ void wsl_reader::run(fs_writer &writer) {
 				} while (rc);
 			} else log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % path->data % type).str());
 		}
-		});
+	});
 }
 
 wsl_v1_reader::wsl_v1_reader(crwstr base) {
@@ -695,7 +695,7 @@ void delete_directory(crwstr path) {
 		if (!(dir ? RemoveDirectory : DeleteFile)(p.data.c_str())) {
 			throw lro_error::from_win32_last(dir ? err_msg::err_delete_dir : err_msg::err_delete_file, { p.data });
 		}
-		});
+	});
 }
 
 bool check_in_use(crwstr path) {

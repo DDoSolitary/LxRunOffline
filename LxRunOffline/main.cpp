@@ -4,6 +4,7 @@
 #include "reg.h"
 #include "shortcut.h"
 #include "utils.h"
+#include <regex>
 
 namespace po = boost::program_options;
 
@@ -115,6 +116,8 @@ int wmain(int argc, wchar_t **argv) {
 			parse_args();
 			check_running(name);
 			auto sp = get_distro_dir(name);
+			std::wregex re(LR"D(\\\\\?\\([a-zA-Z]):)D");
+			sp = std::regex_replace(sp, re, L"$1");
 			if (!move_directory(sp, dir)) {
 				auto ver = get_distro_version(name);
 				auto writer = select_wsl_writer(ver, dir);

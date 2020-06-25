@@ -15,6 +15,7 @@ target_precompile_headers(LxRunOffline PRIVATE stdafx.h)
 target_link_libraries(LxRunOffline PRIVATE ntdll)
 if(MSVC)
 	target_link_libraries(LxRunOffline PRIVATE ws2_32 crypt32)
+	target_link_options(LxRunOffline PRIVATE /MANIFEST:NO)
 endif()
 
 find_package(LibArchive REQUIRED)

@@ -42,27 +42,54 @@ Run `LxRunOffline` for available actions and run `LxRunOffline <action-name>` fo
 
 # Build
 
-### Visual Studio
+This project uses CMake as its build system. MinGW GCC and Visual C++ compilers are supported.
 
-Visual Studio 2017 and Windows SDK 10.0.17134 are required.
+### Visual C++
 
-Install [vcpkg and its VS integration](https://github.com/Microsoft/vcpkg) (if you haven't) and install dependencies.
+1. Install Visual Studio 2019, latest Windows SDK, CMake and [vcpkg](https://github.com/Microsoft/vcpkg).
+
+2. Install dependencies.
 
 ```
 vcpkg install --triplet x64-windows-static libarchive boost-program-options boost-format tinyxml2
 ```
 
-Then build with Visual Studio or MSBuild.
+3. Open "x64 Native Tools Command Prompt" from Start Menu and build.
 
-### MSYS2
-
-Open the "MSYS2 MinGW 64-bit" shell, and install necessary packages.
-
+```cmd
+mkdir build
+cd build
+cmake .. \
+    -G "NMake Makefiles" \
+    -DCMAKE_TOOLCHAIN_FILE=<path-to-vcpkg-dir>/scripts/buildsystems/vcpkg.cmake \
+    -DVCPKG_TARGET_TRIPLET=x64-windows-static
+nmake
 ```
-pacman -Sy --needed --noconfirm base-devel git mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2
+
+### MinGW
+
+1. Install MSYS2.
+
+2. Open the "MSYS2 MinGW 64-bit" shell from Start menu, and install dependencies.
+
+```bash
+pacman -Sy --needed --noconfirm base-devel git mingw-w64-x86_64-{toolchain,cmake,libarchive,boost,tinyxml2}
 ```
 
-Then run `make`.
+3. Build.
+
+```bash
+mkdir build
+cd build
+cmake .. -G "MSYS Makefiles"
+make
+```
+
+### Notes
+
+- Other CMake generators like Visual Studio and Ninja may also work, but they're neither tested nor officially supported by this project.
+- Static linking is used by default. However, you can define `-DLXRUNOFFLINE_STATIC=OFF` to switch to dynamic linking. If you're building with Visual C++, you also need to change vcpkg's triplet to `x64-windows` when installing dependencies and invoking CMake.
+- The build script in [CI configuration](https://github.com/DDoSolitary/LxRunOffline/blob/master/.github/workflows/build.yml) can be used as an example of how to build this project.
 
 # Compatibility
 
@@ -70,4 +97,4 @@ Then run `make`.
 - **v2.x**: Only Windows 10 Fall Creators Update (v1709) or later.
 - **v3.x**: Only Windows 10 April 2018 Update (v1803) or later.
 
-It is strongly recommended to install the April 2018 Update and use v3.x releases.
+It is strongly recommended to install the April 2018 Update or later and use v3.x releases.

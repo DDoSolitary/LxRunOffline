@@ -1,4 +1,4 @@
-$version = [Environment]::OSVersion.Version
+﻿$version = [Environment]::OSVersion.Version
 if ($version.Major -ne 10 -or $version.Build -lt 17134) {
 	throw "This package requires Windows 10 v1803 or later."
 }

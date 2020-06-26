@@ -128,7 +128,12 @@ std::unique_ptr<file_path> linux_path::clone() const {
 wsl_path::wsl_path(crwstr base) : file_path(normalize_path(base)) {}
 
 wstr wsl_path::normalize_path(crwstr path) {
-	auto o = L"\\\\?\\" + get_full_path(path);
+	const auto prefix = L"\\\\?\\";
+	const auto prefix_len = wcslen(prefix);
+	auto o = get_full_path(path);
+	if (o.compare(0, prefix_len, prefix) != 0) {
+		o = L"\\\\?\\" + get_full_path(path);
+	}
 	if (o.back() != L'\\') o += L'\\';
 	return o;
 }

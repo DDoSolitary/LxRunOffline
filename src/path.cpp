@@ -132,7 +132,7 @@ wstr wsl_path::normalize_path(crwstr path) {
 	const auto prefix_len = wcslen(prefix);
 	auto o = get_full_path(path);
 	if (o.compare(0, prefix_len, prefix) != 0) {
-		o = L"\\\\?\\" + get_full_path(path);
+		o = prefix + get_full_path(path);
 	}
 	if (o.back() != L'\\') o += L'\\';
 	return o;

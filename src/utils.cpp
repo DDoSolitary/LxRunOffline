@@ -58,7 +58,7 @@ void print_progress(const double progress) {
 }
 
 wstr from_utf8(const char *s) {
-	const auto res = probe_and_call<wchar_t, int>([&](wchar_t *buf, int len) {
+	const auto res = probe_and_call<wchar_t, int>([&](wchar_t *buf, const int len) {
 		return MultiByteToWideChar(CP_UTF8, 0, s, -1, buf, len);
 	});
 	if (!res.second) throw lro_error::from_win32_last(err_msg::err_convert_encoding, {});
@@ -66,7 +66,7 @@ wstr from_utf8(const char *s) {
 }
 
 std::unique_ptr<char[]> to_utf8(wstr s) {
-	auto res = probe_and_call<char, int>([&](char *buf, int len) {
+	auto res = probe_and_call<char, int>([&](char *buf, const int len) {
 		return WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, buf, len, nullptr, nullptr);
 	});
 	if (!res.second) throw lro_error::from_win32_last(err_msg::err_convert_encoding, {});
@@ -74,7 +74,7 @@ std::unique_ptr<char[]> to_utf8(wstr s) {
 }
 
 wstr get_full_path(crwstr path) {
-	const auto fp = probe_and_call<wchar_t, int>([&](wchar_t *buf, int len) {
+	const auto fp = probe_and_call<wchar_t, int>([&](wchar_t *buf, const int len) {
 		return GetFullPathName(path.c_str(), len, buf, nullptr);
 	});
 	if (!fp.second) {

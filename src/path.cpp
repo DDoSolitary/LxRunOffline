@@ -139,7 +139,8 @@ wstr wsl_path::normalize_path(crwstr path) {
 }
 
 bool wsl_path::is_special_input(const wchar_t c) const {
-	return c >= 1 && c <= 31 || c == L'<' || c == L'>' || c == L':' || c == L'"' || c == L'\\' || c == L'|' || c == L'*' || c == L'?';
+	return c >= 1 && c <= 31 ||
+		c == L'<' || c == L'>' || c == L':' || c == L'"' || c == L'\\' || c == L'|' || c == L'*' || c == L'?';
 }
 
 bool wsl_path::real_convert(file_path &output) const {
@@ -210,8 +211,10 @@ std::unique_ptr<file_path> wsl_v2_path::clone() const {
 	return std::make_unique<wsl_v2_path>(*this);
 }
 
-wsl_legacy_path::wsl_legacy_path(crwstr base)
-	: wsl_v1_path(base), matcher1({ L"home/", L"root/", L"mnt/" }), matcher2({ L"rootfs/home/", L"rootfs/root/", L"rootfs/mnt/" }) {}
+wsl_legacy_path::wsl_legacy_path(crwstr base) :
+	wsl_v1_path(base),
+	matcher1({ L"home/", L"root/", L"mnt/" }),
+	matcher2({ L"rootfs/home/", L"rootfs/root/", L"rootfs/mnt/" }) {}
 
 bool wsl_legacy_path::append(const wchar_t c) {
 	if (!wsl_v1_path::append(c)) return false;
@@ -225,12 +228,14 @@ bool wsl_legacy_path::append(const wchar_t c) {
 }
 
 bool wsl_legacy_path::convert(file_path &output) const {
-	if (!data.compare(base_len, 12, L"rootfs\\root\\") || !data.compare(base_len, 12, L"rootfs\\home\\") || !data.compare(base_len, 11, L"rootfs\\mnt\\")) {
+	if (!data.compare(base_len, 12, L"rootfs\\root\\") || !data.compare(base_len, 12, L"rootfs\\home\\") ||
+		!data.compare(base_len, 11, L"rootfs\\mnt\\")) {
 		// Maybe add warning
 		return false;
 	}
 	output.reset();
-	if (!data.compare(base_len, 5, L"root\\") || !data.compare(base_len, 5, L"home\\") || !data.compare(base_len, 4, L"mnt\\")) {
+	if (!data.compare(base_len, 5, L"root\\") || !data.compare(base_len, 5, L"home\\") ||
+		!data.compare(base_len, 4, L"mnt\\")) {
 		if (!output.append(L"rootfs/")) return false;
 	}
 	return real_convert(output);

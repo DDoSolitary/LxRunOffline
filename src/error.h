@@ -58,7 +58,7 @@ enum class err_msg {
 };
 
 class lro_error : public std::exception {
-	lro_error(const err_msg msg_code, std::vector<wstr> msg_args, HRESULT err_code);
+	lro_error(err_msg msg_code, std::vector<wstr> msg_args, HRESULT err_code);
 public:
 	err_msg msg_code;
 	std::vector<wstr> msg_args;
@@ -70,5 +70,5 @@ public:
 	static lro_error from_nt(err_msg msg_code, std::vector<wstr> msg_args, NTSTATUS err_code);
 	static lro_error from_other(err_msg msg_code, std::vector<wstr> msg_args);
 
-	wstr format() const;
+	[[nodiscard]] wstr format() const;
 };

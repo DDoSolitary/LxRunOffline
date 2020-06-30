@@ -29,7 +29,7 @@ public:
 	bool append(crwstr);
 	virtual bool convert(file_path &) const = 0;
 	virtual void reset();
-	virtual std::unique_ptr<file_path> clone() const = 0;
+	[[nodiscard]] virtual std::unique_ptr<file_path> clone() const = 0;
 };
 
 class linux_path : public file_path {
@@ -41,7 +41,7 @@ public:
 	bool append(wchar_t) override;
 	bool convert(file_path &) const override;
 	void reset() override;
-	std::unique_ptr<file_path> clone() const override;
+	[[nodiscard]] std::unique_ptr<file_path> clone() const override;
 };
 
 class wsl_path : public file_path {
@@ -50,8 +50,8 @@ protected:
 	explicit wsl_path(crwstr);
 	virtual void append_special(wchar_t) = 0;
 	virtual bool convert_special(file_path &, size_t &) const = 0;
-	virtual bool is_special_input(wchar_t) const;
-	virtual bool is_special_output(wchar_t c) const = 0;
+	[[nodiscard]] virtual bool is_special_input(wchar_t) const;
+	[[nodiscard]] virtual bool is_special_output(wchar_t c) const = 0;
 	bool real_convert(file_path &) const;
 public:
 	bool append(wchar_t) override;
@@ -62,21 +62,21 @@ class wsl_v1_path : public wsl_path {
 protected:
 	void append_special(wchar_t) override;
 	bool convert_special(file_path &, size_t &) const override;
-	bool is_special_input(wchar_t) const override;
-	bool is_special_output(wchar_t c) const override;
+	[[nodiscard]] bool is_special_input(wchar_t) const override;
+	[[nodiscard]] bool is_special_output(wchar_t c) const override;
 public:
 	explicit wsl_v1_path(crwstr);
-	std::unique_ptr<file_path> clone() const override;
+	[[nodiscard]] std::unique_ptr<file_path> clone() const override;
 };
 
 class wsl_v2_path : public wsl_path {
 protected:
 	void append_special(wchar_t) override;
 	bool convert_special(file_path &, size_t &) const override;
-	bool is_special_output(wchar_t c) const override;
+	[[nodiscard]] bool is_special_output(wchar_t c) const override;
 public:
-	wsl_v2_path(crwstr);
-	std::unique_ptr<file_path> clone() const override;
+	explicit wsl_v2_path(crwstr);
+	[[nodiscard]] std::unique_ptr<file_path> clone() const override;
 };
 
 class wsl_legacy_path : public wsl_v1_path {
@@ -86,5 +86,5 @@ public:
 	bool append(wchar_t) override;
 	bool convert(file_path &) const override;
 	void reset() override;
-	std::unique_ptr<file_path> clone() const override;
+	[[nodiscard]] std::unique_ptr<file_path> clone() const override;
 };

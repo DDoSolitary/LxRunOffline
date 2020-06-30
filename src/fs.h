@@ -22,14 +22,14 @@ public:
 	virtual void write_directory(const file_attr *) = 0;
 	virtual void write_symlink(const file_attr *, const char *) = 0;
 	virtual void write_hard_link() = 0;
-	virtual bool check_source_path(const file_path &) const = 0;
+	[[nodiscard]] virtual bool check_source_path(const file_path &) const = 0;
 };
 
 class archive_writer : public fs_writer {
 	unique_ptr_del<archive *> pa;
 	unique_ptr_del<archive_entry *> pe;
 	std::set<wstr> ignored_files;
-	void write_entry(const file_attr &);
+	void write_entry(const file_attr &) const;
 	bool check_attr(const file_attr *);
 	static void warn_ignored(crwstr);
 public:
@@ -39,7 +39,7 @@ public:
 	void write_directory(const file_attr *) override;
 	void write_symlink(const file_attr *, const char *) override;
 	void write_hard_link() override;
-	bool check_source_path(const file_path &) const override;
+	[[nodiscard]] bool check_source_path(const file_path &) const override;
 };
 
 class wsl_writer : public fs_writer {
@@ -55,7 +55,7 @@ public:
 	void write_directory(const file_attr *) override;
 	void write_symlink(const file_attr *, const char *) override;
 	void write_hard_link() override;
-	bool check_source_path(const file_path &) const override;
+	[[nodiscard]] bool check_source_path(const file_path &) const override;
 };
 
 class wsl_v1_writer : public wsl_writer {
@@ -69,7 +69,7 @@ public:
 
 class wsl_v2_writer : public wsl_writer {
 	std::stack<std::pair<wstr, file_attr>> dir_attr;
-	void real_write_attr(HANDLE, const file_attr &, crwstr) const;
+	static void real_write_attr(HANDLE, const file_attr &, crwstr);
 protected:
 	void write_attr(HANDLE, const file_attr *) override;
 	void write_symlink_data(HANDLE, const char *) const override;
@@ -101,7 +101,7 @@ protected:
 	std::unique_ptr<file_path> path;
 	virtual std::unique_ptr<file_attr> read_attr(HANDLE) const = 0;
 	virtual std::unique_ptr<char[]> read_symlink_data(HANDLE) const = 0;
-	virtual bool is_legacy() const;
+	[[nodiscard]] virtual bool is_legacy() const;
 public:
 	void run(fs_writer &) override;
 	void run_checked(fs_writer &);
@@ -126,7 +126,7 @@ public:
 
 class wsl_legacy_reader : public wsl_v1_reader {
 protected:
-	bool is_legacy() const override;
+	[[nodiscard]] bool is_legacy() const override;
 public:
 	explicit wsl_legacy_reader(crwstr);
 };

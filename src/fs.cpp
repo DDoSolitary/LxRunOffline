@@ -64,26 +64,29 @@ void create_recursive(crwstr path) {
 	}
 }
 
-uint64_t get_file_size(HANDLE hf) {
+uint64_t get_file_size(const HANDLE hf) {
 	LARGE_INTEGER sz;
 	if (!GetFileSizeEx(hf, &sz)) throw lro_error::from_win32_last(err_msg::err_file_size, {});
 	return sz.QuadPart;
 }
 
-void grant_delete_child(HANDLE hf) {
+void grant_delete_child(const HANDLE hf) {
 	PACL pa;
 	PSECURITY_DESCRIPTOR pdb;
 	if (GetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, &pa, nullptr, &pdb)) return;
 	unique_ptr_del<PSECURITY_DESCRIPTOR> pd(pdb, &LocalFree);
 	EXPLICIT_ACCESS ea;
-	BuildExplicitAccessWithName(&ea, const_cast<wchar_t *>(L"CURRENT_USER"), FILE_DELETE_CHILD, GRANT_ACCESS, CONTAINER_INHERIT_ACE);
+	BuildExplicitAccessWithName(
+		&ea, const_cast<wchar_t *>(L"CURRENT_USER"),
+		FILE_DELETE_CHILD, GRANT_ACCESS, CONTAINER_INHERIT_ACE
+	);
 	PACL pnab;
 	if (SetEntriesInAcl(1, &ea, pa, &pnab)) return;
 	const unique_ptr_del<PACL> pna(pnab, &LocalFree);
 	SetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, pna.get(), nullptr);
 }
 
-void set_cs_info(HANDLE hd) {
+void set_cs_info(const HANDLE hd) {
 	FILE_CASE_SENSITIVE_INFORMATION info = {};
 	auto stat = NtQueryInformationFile(hd, &iostat, &info, sizeof info, FileCaseSensitiveInformation);
 	if (!stat && (info.Flags & FILE_CS_FLAG_CASE_SENSITIVE_DIR)) return;
@@ -97,17 +100,17 @@ void set_cs_info(HANDLE hd) {
 }
 
 template<typename T>
-T get_ea(HANDLE hf, const char *name) {
+T get_ea(const HANDLE hf, const char *name) {
 	const auto nl = static_cast<uint8_t>(strlen(name));
-	const auto pgi = create_fam_struct<FILE_GET_EA_INFORMATION>(nl + 1);
-	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(nl + 1 + sizeof(T));
+	const auto pgi = create_fam_struct<FILE_GET_EA_INFORMATION>(static_cast<size_t>(nl) + 1);
+	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(sizeof(T) + nl + 1);
 	pgi.first->NextEntryOffset = 0;
 	pgi.first->EaNameLength = nl;
 	strcpy(pgi.first->EaName, name);
 	const auto stat = NtQueryEaFile(
 		hf, &iostat,
-		pi.first.get(), pi.second, true,
-		pgi.first.get(), pgi.second, nullptr, true
+		pi.first.get(), static_cast<uint32_t>(pi.second), true,
+		pgi.first.get(), static_cast<uint32_t>(pgi.second), nullptr, true
 	);
 	if (stat) throw lro_error::from_nt(err_msg::err_get_ea, {}, stat);
 	if (pi.first->EaValueLength != sizeof(T)) {
@@ -119,9 +122,9 @@ T get_ea(HANDLE hf, const char *name) {
 }
 
 template<typename T>
-void set_ea(HANDLE hf, const char *name, const T &data) {
+void set_ea(const HANDLE hf, const char *name, const T &data) {
 	const auto nl = static_cast<uint8_t>(strlen(name));
-	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(nl + 1 + sizeof(T));
+	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(sizeof(T) + nl + 1);
 	pi.first->NextEntryOffset = 0;
 	pi.first->Flags = 0;
 	pi.first->EaNameLength = nl;
@@ -131,11 +134,11 @@ void set_ea(HANDLE hf, const char *name, const T &data) {
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
 	memcpy(pi.first->EaName + nl + 1, &data, sizeof(T));
 #pragma GCC diagnostic pop
-	const auto stat = NtSetEaFile(hf, &iostat, pi.first.get(), pi.second);
+	const auto stat = NtSetEaFile(hf, &iostat, pi.first.get(), static_cast<uint32_t>(pi.second));
 	if (stat) throw lro_error::from_nt(err_msg::err_set_ea, { from_utf8(name) }, stat);
 }
 
-void find_close_safe(HANDLE hs) {
+void find_close_safe(const HANDLE hs) {
 	if (hs != INVALID_HANDLE_VALUE) FindClose(hs);
 }
 
@@ -163,7 +166,9 @@ void enum_directory(file_path &path, const bool rootfs_first, std::function<void
 			throw lro_error::from_win32_last(err_msg::err_enum_dir, { path.data });
 		}
 		while (true) {
-			if (wcscmp(data.cFileName, L".") != 0 && wcscmp(data.cFileName, L"..") != 0 && (!is_root || wcscmp(data.cFileName, L"rootfs") != 0)) {
+			if (wcscmp(data.cFileName, L".") != 0 && wcscmp(data.cFileName, L"..") != 0
+				&& (!is_root || wcscmp(data.cFileName, L"rootfs") != 0)) {
+
 				path.data += data.cFileName;
 				if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 					path.data += L'\\';
@@ -204,8 +209,8 @@ archive_writer::archive_writer(crwstr archive_path)
 	check_archive(pa.get(), archive_write_open_filename_w(pa.get(), archive_path.c_str()));
 }
 
-void archive_writer::write_entry(const file_attr &attr) {
-	auto up = to_utf8(path->data);
+void archive_writer::write_entry(const file_attr &attr) const {
+	const auto up = to_utf8(path->data);
 	archive_entry_set_pathname(pe.get(), up.get());
 	archive_entry_set_uid(pe.get(), attr.uid);
 	archive_entry_set_gid(pe.get(), attr.gid);
@@ -237,7 +242,7 @@ bool archive_writer::write_new_file(const file_attr *attr) {
 	return true;
 }
 
-void archive_writer::write_file_data(const char *buf, uint32_t size) {
+void archive_writer::write_file_data(const char *buf, const uint32_t size) {
 	if (size) {
 		if (archive_write_data(pa.get(), buf, size) < 0) {
 			check_archive(pa.get(), ARCHIVE_FATAL);
@@ -275,7 +280,7 @@ bool archive_writer::check_source_path(const file_path &) const {
 
 wsl_writer::wsl_writer() : hf_data(nullptr) {}
 
-void wsl_writer::write_data(HANDLE hf, const char *buf, const uint32_t size) const {
+void wsl_writer::write_data(const HANDLE hf, const char *buf, const uint32_t size) const {
 	DWORD wc;
 	if (!WriteFile(hf, buf, size, &wc, nullptr)) {
 		throw lro_error::from_win32_last(err_msg::err_write_file, { path->data });
@@ -332,7 +337,7 @@ wsl_v1_writer::wsl_v1_writer(crwstr base_path) {
 	create_recursive(path->data);
 }
 
-void wsl_v1_writer::write_attr(HANDLE hf, const file_attr *attr) {
+void wsl_v1_writer::write_attr(const HANDLE hf, const file_attr *attr) {
 	if (!attr) return;
 	try {
 		set_ea(hf, "LXATTRB", lxattrb {
@@ -348,7 +353,7 @@ void wsl_v1_writer::write_attr(HANDLE hf, const file_attr *attr) {
 	}
 }
 
-void wsl_v1_writer::write_symlink_data(HANDLE hf, const char *target) const {
+void wsl_v1_writer::write_symlink_data(const HANDLE hf, const char *target) const {
 	write_data(hf, target, static_cast<uint32_t>(strlen(target)));
 }
 
@@ -358,7 +363,7 @@ wsl_v2_writer::wsl_v2_writer(crwstr base_path) {
 	create_recursive(path->data);
 }
 
-void wsl_v2_writer::real_write_attr(HANDLE hf, const file_attr &attr, crwstr path) const {
+void wsl_v2_writer::real_write_attr(const HANDLE hf, const file_attr &attr, crwstr path) {
 	try {
 		set_ea(hf, "$LXUID", attr.uid);
 		set_ea(hf, "$LXGID", attr.gid);
@@ -378,7 +383,7 @@ void wsl_v2_writer::real_write_attr(HANDLE hf, const file_attr &attr, crwstr pat
 	}
 }
 
-void wsl_v2_writer::write_attr(HANDLE hf, const file_attr *attr) {
+void wsl_v2_writer::write_attr(const HANDLE hf, const file_attr *attr) {
 	if (!attr) return;
 	if ((attr->mode & AE_IFDIR) == AE_IFDIR) {
 		while (!dir_attr.empty()) {
@@ -391,7 +396,7 @@ void wsl_v2_writer::write_attr(HANDLE hf, const file_attr *attr) {
 	} else real_write_attr(hf, *attr, path->data);
 }
 
-void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target) const {
+void wsl_v2_writer::write_symlink_data(const HANDLE hf, const char *target) const {
 	const uint32_t v = 2;
 	const auto pl = strlen(target);
 	const auto dl = static_cast<uint16_t>(pl + sizeof(v));
@@ -402,7 +407,9 @@ void wsl_v2_writer::write_symlink_data(HANDLE hf, const char *target) const {
 	memcpy(pb.first->DataBuffer, &v, 4);
 	memcpy(pb.first->DataBuffer + sizeof(v), target, pl);
 	DWORD cnt;
-	if (!DeviceIoControl(hf, FSCTL_SET_REPARSE_POINT, pb.first.get(), pb.second, nullptr, 0, &cnt, nullptr)) {
+	if (!DeviceIoControl(hf, FSCTL_SET_REPARSE_POINT,
+		pb.first.get(), static_cast<uint32_t>(pb.second), nullptr, 0, &cnt, nullptr)) {
+
 		throw lro_error::from_win32_last(err_msg::err_set_reparse, { path->data });
 	}
 }
@@ -461,7 +468,8 @@ void archive_reader::run(fs_writer &writer) {
 		}
 		auto type = archive_entry_filetype(pe);
 		if (type != AE_IFREG && type != AE_IFDIR && type != AE_IFLNK) {
-			log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % p.data % type).str());
+			const auto msg = boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % p.data % type;
+			log_warning(msg.str());
 			continue;
 		}
 		auto pst = archive_entry_stat(pe);
@@ -470,10 +478,19 @@ void archive_reader::run(fs_writer &writer) {
 			static_cast<uint32_t>(archive_entry_mtime_nsec(pe))
 		};
 		file_attr attr {
-			static_cast<uint32_t>(pst->st_mode), static_cast<uint32_t>(pst->st_uid), static_cast<uint32_t>(pst->st_gid), static_cast<uint64_t>(pst->st_size),
-			archive_entry_atime_is_set(pe) ? unix_time { static_cast<uint64_t>(pst->st_atime), static_cast<uint32_t>(archive_entry_atime_nsec(pe)) } : mt,
+			static_cast<uint32_t>(pst->st_mode),
+			static_cast<uint32_t>(pst->st_uid),
+			static_cast<uint32_t>(pst->st_gid),
+			static_cast<uint64_t>(pst->st_size),
+			archive_entry_atime_is_set(pe) ? unix_time {
+				static_cast<uint64_t>(pst->st_atime),
+				static_cast<uint32_t>(archive_entry_atime_nsec(pe))
+			} : mt,
 			mt,
-			archive_entry_ctime_is_set(pe) ? unix_time { static_cast<uint64_t>(pst->st_ctime), static_cast<uint32_t>(archive_entry_ctime_nsec(pe)) } : mt
+			archive_entry_ctime_is_set(pe) ? unix_time {
+				static_cast<uint64_t>(pst->st_ctime),
+				static_cast<uint32_t>(archive_entry_ctime_nsec(pe))
+			} : mt
 		};
 		if (type == AE_IFREG) {
 			if (!writer.write_new_file(&attr)) continue;
@@ -481,7 +498,7 @@ void archive_reader::run(fs_writer &writer) {
 			size_t cnt;
 			int64_t off;
 			while (check_archive(pa.get(), archive_read_data_block(pa.get(), &buf, &cnt, &off))) {
-				writer.write_file_data(reinterpret_cast<const char *>(buf), static_cast<uint32_t>(cnt));
+				writer.write_file_data(static_cast<const char *>(buf), static_cast<uint32_t>(cnt));
 			}
 			writer.write_file_data(nullptr, 0);
 		} else if (type == AE_IFLNK) {
@@ -506,7 +523,7 @@ void wsl_reader::run(fs_writer &writer) {
 	std::map<uint64_t, std::unique_ptr<file_path>> id_map;
 	char buf[BUFSIZ];
 	auto is_root = true;
-	enum_directory(*path, is_legacy(), [&](enum_dir_type t) {
+	enum_directory(*path, is_legacy(), [&](const enum_dir_type t) {
 		if (t == enum_dir_type::exit) return;
 		if (t == enum_dir_type::enter && is_root) {
 			is_root = false;
@@ -546,7 +563,11 @@ void wsl_reader::run(fs_writer &writer) {
 					}
 					writer.write_file_data(buf, rc);
 				} while (rc);
-			} else log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % path->data % type).str());
+			} else {
+				const auto msg = boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.")
+					% path->data % type;
+				log_warning(msg.str());
+			}
 		}
 	});
 }
@@ -562,7 +583,7 @@ wsl_v1_reader::wsl_v1_reader(crwstr base) {
 	path = std::make_unique<wsl_v1_path>(base);
 }
 
-std::unique_ptr<file_attr> wsl_v1_reader::read_attr(HANDLE hf) const {
+std::unique_ptr<file_attr> wsl_v1_reader::read_attr(const HANDLE hf) const {
 	try {
 		const auto ea = get_ea<lxattrb>(hf, "LXATTRB");
 		return std::make_unique<file_attr>(file_attr {
@@ -578,7 +599,7 @@ std::unique_ptr<file_attr> wsl_v1_reader::read_attr(HANDLE hf) const {
 	}
 }
 
-std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(HANDLE hf) const {
+std::unique_ptr<char[]> wsl_v1_reader::read_symlink_data(const HANDLE hf) const {
 	uint64_t sz;
 	try {
 		sz = get_file_size(hf);
@@ -602,7 +623,7 @@ wsl_v2_reader::wsl_v2_reader(crwstr base) {
 	path = std::make_unique<wsl_v2_path>(base);
 }
 
-std::unique_ptr<file_attr> wsl_v2_reader::read_attr(HANDLE hf) const {
+std::unique_ptr<file_attr> wsl_v2_reader::read_attr(const HANDLE hf) const {
 	std::unique_ptr<file_attr> attr(new file_attr);
 	try {
 		attr->uid = get_ea<uint32_t>(hf, "$LXUID");
@@ -624,10 +645,12 @@ std::unique_ptr<file_attr> wsl_v2_reader::read_attr(HANDLE hf) const {
 	return attr;
 }
 
-std::unique_ptr<char[]> wsl_v2_reader::read_symlink_data(HANDLE hf) const {
+std::unique_ptr<char[]> wsl_v2_reader::read_symlink_data(const HANDLE hf) const {
 	const auto buf = std::make_unique<char[]>(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
 	DWORD cnt;
-	if (!DeviceIoControl(hf, FSCTL_GET_REPARSE_POINT, nullptr, 0, buf.get(), MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &cnt, nullptr)) {
+	if (!DeviceIoControl(hf, FSCTL_GET_REPARSE_POINT,
+		nullptr, 0, buf.get(), MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &cnt, nullptr)) {
+
 		if (GetLastError() == ERROR_NOT_A_REPARSE_POINT) return nullptr;
 		throw lro_error::from_win32_last(err_msg::err_get_reparse, { path->data });
 	}
@@ -675,7 +698,9 @@ bool detect_wsl2(crwstr path) {
 		open_file(p.data + L"ext4.vhdx", false, false);
 		return true;
 	} catch (const lro_error &e) {
-		if (e.msg_code == err_msg::err_open_file && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) return false;
+		if (e.msg_code == err_msg::err_open_file && e.err_code == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
+			return false;
+		}
 		throw;
 	}
 }

@@ -17,9 +17,9 @@ wstr get_full_path(crwstr path);
 // aliasing rules and results in undefined behavior. (See https://github.com/DDoSolitary/LxRunOffline/issues/112)
 // So it seems that the only viable way to do so is to use the C memory allocator "malloc".
 template<typename T>
-std::pair<unique_ptr_del<T *>, size_t> create_fam_struct(size_t fam_size) {
+std::pair<unique_ptr_del<T *>, size_t> create_fam_struct(const size_t fam_size) {
 	// FAMs in Windows SDK are defined as "type name[1];" so the additional byte should be removed from size;
-	size_t size = sizeof(T) + fam_size - 1;
+	const auto size = sizeof(T) + fam_size - 1;
 	return std::make_pair(unique_ptr_del<T *>(static_cast<T *>(malloc(size)), free), size);
 }
 

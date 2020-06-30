@@ -31,7 +31,7 @@ public:
 	void save_file(crwstr path) const;
 	void load_distro(crwstr name, config_item_flags desired);
 	void configure_distro(crwstr name, config_item_flags desired) const;
-	uint32_t get_flags() const;
+	[[nodiscard]] uint32_t get_flags() const;
 	void set_flags(uint32_t value);
-	bool is_wsl2() const;
+	[[nodiscard]] bool is_wsl2() const;
 };

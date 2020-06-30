@@ -56,10 +56,14 @@ int wmain(int argc, wchar_t **argv) {
 			bool shortcut;
 			desc.add_options()
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to install the distribution into.")
-				(",f", po::wvalue<wstr>(&file)->required(), "The tar file containing the root filesystem of the distribution to be installed. If a file of the same name with a .xml extension exists and \"-c\" isn't specified, that file will be imported as a config file.")
+				(",f", po::wvalue<wstr>(&file)->required(),
+					"The tar file containing the root filesystem of the distribution to be installed. If a file of the "
+					"same name with a .xml extension exists and \"-c\" isn't specified, that file will be imported as "
+					"a config file.")
 				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
-				(",v", po::wvalue<uint32_t>(&ver)->default_value(win_build >= 17763 ? 2 : 1), "The version of filesystem to use, latest available one if not specified.")
+				(",v", po::wvalue<uint32_t>(&ver)->default_value(win_build >= 17763 ? 2 : 1),
+					"The version of filesystem to use, latest available one if not specified.")
 				(",s", po::bool_switch(&shortcut), "Create a shortcut for this distribution on Desktop.");
 			parse_args();
 			reg_config conf;
@@ -86,7 +90,10 @@ int wmain(int argc, wchar_t **argv) {
 				unique_ptr_del<wchar_t *> dp(s, &CoTaskMemFree);
 				create_shortcut(name, dp.get() + (L'\\' + name + L".lnk"), L"");
 			}
-			log_warning(L"Love this tool? Would you like to make a donation: https://github.com/DDoSolitary/LxRunOffline/blob/master/README.md#donation");
+			log_warning(
+				L"Love this tool? Would you like to make a donation: "
+				"https://github.com/DDoSolitary/LxRunOffline/blob/master/README.md#donation"
+			);
 		} else if (!wcscmp(argv[1], L"ui") || !wcscmp(argv[1], L"uninstall")) {
 			parse_args();
 			check_running(name);
@@ -127,7 +134,8 @@ int wmain(int argc, wchar_t **argv) {
 				(",d", po::wvalue<wstr>(&dir)->required(), "The directory to copy the distribution to.")
 				(",N", po::wvalue<wstr>(&new_name)->required(), "Name of the new distribution.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
-				(",v", po::wvalue<uint32_t>(&ver)->default_value(-1), "The version of filesystem to use, same as source if not specified.");
+				(",v", po::wvalue<uint32_t>(&ver)->default_value(-1),
+					"The version of filesystem to use, same as source if not specified.");
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_all);
@@ -143,7 +151,11 @@ int wmain(int argc, wchar_t **argv) {
 			select_wsl_reader(ov, get_distro_dir(name))->run_checked(*writer);
 		} else if (!wcscmp(argv[1], L"e") || !wcscmp(argv[1], L"export")) {
 			wstr file;
-			desc.add_options()(",f", po::wvalue<wstr>(&file)->required(), "Path to the .tar.gz file to export to. A config file will also be exported to this file name with a .xml extension.");
+			desc.add_options()(
+				",f", po::wvalue<wstr>(&file)->required(),
+				"Path to the .tar.gz file to export to. A config file will also be exported to this file name with a "
+				".xml extension."
+			);
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_all);
@@ -162,7 +174,9 @@ int wmain(int argc, wchar_t **argv) {
 			if (hw == INVALID_HANDLE_VALUE) throw lro_error::from_win32_last(err_msg::err_no_wslapi, {});
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-function-type"
-			auto launch = reinterpret_cast<HRESULT(__stdcall *)(PCWSTR, PCWSTR, BOOL, DWORD *)>(GetProcAddress(hw, "WslLaunchInteractive"));
+			auto launch = reinterpret_cast<HRESULT(__stdcall *)(PCWSTR, PCWSTR, BOOL, DWORD *)>(
+				GetProcAddress(hw, "WslLaunchInteractive")
+			);
 #pragma GCC diagnostic pop
 			if (!launch) throw lro_error::from_win32_last(err_msg::err_no_wslapi, {});
 			DWORD code;
@@ -184,7 +198,10 @@ int wmain(int argc, wchar_t **argv) {
 			}
 		} else if (!wcscmp(argv[1], L"se") || !wcscmp(argv[1], L"set-env")) {
 			reg_config conf;
-			desc.add_options()(",v", po::wvalue<std::vector<wstr>>(&conf.env)->required(), "Environment variables to be set. This argument can be specified multiple times.");
+			desc.add_options()(
+				",v", po::wvalue<std::vector<wstr>>(&conf.env)->required(),
+				"Environment variables to be set. This argument can be specified multiple times."
+			);
 			parse_args();
 			conf.configure_distro(name, config_env);
 		} else if (!wcscmp(argv[1], L"ae") || !wcscmp(argv[1], L"add-env")) {
@@ -210,7 +227,10 @@ int wmain(int argc, wchar_t **argv) {
 			conf.configure_distro(name, config_env);
 		} else if (!wcscmp(argv[1], L"re") || !wcscmp(argv[1], L"remove-env")) {
 			wstr env_name;
-			desc.add_options()(",v", po::wvalue<wstr>(&env_name)->required(), "Name of the environment variable to remove.");
+			desc.add_options()(
+				",v", po::wvalue<wstr>(&env_name)->required(),
+				"Name of the environment variable to remove."
+			);
 			parse_args();
 			reg_config conf;
 			conf.load_distro(name, config_env);
@@ -256,7 +276,8 @@ int wmain(int argc, wchar_t **argv) {
 		} else if (!wcscmp(argv[1], L"s") || !wcscmp(argv[1], L"shortcut")) {
 			wstr fp, ip;
 			desc.add_options()
-				(",f", po::wvalue<wstr>(&fp)->required(), "Path to the shortcut to be created, including the \".lnk\" suffix.")
+				(",f", po::wvalue<wstr>(&fp)->required(),
+					"Path to the shortcut to be created, including the \".lnk\" suffix.")
 				(",i", po::wvalue<wstr>(&ip), "Path to the icon file for the shortcut. This argument is optional.");
 			parse_args();
 			create_shortcut(name, fp, ip);
@@ -289,7 +310,7 @@ int wmain(int argc, wchar_t **argv) {
 				<< L"       Environment variables: ";
 			for (size_t i = 0; i < conf.env.size(); i++) {
 				if (i > 0) std::wcout << L"                              ";
-				std::wcout << conf.env[i] <<'\n';
+				std::wcout << conf.env[i] << '\n';
 			}
 		} else {
 			throw lro_error::from_other(err_msg::err_invalid_action, { argv[1] });

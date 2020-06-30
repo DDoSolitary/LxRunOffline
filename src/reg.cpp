@@ -52,7 +52,8 @@ void set_dynamic(crwstr path, crwstr value_name, const uint32_t type, const void
 	if (code) throw lro_error::from_win32(err_msg::err_set_key_value, { path, value_name }, code);
 }
 
-template<typename T> T get_value(crwstr, crwstr);
+template<typename T>
+T get_value(crwstr, crwstr);
 
 template<>
 wstr get_value<wstr>(crwstr path, crwstr value_name) {
@@ -82,7 +83,8 @@ uint32_t get_value<uint32_t>(crwstr path, crwstr value_name) {
 	return res;
 }
 
-template<typename T> void set_value(crwstr, crwstr, const T &);
+template<typename T>
+void set_value(crwstr, crwstr, const T &);
 
 template<>
 void set_value<wstr>(crwstr path, crwstr value_name, crwstr value) {
@@ -140,7 +142,7 @@ std::vector<wstr> list_distros() {
 	auto res = list_distro_id();
 	std::transform(
 		res.begin(), res.end(), res.begin(),
-		[](crwstr id) { return  get_value<wstr>(reg_base_path + id, vn_distro_name); }
+		[](crwstr id) { return get_value<wstr>(reg_base_path + id, vn_distro_name); }
 	);
 	return res;
 }
@@ -222,8 +224,16 @@ void unregister_distro(crwstr name) {
 		try {
 			auto l = list_distro_id();
 			if (l.empty()) {
-				const auto code2 = RegDeleteKeyValue(HKEY_CURRENT_USER, reg_base_path.c_str(), vn_default_distro.c_str());
-				if (code2) throw lro_error::from_win32(err_msg::err_delete_key_value, { reg_base_path, vn_default_distro }, code2);
+				const auto code2 = RegDeleteKeyValue(
+					HKEY_CURRENT_USER,
+					reg_base_path.c_str(), vn_default_distro.c_str()
+				);
+				if (code2) {
+					throw lro_error::from_win32(
+						err_msg::err_delete_key_value,
+						{ reg_base_path, vn_default_distro }, code2
+					);
+				}
 			} else {
 				set_value(reg_base_path, vn_default_distro, l.front());
 			}

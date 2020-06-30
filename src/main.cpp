@@ -34,7 +34,7 @@ int wmain(int argc, wchar_t **argv) {
 	};
 
 	try {
-		if (win_build < 17134) {
+		if (get_win_build() < 17134) {
 			throw lro_error::from_other(err_msg::err_version_old, { L"1803", L"17134" });
 		}
 		if (argc < 2) {
@@ -62,7 +62,7 @@ int wmain(int argc, wchar_t **argv) {
 					"a config file.")
 				(",r", po::wvalue<wstr>(&root), "The directory in the tar file to extract. This argument is optional.")
 				(",c", po::wvalue<wstr>(&conf_path), "The config file to use. This argument is optional.")
-				(",v", po::wvalue<uint32_t>(&ver)->default_value(win_build >= 17763 ? 2 : 1),
+				(",v", po::wvalue<uint32_t>(&ver)->default_value(get_win_build() >= 17763 ? 2 : 1),
 					"The version of filesystem to use, latest available one if not specified.")
 				(",s", po::bool_switch(&shortcut), "Create a shortcut for this distribution on Desktop.");
 			parse_args();

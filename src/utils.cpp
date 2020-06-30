@@ -2,7 +2,7 @@
 #include "error.h"
 #include "utils.h"
 
-const uint32_t win_build = []() {
+uint32_t get_win_build() {
 	OSVERSIONINFO ver;
 	ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 #pragma warning(disable:4996)
@@ -11,13 +11,18 @@ const uint32_t win_build = []() {
 		throw lro_error::from_other(err_msg::err_get_version, {});
 	}
 	return ver.dwBuildNumber;
-}();
+}
 
-const auto hcon = GetStdHandle(STD_ERROR_HANDLE);
+HANDLE get_hcon() {
+	const static auto hcon = GetStdHandle(STD_ERROR_HANDLE);
+	return hcon;
+}
+
 bool progress_printed;
 
 void write(crwstr output, const uint16_t color) {
 	CONSOLE_SCREEN_BUFFER_INFO ci;
+	const auto hcon = get_hcon();
 	const auto ok = hcon != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hcon, &ci);
 	if (ok) {
 		if (progress_printed && SetConsoleCursorPosition(hcon, { 0, ci.dwCursorPosition.Y })) {
@@ -41,6 +46,7 @@ void log_error(crwstr msg) {
 
 void print_progress(const double progress) {
 	static int lc;
+	const auto hcon = get_hcon();
 	if (hcon == INVALID_HANDLE_VALUE) return;
 	CONSOLE_SCREEN_BUFFER_INFO ci;
 	if (!GetConsoleScreenBufferInfo(hcon, &ci)) return;

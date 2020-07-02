@@ -36,10 +36,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 #include <boost/format.hpp>
-#include <boost/program_options.hpp>
 #include <tinyxml2.h>
-
-#include "config.h"
 
 typedef std::wstring wstr;
 typedef const std::wstring &crwstr;

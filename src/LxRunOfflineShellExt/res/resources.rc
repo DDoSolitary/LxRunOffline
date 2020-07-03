@@ -1,0 +1,6 @@
+#include "resources.h"
+
+IDR_LXRUNOFFLINESHELLEXT REGISTRY "LxRunOfflineShellExt.rgs"
+IDR_CONTEXTMENUHANDLER REGISTRY "ContextMenuHandler.rgs"
+
+1 TYPELIB "LxRunOfflineShellExt.tlb"

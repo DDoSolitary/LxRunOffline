@@ -102,39 +102,42 @@ void set_cs_info(const HANDLE hd) {
 template<typename T>
 T get_ea(const HANDLE hf, const char *name) {
 	const auto nl = static_cast<uint8_t>(strlen(name));
-	const auto pgi = create_fam_struct<FILE_GET_EA_INFORMATION>(static_cast<size_t>(nl) + 1);
-	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(sizeof(T) + nl + 1);
-	pgi.first->NextEntryOffset = 0;
-	pgi.first->EaNameLength = nl;
-	strcpy(pgi.first->EaName, name);
+	const auto gil = static_cast<uint32_t>(FIELD_OFFSET(FILE_GET_EA_INFORMATION, EaName) + nl + 1);
+	const auto pgi = create_fam_struct<FILE_GET_EA_INFORMATION>(gil);
+	const auto il = static_cast<uint32_t>(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + sizeof(T) + nl + 1);
+	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(il);
+	pgi->NextEntryOffset = 0;
+	pgi->EaNameLength = nl;
+	strcpy(pgi->EaName, name);
 	const auto stat = NtQueryEaFile(
 		hf, &iostat,
-		pi.first.get(), static_cast<uint32_t>(pi.second), true,
-		pgi.first.get(), static_cast<uint32_t>(pgi.second), nullptr, true
+		pi.get(), static_cast<uint32_t>(il), true,
+		pgi.get(), static_cast<uint32_t>(gil), nullptr, true
 	);
 	if (stat) throw lro_error::from_nt(err_msg::err_get_ea, {}, stat);
-	if (pi.first->EaValueLength != sizeof(T)) {
+	if (pi->EaValueLength != sizeof(T)) {
 		throw lro_error::from_other(err_msg::err_invalid_ea, { from_utf8(name) });
 	}
 	T t = {};
-	memcpy(&t, pi.first->EaName + nl + 1, sizeof(T));
+	memcpy(&t, pi->EaName + nl + 1, sizeof(T));
 	return t;
 }
 
 template<typename T>
 void set_ea(const HANDLE hf, const char *name, const T &data) {
 	const auto nl = static_cast<uint8_t>(strlen(name));
-	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(sizeof(T) + nl + 1);
-	pi.first->NextEntryOffset = 0;
-	pi.first->Flags = 0;
-	pi.first->EaNameLength = nl;
-	pi.first->EaValueLength = sizeof(T);
-	strcpy(pi.first->EaName, name);
+	const auto il = static_cast<uint32_t>(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + sizeof(T) + nl + 1);
+	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(il);
+	pi->NextEntryOffset = 0;
+	pi->Flags = 0;
+	pi->EaNameLength = nl;
+	pi->EaValueLength = sizeof(T);
+	strcpy(pi->EaName, name);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
-	memcpy(pi.first->EaName + nl + 1, &data, sizeof(T));
+	memcpy(pi->EaName + nl + 1, &data, sizeof(T));
 #pragma GCC diagnostic pop
-	const auto stat = NtSetEaFile(hf, &iostat, pi.first.get(), static_cast<uint32_t>(pi.second));
+	const auto stat = NtSetEaFile(hf, &iostat, pi.get(), il);
 	if (stat) throw lro_error::from_nt(err_msg::err_set_ea, { from_utf8(name) }, stat);
 }
 
@@ -400,15 +403,16 @@ void wsl_v2_writer::write_symlink_data(const HANDLE hf, const char *target) cons
 	const uint32_t v = 2;
 	const auto pl = strlen(target);
 	const auto dl = static_cast<uint16_t>(pl + sizeof(v));
-	const auto pb = create_fam_struct<REPARSE_DATA_BUFFER>(dl);
-	pb.first->ReparseTag = IO_REPARSE_TAG_LX_SYMLINK;
-	pb.first->ReparseDataLength = dl;
-	pb.first->Reserved = 0;
-	memcpy(pb.first->DataBuffer, &v, 4);
-	memcpy(pb.first->DataBuffer + sizeof(v), target, pl);
+	const auto bl = static_cast<uint32_t>(FIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer) + dl);
+	const auto pb = create_fam_struct<REPARSE_DATA_BUFFER>(bl);
+	pb->ReparseTag = IO_REPARSE_TAG_LX_SYMLINK;
+	pb->ReparseDataLength = dl;
+	pb->Reserved = 0;
+	memcpy(pb->DataBuffer, &v, sizeof(v));
+	memcpy(pb->DataBuffer + sizeof(v), target, pl);
 	DWORD cnt;
 	if (!DeviceIoControl(hf, FSCTL_SET_REPARSE_POINT,
-		pb.first.get(), static_cast<uint32_t>(pb.second), nullptr, 0, &cnt, nullptr)) {
+		pb.get(), bl, nullptr, 0, &cnt, nullptr)) {
 
 		throw lro_error::from_win32_last(err_msg::err_set_reparse, { path->data });
 	}

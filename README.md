@@ -94,6 +94,7 @@ make
 - Other CMake generators like Visual Studio and Ninja may also work, but they're neither tested nor officially supported by this project.
 - Static linking is used by default. However, you can define `-DLXRUNOFFLINE_STATIC=OFF` to switch to dynamic linking. If you're building with Visual C++, you also need to change vcpkg's triplet to `x64-windows` when installing dependencies and invoking CMake.
 - The build script in [CI configuration](https://github.com/DDoSolitary/LxRunOffline/blob/master/.github/workflows/build.yml) can be used as an example of how to build this project.
+- The shell extension uses ATL, which is not supported by MinGW, so it will only be built when using Visual C++.
 
 # Compatibility
 

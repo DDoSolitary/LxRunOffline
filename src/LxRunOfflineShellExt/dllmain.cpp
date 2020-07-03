@@ -3,7 +3,7 @@
 
 CLxRunOfflineShellExtModule _AtlModule;
 
-extern "C" BOOL WINAPI DllMain(const HINSTANCE hInstance, const DWORD dwReason, const LPVOID lpReserved) {
+extern "C" BOOL WINAPI DllMain(HINSTANCE, const DWORD dwReason, const LPVOID lpReserved) {
 	return _AtlModule.DllMain(dwReason, lpReserved);
 }
 
@@ -28,15 +28,14 @@ STDAPI DllUnregisterServer() {
 }
 
 STDAPI DllInstall(const BOOL bInstall, const LPCWSTR pszCmdLine) {
-	HRESULT hr = E_FAIL;
 	static const wchar_t szUserSwitch[] = L"user";
-
 	if (pszCmdLine != nullptr) {
 		if (_wcsnicmp(pszCmdLine, szUserSwitch, _countof(szUserSwitch)) == 0) {
 			ATL::AtlSetPerUserRegistration(true);
 		}
 	}
 
+	HRESULT hr;
 	if (bInstall) {
 		hr = DllRegisterServer();
 		if (FAILED(hr)) {
@@ -45,6 +44,5 @@ STDAPI DllInstall(const BOOL bInstall, const LPCWSTR pszCmdLine) {
 	} else {
 		hr = DllUnregisterServer();
 	}
-
 	return hr;
 }

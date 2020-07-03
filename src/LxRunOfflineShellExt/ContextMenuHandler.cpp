@@ -67,7 +67,7 @@ IFACEMETHODIMP CContextMenuHandler::QueryContextMenu(
 	const UINT idCmdLast,
 	const UINT uFlags
 ) {
-	if (uFlags & CMF_DEFAULTONLY || !(uFlags & CMF_EXTENDEDVERBS)) {
+	if (uFlags & CMF_DEFAULTONLY) {
 		return S_OK;
 	}
 	const auto distro_size = static_cast<UINT>(this->distros.size());

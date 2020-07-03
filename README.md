@@ -34,6 +34,10 @@ You can install via Chocolatey `choco install lxrunoffline`, Scoop `scoop bucket
 - Latest releases: https://github.com/DDoSolitary/LxRunOffline/releases
 - Development builds: https://dl.bintray.com/ddosolitary/dev-releases/LxRunOffline/
 
+### Shell extension
+
+The right-click menu feature requires the shell extension DLL to be properly registered. This is automatically done if you used Chocolatey to install this project. However, if you downloaded the binaries directly, you need to run `regsvr32 LxRunOfflineShellExt.dll` manually to register the DLL file.
+
 # Usage
 
 See the [Wiki](https://github.com/DDoSolitary/LxRunOffline/wiki) to download tar files for different distros, which are used by the `LxRunOffline install` command.

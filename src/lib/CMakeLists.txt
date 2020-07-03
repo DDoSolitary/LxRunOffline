@@ -22,7 +22,7 @@ if (LXRUNOFFLINE_STATIC AND MINGW)
 	find_package(Iconv REQUIRED)
 	find_library(LZ4_LIBRARY lz4 REQUIRED)
 	find_library(ZSTD_LIBRARY zstd REQUIRED)
-	target_link_libraries(LibArchive::LibArchive PUBLIC
+	target_link_libraries(LibArchive::LibArchive INTERFACE
 		ZLIB::ZLIB
 		BZip2::BZip2
 		LibLZMA::LibLZMA
@@ -41,7 +41,7 @@ else()
 	find_library(TINYXML2_LIBRARY tinyxml2 REQUIRED)
 	find_path(TINYXML2_INCLUDE_DIR tinyxml2.h REQUIRED)
 	target_link_libraries(LibLxRunOffline PUBLIC ${TINYXML2_LIBRARY})
-	target_include_directories(LxRunOfflineLib PRIVATE ${TINYXML2_INCLUDE_DIR})
+	target_include_directories(LibLxRunOffline PRIVATE ${TINYXML2_INCLUDE_DIR})
 	if(CMAKE_BUILD_TYPE STREQUAL Debug)
 		target_compile_definitions(LibLxRunOffline PRIVATE TINYXML2_DEBUG)
 	endif()

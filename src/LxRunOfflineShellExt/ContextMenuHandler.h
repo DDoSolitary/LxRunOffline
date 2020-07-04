@@ -24,7 +24,7 @@ private:
 	HMENU hsm = nullptr;
 
 public:
-	~CContextMenuHandler();
+	void FinalRelease() const;
 
 	IFACEMETHODIMP Initialize(
 		PCIDLIST_ABSOLUTE pidlFolder,

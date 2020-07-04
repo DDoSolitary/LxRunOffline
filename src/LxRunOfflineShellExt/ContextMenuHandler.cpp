@@ -3,7 +3,7 @@
 #include "ContextMenuHandler.h"
 #include "../lib/reg.h"
 
-CContextMenuHandler::~CContextMenuHandler() {
+void CContextMenuHandler::FinalRelease() const {
 	if (this->hsm) {
 		DestroyMenu(hsm);
 	}

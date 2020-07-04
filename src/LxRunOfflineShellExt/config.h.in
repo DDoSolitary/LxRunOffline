@@ -1,1 +1,2 @@
+#pragma once
 #define HANDLER_CLSID_STR "@HANDLER_CLSID_STR@"

@@ -1,6 +1,6 @@
 HKCR {
 	NoRemove CLSID {
-		ForceRemove {10b70111-8421-4200-a46e-91e7ded88e5b} = s 'LxRunOfflineShellExt' {
+		ForceRemove {@HANDLER_CLSID_STR@} = s 'LxRunOfflineShellExt' {
 			InprocServer32 = s '%MODULE%' {
 				val ThreadingModel = s 'Apartment'
 			}

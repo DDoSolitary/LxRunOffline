@@ -1,3 +1,5 @@
+#include "config.h"
+
 import "shobjidl.idl";
 
 [
@@ -5,7 +7,7 @@ import "shobjidl.idl";
 	version(1.0),
 ]
 library LxRunOfflineShellExtLib {
-	[uuid(10b70111-8421-4200-a46e-91e7ded88e5b)]
+	[uuid(HANDLER_CLSID_STR)]
 	coclass ContextMenuHandler {
 		[default] interface IShellExtInit;
 		interface IContextMenu;

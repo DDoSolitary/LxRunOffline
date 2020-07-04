@@ -1,11 +1,12 @@
 #pragma once
 #include "pch.h"
+#include "config.h"
 #include "res/resources.h"
 #include "LxRunOfflineShellExt_i.h"
 
 using namespace ATL;
 
-class ATL_NO_VTABLE __declspec(uuid("10b70111-8421-4200-a46e-91e7ded88e5b")) CContextMenuHandler :
+class ATL_NO_VTABLE __declspec(uuid(HANDLER_CLSID_STR)) CContextMenuHandler :
 	public CComObjectRootEx<CComSingleThreadModel>,
 	public CComCoClass<CContextMenuHandler, &CLSID_ContextMenuHandler>,
 	public IShellExtInit,

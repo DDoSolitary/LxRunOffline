@@ -53,6 +53,8 @@ endif()
 # The shell extension can't be built with MinGW, so it doesn't make much sense to package the project when using MinGW.
 if(MSVC)
 	add_subdirectory(choco)
+else()
+	message(WARNING "Not using MSVC compiler. Chocolatey package will not be built.")
 endif()
 add_subdirectory(src)
 

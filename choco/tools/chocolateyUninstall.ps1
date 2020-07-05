@@ -1,8 +1,3 @@
-﻿$unzipLocation = Join-Path $Env:ChocolateyToolsLocation 'lxrunoffline'
-$shellExtPath = Join-Path $unzipLocation 'LxRunOfflineShellExt.dll'
-if (Test-Path $unzipLocation) {
-	if (Test-Path $shellExtPath) {
-		regsvr32 /s /u $shellExtPath
-	}
-	rm -Recurse $unzipLocation
-}
+﻿$pkgDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$shellExtPath = Join-Path $pkgDir 'LxRunOfflineShellExt.dll'
+regsvr32 /s /u $shellExtPath

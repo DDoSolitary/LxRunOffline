@@ -11,12 +11,19 @@ jobs:
           C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --noconfirm --noprogressbar"
           C:\msys64\usr\bin\bash.exe -l -c "pacman -Syu --needed --noconfirm --noprogressbar base-devel cmake git mingw-w64-x86_64-toolchain mingw-w64-x86_64-libarchive mingw-w64-x86_64-boost mingw-w64-x86_64-tinyxml2"
           git fetch --unshallow --tags
-          C:\msys64\usr\bin\bash.exe -l -c "cd /d/a/LxRunOffline/LxRunOffline && cmake -G 'MSYS Makefiles' -DCMAKE_INSTALL_PREFIX= -DCMAKE_BUILD_TYPE=Release . && make DESTDIR=release install/strip -j"
+          C:\msys64\usr\bin\bash.exe -l -c "
+            cd /d/a/LxRunOffline/LxRunOffline &&
+            cmake -G 'MSYS Makefiles' -DCMAKE_BUILD_TYPE=Release . &&
+            make package -j"
           if ($LASTEXITCODE -ne 0) { Exit 1 }
-          7z a release.zip .\release\*
-          $version = (git describe --tags).Substring(1)
-          curl.exe -fsS -T release.zip -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/LxRunOffline-v$version-mingw.zip
-          curl.exe -fsS -X POST -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish
+          $zip_name = "LxRunOffline-$(git describe --tags)-mingw.zip"
+          curl.exe -fsS `
+            -T $zip_name `
+            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
+            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/$zip_name
+          curl.exe -fsS -X POST `
+            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
+            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish
   build-msvc:
     runs-on: windows-latest
     steps:
@@ -34,10 +41,27 @@ jobs:
           git fetch --unshallow --tags
           cmd /c '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" & set' |
             foreach { if ($_ -match "=") { $v = $_.split("="); Set-Item -Force -Path "Env:\$($v[0])" -Value "$($v[1])" } }
-          cmake -G "NMake Makefiles" -DCMAKE_TOOLCHAIN_FILE="$Env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET="$Env:VCPKG_DEFAULT_TRIPLET" -DCMAKE_INSTALL_PREFIX= -DCMAKE_BUILD_TYPE=Release .
-          nmake DESTDIR=release install
+          cmake . `
+            -G "NMake Makefiles" `
+            -DCMAKE_TOOLCHAIN_FILE="$Env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET="$Env:VCPKG_DEFAULT_TRIPLET" `
+            -DCMAKE_BUILD_TYPE=Release
+          nmake package
           if ($LASTEXITCODE -ne 0) { Exit 1 }
-          7z a release.zip .\release\*
-          $version = (git describe --tags).Substring(1)
-          curl.exe -fsS -T release.zip -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/LxRunOffline-v$version-msvc.zip
-          curl.exe -fsS -X POST -u ddosolitary:${{ secrets.BINTRAY_KEY }} https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish
+          $version = git describe --tags
+          $zip_name = "LxRunOffline-$version-msvc.zip"
+          curl.exe -fsS `
+            -T $zip_name `
+            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
+            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/$zip_name
+          if (-not $version.Contains("-")) {
+            cmake -DCOMPONENT=choco -DCMAKE_INSTALL_PREFIX="$PWD" -P cmake_install.cmake
+            $pkg_name = "lxrunoffline.$($version.Substring(1)).nupkg"
+            curl.exe -fsS `
+              -T $pkg_name `
+              -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
+              https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/$pkg_name
+          }
+          curl.exe -fsS -X POST `
+            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
+            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish

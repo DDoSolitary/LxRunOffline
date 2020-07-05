@@ -50,6 +50,21 @@ else()
 	message(WARNING "Only MinGW and MSVC compilers are supported.")
 endif()
 
+# The shell extension can't be built with MinGW, so it doesn't make much sense to package the project when using MinGW.
+if(MSVC)
+	add_subdirectory(choco)
+endif()
 add_subdirectory(src)
 
 install(FILES LICENSE LICENSE-3RD-PARTY DESTINATION .)
+
+if(MSVC)
+	set(ZIP_NAME_SUFFIX -msvc)
+else()
+	set(ZIP_NAME_SUFFIX -mingw)
+endif()
+
+set(CPACK_GENERATOR ZIP)
+set(CPACK_STRIP_FILES ON)
+set(CPACK_PACKAGE_FILE_NAME LxRunOffline-${LxRunOffline_VERSION_STR}${ZIP_NAME_SUFFIX})
+include(CPack)

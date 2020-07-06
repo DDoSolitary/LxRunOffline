@@ -19,6 +19,7 @@ endif()
 project(LxRunOffline VERSION ${VERSION})
 
 option(LXRUNOFFLINE_STATIC "Link statically" ON)
+option(BUILD_CHOCO_PKG "Package the files for Chocolatey" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -50,11 +51,12 @@ else()
 	message(WARNING "Only MinGW and MSVC compilers are supported.")
 endif()
 
-# The shell extension can't be built with MinGW, so it doesn't make much sense to package the project when using MinGW.
-if(MSVC)
-	add_subdirectory(choco)
-else()
-	message(WARNING "Not using MSVC compiler. Chocolatey package will not be built.")
+if(BUILD_CHOCO_PKG)
+	if(MSVC)
+		add_subdirectory(choco)
+	else()
+		message(FATAL_ERROR "Can't build Chocolatey package with non-MSVC compilers because the shell extension can't be built.")
+	endif()
 endif()
 add_subdirectory(src)
 

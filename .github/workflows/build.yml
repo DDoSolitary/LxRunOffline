@@ -45,7 +45,8 @@ jobs:
             -G "NMake Makefiles" `
             -DCMAKE_TOOLCHAIN_FILE="$Env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
             -DVCPKG_TARGET_TRIPLET="$Env:VCPKG_DEFAULT_TRIPLET" `
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release `
+            -DBUILD_CHOCO_PKG=ON
           nmake package
           if ($LASTEXITCODE -ne 0) { Exit 1 }
           $version = git describe --tags

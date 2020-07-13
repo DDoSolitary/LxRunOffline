@@ -9,8 +9,6 @@ A full-featured utility for managing *Windows Subsystem for Linux (WSL)*.
 
 It would be greatly appreciated if you could make a donation to support development of this project.
 
-Note: It's extremely difficult to withdraw from PayPal balance for a Chinese citizen like me, so if you want to donate 100$ or more, please either use Alipay or contact me via email for other donation options.
-
 PayPal [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.me/ddosolitary)
 
 Alipay

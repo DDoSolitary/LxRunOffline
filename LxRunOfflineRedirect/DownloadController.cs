@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace LxRunOfflineRedirect {
 	[Route("[controller]/[action]/{version?}")]
@@ -10,6 +12,7 @@ namespace LxRunOfflineRedirect {
 		async Task<string> DownloadStringAsync(string url) {
 			try {
 				using var client = new WebClient();
+				client.Headers.Add("User-Agent", nameof(LxRunOfflineRedirect));
 				return await client.DownloadStringTaskAsync(url);
 			} catch (WebException e) {
 				if (e.Status == WebExceptionStatus.ProtocolError &&
@@ -48,7 +51,16 @@ namespace LxRunOfflineRedirect {
 		}
 
 		public async Task<IActionResult> Fedora(string version = "rawhide") {
-			var url = $"https://github.com/fedora-cloud/docker-brew-fedora/raw/{version.ToLower()}/x86_64/";
+			var repoSlug = "fedora-cloud/docker-brew-fedora";
+			if (version == "rawhide") {
+				var branches = JArray.Parse(await DownloadStringAsync($"https://api.github.com/repos/{repoSlug}/branches"));
+				version = branches
+					.Select(b => (string)((JObject)b)["name"])
+					.Where(name => int.TryParse(name, out _))
+					.OrderByDescending(int.Parse)
+					.First().ToString();
+			}
+			var url = $"https://github.com/{repoSlug}/raw/{version.ToLower()}/x86_64/";
 			var dockerFile = await DownloadStringAsync(url + "Dockerfile");
 			if (dockerFile == null) return NotFound();
 			return Redirect(url + Regex.Match(dockerFile, @"\bfedora-.*\.tar\.xz\b").Value);

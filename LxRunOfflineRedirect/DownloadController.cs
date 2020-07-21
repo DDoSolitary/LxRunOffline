@@ -9,9 +9,8 @@ namespace LxRunOfflineRedirect {
 	public class DownloadController : Controller {
 		async Task<string> DownloadStringAsync(string url) {
 			try {
-				using (var client = new WebClient()) {
-					return await client.DownloadStringTaskAsync(url);
-				}
+				using var client = new WebClient();
+				return await client.DownloadStringTaskAsync(url);
 			} catch (WebException e) {
 				if (e.Status == WebExceptionStatus.ProtocolError &&
 					((HttpWebResponse)e.Response).StatusCode == HttpStatusCode.NotFound) {
@@ -22,14 +21,11 @@ namespace LxRunOfflineRedirect {
 		}
 
 		public IActionResult UbuntuFromMS(int version) {
-			switch (version) {
-			case 14:
-				return Redirect("https://wsldownload.azureedge.net/14.04.5.3-server-cloudimg-amd64-root.tar.gz");
-			case 16:
-				return Redirect("https://wsldownload.azureedge.net/16.04.2-server-cloudimg-amd64-root.tar.gz");
-			default:
-				return NotFound();
-			}
+			return version switch {
+				14 => Redirect("https://wsldownload.azureedge.net/14.04.5.3-server-cloudimg-amd64-root.tar.gz"),
+				16 => Redirect("https://wsldownload.azureedge.net/16.04.2-server-cloudimg-amd64-root.tar.gz"),
+				_ => NotFound(),
+			};
 		}
 
 		public IActionResult Ubuntu(string version) {

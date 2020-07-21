@@ -52,7 +52,7 @@ namespace LxRunOfflineRedirect {
 
 		public async Task<IActionResult> Fedora(string version = "rawhide") {
 			var repoSlug = "fedora-cloud/docker-brew-fedora";
-			if (version == "rawhide") {
+			if (version.ToLowerInvariant() == "rawhide") {
 				var branches = JArray.Parse(await DownloadStringAsync($"https://api.github.com/repos/{repoSlug}/branches"));
 				version = branches
 					.Select(b => (string)((JObject)b)["name"])

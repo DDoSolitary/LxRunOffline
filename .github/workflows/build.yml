@@ -16,14 +16,16 @@ jobs:
             cmake -G 'MSYS Makefiles' -DCMAKE_BUILD_TYPE=Release . &&
             make package -j"
           if ($LASTEXITCODE -ne 0) { Exit 1 }
+      - if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+        run: |
           $zip_name = "LxRunOffline-$(git describe --tags)-mingw.zip"
           curl.exe -fsS `
             -T $zip_name `
             -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/$zip_name
-          curl.exe -fsS -X POST `
-            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish
+            -H "X-Bintray-Package: default" `
+            -H "X-Bintray-Version: default" `
+            -H "X-Bintray-Publish: 1" `
+            https://api.bintray.com/content/ddosolitary/dev-releases/LxRunOffline/$zip_name
   build-msvc:
     runs-on: windows-latest
     steps:
@@ -49,20 +51,25 @@ jobs:
             -DBUILD_CHOCO_PKG=ON
           nmake package
           if ($LASTEXITCODE -ne 0) { Exit 1 }
+      - if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
+        run: |
           $version = git describe --tags
           $zip_name = "LxRunOffline-$version-msvc.zip"
           curl.exe -fsS `
             -T $zip_name `
             -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/$zip_name
+            -H "X-Bintray-Package: default" `
+            -H "X-Bintray-Version: default" `
+            -H "X-Bintray-Publish: 1" `
+            https://api.bintray.com/content/ddosolitary/dev-releases/LxRunOffline/$zip_name
           if (-not $version.Contains("-")) {
             cmake -DCOMPONENT=choco -DCMAKE_INSTALL_PREFIX="$PWD" -P cmake_install.cmake
             $pkg_name = "lxrunoffline.$($version.Substring(1)).nupkg"
             curl.exe -fsS `
               -T $pkg_name `
               -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-              https://api.bintray.com/content/ddosolitary/dev-releases/default/default/LxRunOffline/$pkg_name
+              -H "X-Bintray-Package: default" `
+              -H "X-Bintray-Version: default" `
+              -H "X-Bintray-Publish: 1" `
+              https://api.bintray.com/content/ddosolitary/dev-releases/LxRunOffline/$pkg_name
           }
-          curl.exe -fsS -X POST `
-            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-            https://api.bintray.com/content/ddosolitary/dev-releases/default/default/publish

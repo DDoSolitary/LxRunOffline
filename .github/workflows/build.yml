@@ -39,6 +39,10 @@ jobs:
           .\bootstrap-vcpkg.bat
           popd
           vcpkg integrate install
+          $portPath = "$Env:VCPKG_INSTALLATION_ROOT\ports\libarchive\"
+          Copy-Item misc\remove-slash-conversion.patch $portPath
+          $portfilePath = (Join-Path $portPath portfile.cmake)
+          (Get-Content $portfilePath) -replace 'PATCHES', 'PATCHES remove-slash-conversion.patch' | Set-Content $portfilePath
           vcpkg install libarchive boost-program-options boost-format tinyxml2
           git fetch --unshallow --tags
           cmd /c '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" & set' |

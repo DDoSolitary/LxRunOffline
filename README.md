@@ -61,9 +61,9 @@ vcpkg install --triplet x64-windows-static libarchive boost-program-options boos
 ```cmd
 mkdir build
 cd build
-cmake .. \
-    -G "NMake Makefiles" \
-    -DCMAKE_TOOLCHAIN_FILE=<path-to-vcpkg-dir>/scripts/buildsystems/vcpkg.cmake \
+cmake .. ^
+    -G "NMake Makefiles" ^
+    -DCMAKE_TOOLCHAIN_FILE=<path-to-vcpkg-dir>/scripts/buildsystems/vcpkg.cmake ^
     -DVCPKG_TARGET_TRIPLET=x64-windows-static
 nmake
 ```

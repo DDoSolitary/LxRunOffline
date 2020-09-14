@@ -18,14 +18,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Exit 1 }
       - if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         run: |
-          $zip_name = "LxRunOffline-$(git describe --tags)-mingw.zip"
-          curl.exe -fsS `
-            -T $zip_name `
-            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-            -H "X-Bintray-Package: default" `
-            -H "X-Bintray-Version: default" `
-            -H "X-Bintray-Publish: 1" `
-            https://api.bintray.com/content/ddosolitary/dev-releases/LxRunOffline/$zip_name
+          mkdir -Force ~\.ssh
+          [IO.File]::WriteAllBytes( `
+              "$Env:USERPROFILE\.ssh\id_ed25519", `
+              [Convert]::FromBase64String("${{ secrets.DEPLOYKEY  }}"))
+          cmd /c 'ssh-keyscan web.sourceforge.net > "%USERPROFILE%\.ssh\known_hosts" 2>nul'
+          cmd /c "scp LxRunOffline-$(git describe --tags)-mingw.zip ddosolitary@web.sourceforge.net:/home/project-web/ddosolitary-builds/htdocs/LxRunOffline/ 2>&1"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
   build-msvc:
     runs-on: windows-latest
     steps:
@@ -57,23 +56,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Exit 1 }
       - if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         run: |
+          mkdir -Force ~\.ssh
+          [IO.File]::WriteAllBytes( `
+              "$Env:USERPROFILE\.ssh\id_ed25519", `
+              [Convert]::FromBase64String("${{ secrets.DEPLOYKEY  }}"))
+          cmd /c 'ssh-keyscan web.sourceforge.net > "%USERPROFILE%\.ssh\known_hosts" 2>nul'
           $version = git describe --tags
-          $zip_name = "LxRunOffline-$version-msvc.zip"
-          curl.exe -fsS `
-            -T $zip_name `
-            -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-            -H "X-Bintray-Package: default" `
-            -H "X-Bintray-Version: default" `
-            -H "X-Bintray-Publish: 1" `
-            https://api.bintray.com/content/ddosolitary/dev-releases/LxRunOffline/$zip_name
+          cmd /c "scp LxRunOffline-$version-msvc.zip ddosolitary@web.sourceforge.net:/home/project-web/ddosolitary-builds/htdocs/LxRunOffline/ 2>&1"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
           if (-not $version.Contains("-")) {
             cmake -DCOMPONENT=choco -DCMAKE_INSTALL_PREFIX="$PWD" -P cmake_install.cmake
-            $pkg_name = "lxrunoffline.$($version.Substring(1)).nupkg"
-            curl.exe -fsS `
-              -T $pkg_name `
-              -u ddosolitary:${{ secrets.BINTRAY_KEY }} `
-              -H "X-Bintray-Package: default" `
-              -H "X-Bintray-Version: default" `
-              -H "X-Bintray-Publish: 1" `
-              https://api.bintray.com/content/ddosolitary/dev-releases/LxRunOffline/$pkg_name
+            cmd /c "scp lxrunoffline.$($version.Substring(1)).nupkg ddosolitary@web.sourceforge.net:/home/project-web/ddosolitary-builds/htdocs/LxRunOffline/ 2>&1"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
           }

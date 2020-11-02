@@ -149,7 +149,10 @@ void enum_directory(file_path &path, const bool rootfs_first, std::function<void
 	std::function<void(bool)> enum_rec;
 	enum_rec = [&](const bool is_root) {
 		try {
-			set_cs_info(open_file(path.data, true, false).get());
+			const auto hf = open_file(path.data, true, false);
+			if (get_win_build() <= 20206) {
+				set_cs_info(hf.get());
+			}
 		} catch (lro_error &e) {
 			if (e.msg_code == err_msg::err_set_cs) e.msg_args.push_back(path.data);
 			throw;

@@ -1,0 +1,8 @@
+{
+	"cmake.configureOnOpen": true,
+	"cmake.configureArgs": [
+		"-DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake",
+		"-DVCPKG_TARGET_TRIPLET=x64-windows-static"
+	],
+	"C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+}

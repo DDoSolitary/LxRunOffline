@@ -33,8 +33,8 @@ wstr new_guid() {
 	return buf.get();
 }
 
-std::unique_ptr<char[]> get_dynamic(crwstr path, crwstr value_name, const uint32_t type) {
-	return probe_and_call<char, DWORD>([&](char *buf, DWORD len) {
+std::unique_ptr<wchar_t[]> get_dynamic(crwstr path, crwstr value_name, const uint32_t type) {
+	return probe_and_call<wchar_t, DWORD>([&](wchar_t *buf, DWORD len) {
 		const auto code = RegGetValue(
 			HKEY_CURRENT_USER, path.c_str(),
 			value_name.c_str(), type, nullptr, buf, &len
@@ -57,14 +57,14 @@ T get_value(crwstr, crwstr);
 
 template<>
 wstr get_value<wstr>(crwstr path, crwstr value_name) {
-	return reinterpret_cast<wchar_t *>(get_dynamic(path, value_name, RRF_RT_REG_SZ).get());
+	return get_dynamic(path, value_name, RRF_RT_REG_SZ).get();
 }
 
 template<>
 std::vector<wstr> get_value<std::vector<wstr>>(crwstr path, crwstr value_name) {
 	std::vector<wstr> v;
 	const auto buf = get_dynamic(path, value_name, RRF_RT_REG_MULTI_SZ);
-	auto ps = reinterpret_cast<wchar_t *>(buf.get());
+	auto ps = buf.get();
 	while (*ps) {
 		v.emplace_back(ps);
 		ps += wcslen(ps) + 1;

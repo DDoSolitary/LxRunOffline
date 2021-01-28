@@ -653,15 +653,14 @@ std::unique_ptr<file_attr> wsl_v2_reader::read_attr(const HANDLE hf) const {
 }
 
 std::unique_ptr<char[]> wsl_v2_reader::read_symlink_data(const HANDLE hf) const {
-	const auto buf = std::make_unique<char[]>(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+	const auto pb = create_fam_struct<REPARSE_DATA_BUFFER>(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
 	DWORD cnt;
 	if (!DeviceIoControl(hf, FSCTL_GET_REPARSE_POINT,
-		nullptr, 0, buf.get(), MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &cnt, nullptr)) {
+		nullptr, 0, pb.get(), MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &cnt, nullptr)) {
 
 		if (GetLastError() == ERROR_NOT_A_REPARSE_POINT) return nullptr;
 		throw lro_error::from_win32_last(err_msg::err_get_reparse, { path->data });
 	}
-	const auto pb = reinterpret_cast<REPARSE_DATA_BUFFER *>(buf.get());
 	if (pb->ReparseTag != IO_REPARSE_TAG_LX_SYMLINK) return nullptr;
 	const auto pl = pb->ReparseDataLength - 4;
 	auto s = std::make_unique<char[]>(static_cast<size_t>(pl) + 1);

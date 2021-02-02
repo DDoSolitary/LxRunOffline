@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "pch.h"
 #include "error.h"
 #include "reg.h"
 #include "utils.h"

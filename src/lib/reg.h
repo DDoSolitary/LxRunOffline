@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "pch.h"
 
 std::vector<wstr> list_distros();
 wstr get_default_distro();

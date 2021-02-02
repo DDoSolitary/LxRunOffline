@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "pch.h"
 
 uint32_t get_win_build();
 void log_warning(crwstr msg);

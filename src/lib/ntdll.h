@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "pch.h"
 
 #define FILE_CS_FLAG_CASE_SENSITIVE_DIR 0x00000001
 #define IO_REPARSE_TAG_LX_SYMLINK (0xA000001DL)

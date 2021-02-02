@@ -6,7 +6,7 @@ add_library(LibLxRunOffline STATIC
 	"shortcut.cpp"
 	"utils.cpp")
 
-target_precompile_headers(LibLxRunOffline PRIVATE stdafx.h)
+target_precompile_headers(LibLxRunOffline PRIVATE pch.h)
 target_link_libraries(LibLxRunOffline PUBLIC ntdll)
 if(LXRUNOFFLINE_STATIC AND MSVC)
 	target_link_libraries(LibLxRunOffline PUBLIC ws2_32 crypt32)

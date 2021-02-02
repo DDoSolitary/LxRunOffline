@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "pch.h"
 #include "error.h"
 
 const wstr msg_table[] = {

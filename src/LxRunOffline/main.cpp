@@ -1,10 +1,10 @@
 #include <boost/program_options.hpp>
 #include "config.h"
-#include "../lib/error.h"
-#include "../lib/fs.h"
-#include "../lib/reg.h"
-#include "../lib/shortcut.h"
-#include "../lib/utils.h"
+#include "error.h"
+#include "fs.h"
+#include "reg.h"
+#include "shortcut.h"
+#include "utils.h"
 
 namespace po = boost::program_options;
 

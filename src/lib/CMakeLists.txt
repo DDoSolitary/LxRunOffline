@@ -6,6 +6,7 @@ add_library(LibLxRunOffline STATIC
 	"shortcut.cpp"
 	"utils.cpp")
 
+target_include_directories(LibLxRunOffline INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_precompile_headers(LibLxRunOffline PRIVATE pch.h)
 target_link_libraries(LibLxRunOffline PUBLIC ntdll)
 if(LXRUNOFFLINE_STATIC AND MSVC)
@@ -41,9 +42,9 @@ else()
 	find_library(TINYXML2_LIBRARY tinyxml2 REQUIRED)
 	find_path(TINYXML2_INCLUDE_DIR tinyxml2.h REQUIRED)
 	target_link_libraries(LibLxRunOffline PUBLIC ${TINYXML2_LIBRARY})
-	target_include_directories(LibLxRunOffline PRIVATE ${TINYXML2_INCLUDE_DIR})
+	target_include_directories(LibLxRunOffline PUBLIC ${TINYXML2_INCLUDE_DIR})
 	if(CMAKE_BUILD_TYPE STREQUAL Debug)
-		target_compile_definitions(LibLxRunOffline PRIVATE TINYXML2_DEBUG)
+		target_compile_definitions(LibLxRunOffline PUBLIC TINYXML2_DEBUG)
 	endif()
 endif()
 

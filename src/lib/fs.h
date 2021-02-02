@@ -11,16 +11,20 @@ struct file_attr {
 	uint32_t mode, uid, gid;
 	uint64_t size;
 	unix_time at, mt, ct;
+	uint32_t dev_major, dev_minor;
+	const char *symlink;
 };
 
 class fs_writer {
+	std::set<wstr> ignored_files;
+protected:
+	bool check_attr(const file_attr *, bool, bool);
+	bool check_target_ignored();
 public:
 	std::unique_ptr<file_path> path, target_path;
 	virtual ~fs_writer() = default;
 	virtual bool write_new_file(const file_attr *) = 0;
 	virtual void write_file_data(const char *, uint32_t) = 0;
-	virtual void write_directory(const file_attr *) = 0;
-	virtual void write_symlink(const file_attr *, const char *) = 0;
 	virtual void write_hard_link() = 0;
 	[[nodiscard]] virtual bool check_source_path(const file_path &) const = 0;
 };
@@ -28,16 +32,10 @@ public:
 class archive_writer : public fs_writer {
 	unique_ptr_del<archive *> pa;
 	unique_ptr_del<archive_entry *> pe;
-	std::set<wstr> ignored_files;
-	void write_entry(const file_attr &) const;
-	bool check_attr(const file_attr *);
-	static void warn_ignored(crwstr);
 public:
 	explicit archive_writer(crwstr);
 	bool write_new_file(const file_attr *) override;
 	void write_file_data(const char *, uint32_t) override;
-	void write_directory(const file_attr *) override;
-	void write_symlink(const file_attr *, const char *) override;
 	void write_hard_link() override;
 	[[nodiscard]] bool check_source_path(const file_path &) const override;
 };
@@ -47,13 +45,10 @@ protected:
 	unique_ptr_del<HANDLE> hf_data;
 	void write_data(HANDLE, const char *, uint32_t) const;
 	virtual void write_attr(HANDLE, const file_attr *) = 0;
-	virtual void write_symlink_data(HANDLE, const char *) const = 0;
 	wsl_writer();
 public:
 	bool write_new_file(const file_attr *) override;
 	void write_file_data(const char *, uint32_t) override;
-	void write_directory(const file_attr *) override;
-	void write_symlink(const file_attr *, const char *) override;
 	void write_hard_link() override;
 	[[nodiscard]] bool check_source_path(const file_path &) const override;
 };
@@ -62,7 +57,6 @@ class wsl_v1_writer : public wsl_writer {
 protected:
 	wsl_v1_writer() = default;
 	void write_attr(HANDLE, const file_attr *) override;
-	void write_symlink_data(HANDLE, const char *) const override;
 public:
 	explicit wsl_v1_writer(crwstr);
 };
@@ -72,7 +66,6 @@ class wsl_v2_writer : public wsl_writer {
 	static void real_write_attr(HANDLE, const file_attr &, crwstr);
 protected:
 	void write_attr(HANDLE, const file_attr *) override;
-	void write_symlink_data(HANDLE, const char *) const override;
 public:
 	explicit wsl_v2_writer(crwstr);
 	~wsl_v2_writer() override;

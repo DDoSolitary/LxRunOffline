@@ -206,6 +206,30 @@ void time_f2u(const LARGE_INTEGER &ft, unix_time &ut) {
 	ut.nsec = static_cast<uint32_t>(t % 10000000 * 100);
 }
 
+bool fs_writer::check_attr(const file_attr *attr, const bool allow_null, const bool allow_sock) {
+	if (attr) {
+		const auto type = attr->mode & AE_IFMT;
+		if (type == AE_IFREG || type == AE_IFLNK || type == AE_IFCHR || type == AE_IFBLK || type == AE_IFDIR || type == AE_IFIFO) return true;
+		if (type == AE_IFSOCK && allow_sock) return true;
+		log_warning((boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % path->data % type).str());
+	} else if (allow_null) {
+		return true;
+	} else {
+		log_warning((boost::wformat(L"Ignoring the file \"%1%\" which doesn't have WSL attributes.") % path->data).str());
+	}
+	ignored_files.insert(path->data);
+	return false;
+}
+
+bool fs_writer::check_target_ignored() {
+	if (ignored_files.find(target_path->data) != ignored_files.end()) {
+		log_warning((boost::wformat(L"Ignoring the hard link \"%1%\" whose target has been ignored.") % path->data).str());
+		ignored_files.insert(path->data);
+		return false;
+	}
+	return true;
+}
+
 archive_writer::archive_writer(crwstr archive_path)
 	: pa(archive_write_new(), &archive_write_free), pe(archive_entry_new(), &archive_entry_free) {
 	path = std::make_unique<linux_path>();
@@ -215,36 +239,26 @@ archive_writer::archive_writer(crwstr archive_path)
 	check_archive(pa.get(), archive_write_open_filename_w(pa.get(), archive_path.c_str()));
 }
 
-void archive_writer::write_entry(const file_attr &attr) const {
+bool archive_writer::write_new_file(const file_attr *attr) {
+	if (!check_attr(attr, false, false) || path->data.empty()) return false;
 	const auto up = to_utf8(path->data);
+	const auto type = attr->mode & AE_IFMT;
 	archive_entry_set_pathname(pe.get(), up.get());
-	archive_entry_set_uid(pe.get(), attr.uid);
-	archive_entry_set_gid(pe.get(), attr.gid);
-	archive_entry_set_mode(pe.get(), attr.mode);
-	archive_entry_set_size(pe.get(), attr.size);
-	archive_entry_set_atime(pe.get(), attr.at.sec, attr.at.nsec);
-	archive_entry_set_mtime(pe.get(), attr.mt.sec, attr.mt.nsec);
-	archive_entry_set_ctime(pe.get(), attr.ct.sec, attr.ct.nsec);
+	archive_entry_set_uid(pe.get(), attr->uid);
+	archive_entry_set_gid(pe.get(), attr->gid);
+	archive_entry_set_mode(pe.get(), static_cast<unsigned short>(attr->mode));
+	archive_entry_set_size(pe.get(), attr->size);
+	archive_entry_set_atime(pe.get(), attr->at.sec, attr->at.nsec);
+	archive_entry_set_mtime(pe.get(), attr->mt.sec, attr->mt.nsec);
+	archive_entry_set_ctime(pe.get(), attr->ct.sec, attr->ct.nsec);
+	if (type == AE_IFLNK) {
+		archive_entry_set_symlink(pe.get(), attr->symlink);
+	} else if (type == AE_IFCHR || type == AE_IFBLK) {
+		archive_entry_set_rdevmajor(pe.get(), static_cast<dev_t>(attr->dev_major));
+		archive_entry_set_rdevminor(pe.get(), static_cast<dev_t>(attr->dev_minor));
+	}
 	check_archive(pa.get(), archive_write_header(pa.get(), pe.get()));
 	archive_entry_clear(pe.get());
-}
-
-bool archive_writer::check_attr(const file_attr *attr) {
-	if (!attr) {
-		warn_ignored(path->data);
-		ignored_files.insert(path->data);
-		return false;
-	}
-	return true;
-}
-
-void archive_writer::warn_ignored(crwstr path) {
-	log_warning((boost::wformat(L"Ignoring the file \"%1%\" which doesn't have WSL attributes.") % path).str());
-}
-
-bool archive_writer::write_new_file(const file_attr *attr) {
-	if (!check_attr(attr)) return false;
-	write_entry(*attr);
 	return true;
 }
 
@@ -256,22 +270,8 @@ void archive_writer::write_file_data(const char *buf, const uint32_t size) {
 	}
 }
 
-void archive_writer::write_directory(const file_attr *attr) {
-	if (!check_attr(attr)) return;
-	if (!path->data.empty()) write_entry(*attr);
-}
-
-void archive_writer::write_symlink(const file_attr *attr, const char *target) {
-	if (!check_attr(attr)) return;
-	archive_entry_set_symlink(pe.get(), target);
-	write_entry(*attr);
-}
-
 void archive_writer::write_hard_link() {
-	if (ignored_files.find(target_path->data) != ignored_files.end()) {
-		warn_ignored(path->data);
-		return;
-	}
+	if (!check_target_ignored()) return;
 	const auto up = to_utf8(path->data);
 	archive_entry_set_pathname(pe.get(), up.get());
 	const auto ut = to_utf8(target_path->data);
@@ -294,8 +294,28 @@ void wsl_writer::write_data(const HANDLE hf, const char *buf, const uint32_t siz
 }
 
 bool wsl_writer::write_new_file(const file_attr *attr) {
-	hf_data = open_file(path->data, false, true);
-	write_attr(hf_data.get(), attr);
+	if (!check_attr(attr, true, true)) return false;
+	const auto type = attr ? attr->mode & AE_IFMT : AE_IFREG;
+	const auto is_dir = type == AE_IFDIR;
+	if (is_dir) {
+		if (!CreateDirectory(path->data.c_str(), nullptr)) {
+			const auto e = lro_error::from_win32_last(err_msg::err_create_dir, { path->data });
+			if (GetLastError() != ERROR_ALREADY_EXISTS) throw lro_error(e);
+			log_warning(e.format());
+		}
+	}
+	auto hf = open_file(path->data, is_dir, !is_dir);
+	write_attr(hf.get(), attr);
+	if (type == AE_IFREG) {
+		hf_data = std::move(hf);
+	} else if (type == AE_IFDIR) {
+		try {
+			set_cs_info(hf.get());
+		} catch (lro_error &e) {
+			e.msg_args.push_back(path->data);
+			throw;
+		}
+	}
 	return true;
 }
 
@@ -304,29 +324,8 @@ void wsl_writer::write_file_data(const char *buf, const uint32_t size) {
 	else hf_data.reset();
 }
 
-void wsl_writer::write_directory(const file_attr *attr) {
-	if (!CreateDirectory(path->data.c_str(), nullptr)) {
-		const auto e = lro_error::from_win32_last(err_msg::err_create_dir, { path->data });
-		if (GetLastError() != ERROR_ALREADY_EXISTS) throw lro_error(e);
-		log_warning(e.format());
-	}
-	const auto hf = open_file(path->data, true, false);
-	write_attr(hf.get(), attr);
-	try {
-		set_cs_info(hf.get());
-	} catch (lro_error &e) {
-		e.msg_args.push_back(path->data);
-		throw;
-	}
-}
-
-void wsl_writer::write_symlink(const file_attr *attr, const char *target) {
-	const auto hf = open_file(path->data, false, true);
-	write_attr(hf.get(), attr);
-	write_symlink_data(hf.get(), target);
-}
-
 void wsl_writer::write_hard_link() {
+	if (!check_target_ignored()) return;
 	if (!CreateHardLink(path->data.c_str(), target_path->data.c_str(), nullptr)) {
 		throw lro_error::from_win32_last(err_msg::err_hard_link, { path->data, target_path->data });
 	}
@@ -349,7 +348,7 @@ void wsl_v1_writer::write_attr(const HANDLE hf, const file_attr *attr) {
 		set_ea(hf, "LXATTRB", lxattrb {
 			0, 1,
 			attr->mode, attr->uid, attr->gid,
-			0,
+			attr->dev_major << 20 | (attr->dev_minor & 0xfffff),
 			attr->at.nsec, attr->mt.nsec, attr->ct.nsec,
 			attr->at.sec, attr->mt.sec, attr->ct.sec
 		});
@@ -357,10 +356,9 @@ void wsl_v1_writer::write_attr(const HANDLE hf, const file_attr *attr) {
 		e.msg_args.push_back(path->data);
 		throw;
 	}
-}
-
-void wsl_v1_writer::write_symlink_data(const HANDLE hf, const char *target) const {
-	write_data(hf, target, static_cast<uint32_t>(strlen(target)));
+	if ((attr->mode & AE_IFMT) == AE_IFLNK) {
+		write_data(hf, attr->symlink, static_cast<uint32_t>(strlen(attr->symlink)));
+	}
 }
 
 wsl_v2_writer::wsl_v2_writer(crwstr base_path) {
@@ -370,14 +368,60 @@ wsl_v2_writer::wsl_v2_writer(crwstr base_path) {
 }
 
 void wsl_v2_writer::real_write_attr(const HANDLE hf, const file_attr &attr, crwstr path) {
+	const auto type = attr.mode & AE_IFMT;
+
 	try {
 		set_ea(hf, "$LXUID", attr.uid);
 		set_ea(hf, "$LXGID", attr.gid);
 		set_ea(hf, "$LXMOD", attr.mode);
+		if (type == AE_IFCHR || type == AE_IFBLK) {
+			set_ea(hf, "$LXDEV", static_cast<uint64_t>(attr.dev_minor) << 32 | attr.dev_major);
+		}
 	} catch (lro_error &e) {
 		e.msg_args.push_back(path);
 		throw;
 	}
+
+	unique_ptr_del<REPARSE_DATA_BUFFER *> pb = nullptr;
+	const auto hl = FIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer);
+	if (type == AE_IFLNK) {
+		const uint32_t v = 2;
+		const auto pl = strlen(attr.symlink);
+		const auto dl = static_cast<uint16_t>(pl + sizeof(v));
+		const auto bl = static_cast<uint32_t>(hl + dl);
+		pb = create_fam_struct<REPARSE_DATA_BUFFER>(bl);
+		pb->ReparseTag = IO_REPARSE_TAG_LX_SYMLINK;
+		pb->ReparseDataLength = dl;
+		memcpy(pb->DataBuffer, &v, sizeof(v));
+		memcpy(pb->DataBuffer + sizeof(v), attr.symlink, pl);
+	} else if (type == AE_IFSOCK) {
+		pb = create_fam_struct<REPARSE_DATA_BUFFER>(hl);
+		pb->ReparseTag = IO_REPARSE_TAG_AF_UNIX;
+		pb->ReparseDataLength = 0;
+	} else if (type == AE_IFCHR) {
+		pb = create_fam_struct<REPARSE_DATA_BUFFER>(hl);
+		pb->ReparseTag = IO_REPARSE_TAG_LX_CHR;
+		pb->ReparseDataLength = 0;
+	} else if (type == AE_IFBLK) {
+		pb = create_fam_struct<REPARSE_DATA_BUFFER>(hl);
+		pb->ReparseTag = IO_REPARSE_TAG_LX_BLK;
+		pb->ReparseDataLength = 0;
+	} else if (type == AE_IFIFO) {
+		pb = create_fam_struct<REPARSE_DATA_BUFFER>(hl);
+		pb->ReparseTag = IO_REPARSE_TAG_LX_FIFO;
+		pb->ReparseDataLength = 0;
+	}
+	if (pb) {
+		pb->Reserved = 0;
+		const auto bl = hl + pb->ReparseDataLength;
+		DWORD cnt;
+		if (!DeviceIoControl(hf, FSCTL_SET_REPARSE_POINT,
+			pb.get(), bl, nullptr, 0, &cnt, nullptr)) {
+
+			throw lro_error::from_win32_last(err_msg::err_set_reparse, { path });
+		}
+	}
+
 	FILE_BASIC_INFO info;
 	time_u2f(attr.at, info.LastAccessTime);
 	time_u2f(attr.mt, info.LastWriteTime);
@@ -391,7 +435,7 @@ void wsl_v2_writer::real_write_attr(const HANDLE hf, const file_attr &attr, crws
 
 void wsl_v2_writer::write_attr(const HANDLE hf, const file_attr *attr) {
 	if (!attr) return;
-	if ((attr->mode & AE_IFDIR) == AE_IFDIR) {
+	if ((attr->mode & AE_IFMT) == AE_IFDIR) {
 		while (!dir_attr.empty()) {
 			auto p = dir_attr.top();
 			if (!path->data.compare(0, p.first.size(), p.first)) break;
@@ -400,25 +444,6 @@ void wsl_v2_writer::write_attr(const HANDLE hf, const file_attr *attr) {
 		}
 		dir_attr.push(std::make_pair(path->data, *attr));
 	} else real_write_attr(hf, *attr, path->data);
-}
-
-void wsl_v2_writer::write_symlink_data(const HANDLE hf, const char *target) const {
-	const uint32_t v = 2;
-	const auto pl = strlen(target);
-	const auto dl = static_cast<uint16_t>(pl + sizeof(v));
-	const auto bl = static_cast<uint32_t>(FIELD_OFFSET(REPARSE_DATA_BUFFER, DataBuffer) + dl);
-	const auto pb = create_fam_struct<REPARSE_DATA_BUFFER>(bl);
-	pb->ReparseTag = IO_REPARSE_TAG_LX_SYMLINK;
-	pb->ReparseDataLength = dl;
-	pb->Reserved = 0;
-	memcpy(pb->DataBuffer, &v, sizeof(v));
-	memcpy(pb->DataBuffer + sizeof(v), target, pl);
-	DWORD cnt;
-	if (!DeviceIoControl(hf, FSCTL_SET_REPARSE_POINT,
-		pb.get(), bl, nullptr, 0, &cnt, nullptr)) {
-
-		throw lro_error::from_win32_last(err_msg::err_set_reparse, { path->data });
-	}
 }
 
 wsl_v2_writer::~wsl_v2_writer() {
@@ -452,8 +477,8 @@ void archive_reader::run(fs_writer &writer) {
 	check_archive(pa.get(), archive_read_open_filename_w(pa.get(), archive_path.c_str(), BUFSIZ));
 	linux_path p;
 	if (p.convert(*writer.path)) {
-		file_attr attr { 0040755, 0, 0, 0, {}, {}, {} };
-		writer.write_directory(&attr);
+		file_attr attr { 0040755, 0, 0, 0, {}, {}, {}, 0, 0, nullptr };
+		writer.write_new_file(&attr);
 	}
 	archive_entry *pe;
 	while (check_archive(pa.get(), archive_read_next_header(pa.get(), &pe))) {
@@ -474,11 +499,6 @@ void archive_reader::run(fs_writer &writer) {
 			continue;
 		}
 		auto type = archive_entry_filetype(pe);
-		if (type != AE_IFREG && type != AE_IFDIR && type != AE_IFLNK) {
-			const auto msg = boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.") % p.data % type;
-			log_warning(msg.str());
-			continue;
-		}
 		auto pst = archive_entry_stat(pe);
 		unix_time mt {
 			static_cast<uint64_t>(pst->st_mtime),
@@ -497,10 +517,21 @@ void archive_reader::run(fs_writer &writer) {
 			archive_entry_ctime_is_set(pe) ? unix_time {
 				static_cast<uint64_t>(pst->st_ctime),
 				static_cast<uint32_t>(archive_entry_ctime_nsec(pe))
-			} : mt
+			} : mt,
+			static_cast<uint32_t>(archive_entry_rdevmajor(pe)),
+			static_cast<uint32_t>(archive_entry_rdevminor(pe)),
+			nullptr
 		};
+		std::unique_ptr<char[]> ptp;
+		if (type == AE_IFLNK) {
+			attr.symlink = archive_entry_symlink(pe);
+			if (!attr.symlink) {
+				ptp = to_utf8(archive_entry_symlink_w(pe));
+				attr.symlink = ptp.get();
+			}
+		}
+		if (!writer.write_new_file(&attr)) continue;
 		if (type == AE_IFREG) {
-			if (!writer.write_new_file(&attr)) continue;
 			const void *buf;
 			size_t cnt;
 			int64_t off;
@@ -508,16 +539,6 @@ void archive_reader::run(fs_writer &writer) {
 				writer.write_file_data(static_cast<const char *>(buf), static_cast<uint32_t>(cnt));
 			}
 			writer.write_file_data(nullptr, 0);
-		} else if (type == AE_IFLNK) {
-			auto tp = archive_entry_symlink(pe);
-			std::unique_ptr<char[]> ptp = nullptr;
-			if (!tp) {
-				ptp = to_utf8(archive_entry_symlink_w(pe));
-				tp = ptp.get();
-			}
-			writer.write_symlink(&attr, tp);
-		} else { // AE_IFDIR
-			writer.write_directory(&attr);
 		}
 	}
 }
@@ -553,16 +574,20 @@ void wsl_reader::run(fs_writer &writer) {
 			}
 		}
 		const auto attr = read_attr(hf.get());
-		if (dir) writer.write_directory(attr.get());
+		if (dir) writer.write_new_file(attr.get());
 		else {
 			const auto type = attr ? attr->mode & AE_IFMT : AE_IFREG;
+			std::unique_ptr<char[]> tb;
 			if (type == AE_IFLNK) {
-				const auto tb = read_symlink_data(hf.get());
-				if (tb) writer.write_symlink(attr.get(), tb.get());
-				else log_warning((boost::wformat(L"Ignoring an invalid symlink \"%1%\".") % path->data).str());
-				return;
-			} else if (type == AE_IFREG) {
-				if (!writer.write_new_file(attr.get())) return;
+				tb = read_symlink_data(hf.get());
+				if (attr && tb) attr->symlink = tb.get();
+				else {
+					log_warning((boost::wformat(L"Ignoring an invalid symlink \"%1%\".") % path->data).str());
+					return;
+				}
+			}
+			if (!writer.write_new_file(attr.get())) return;
+			if (type == AE_IFREG) {
 				DWORD rc;
 				do {
 					if (!ReadFile(hf.get(), buf, BUFSIZ, &rc, nullptr)) {
@@ -570,10 +595,6 @@ void wsl_reader::run(fs_writer &writer) {
 					}
 					writer.write_file_data(buf, rc);
 				} while (rc);
-			} else {
-				const auto msg = boost::wformat(L"Ignoring an unsupported file \"%1%\" of type %2$07o.")
-					% path->data % type;
-				log_warning(msg.str());
 			}
 		}
 	});
@@ -597,7 +618,9 @@ std::unique_ptr<file_attr> wsl_v1_reader::read_attr(const HANDLE hf) const {
 			ea.mode, ea.uid, ea.gid, get_file_size(hf),
 			{ ea.atime, ea.atime_nsec },
 			{ ea.mtime, ea.mtime_nsec },
-			{ ea.ctime, ea.ctime_nsec }
+			{ ea.ctime, ea.ctime_nsec },
+			ea.rdev >> 20, ea.rdev & 0xfffff,
+			nullptr
 		});
 	} catch (lro_error &e) {
 		if (e.msg_code == err_msg::err_invalid_ea) return nullptr;
@@ -637,6 +660,12 @@ std::unique_ptr<file_attr> wsl_v2_reader::read_attr(const HANDLE hf) const {
 		attr->gid = get_ea<uint32_t>(hf, "$LXGID");
 		attr->mode = get_ea<uint32_t>(hf, "$LXMOD");
 		attr->size = get_file_size(hf);
+		const auto type = attr->mode & AE_IFMT;
+		if (type == AE_IFCHR || type == AE_IFBLK) {
+			const auto dev = get_ea<uint64_t>(hf, "$LXDEV");
+			attr->dev_major = static_cast<uint32_t>(dev);
+			attr->dev_minor = static_cast<uint32_t>(dev >> 32);
+		}
 	} catch (lro_error &e) {
 		if (e.msg_code == err_msg::err_invalid_ea) return nullptr;
 		e.msg_args.push_back(path->data);

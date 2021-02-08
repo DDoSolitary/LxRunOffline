@@ -97,7 +97,7 @@ wstr lro_error::format() const {
 				FORMAT_MESSAGE_IGNORE_INSERTS;
 			auto hm = LoadLibrary(L"ntdll.dll");
 			auto ok = hm && FormatMessage(
-				f, hm, stat, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
+				f, hm, stat, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 				reinterpret_cast<wchar_t *>(&buf), 0, nullptr
 			);
 			if (hm) FreeLibrary(hm);

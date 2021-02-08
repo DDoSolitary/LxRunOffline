@@ -53,7 +53,7 @@ This project uses CMake as its build system. MinGW GCC and Visual C++ compilers 
 2. Install dependencies.
 
 ```
-vcpkg install --triplet x64-windows-static libarchive boost-program-options boost-format tinyxml2
+vcpkg install --triplet x64-windows-static libarchive boost-program-options boost-format boost-algorithm tinyxml2
 ```
 
 3. Open "x64 Native Tools Command Prompt" from Start Menu and build.

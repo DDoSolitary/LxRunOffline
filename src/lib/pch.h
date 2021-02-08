@@ -35,6 +35,7 @@
 
 #include <archive.h>
 #include <archive_entry.h>
+#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <tinyxml2.h>
 

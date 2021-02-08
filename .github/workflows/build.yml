@@ -42,7 +42,7 @@ jobs:
           Copy-Item misc\remove-slash-conversion.patch $portPath
           $portfilePath = (Join-Path $portPath portfile.cmake)
           (Get-Content $portfilePath) -replace 'PATCHES', 'PATCHES remove-slash-conversion.patch' | Set-Content $portfilePath
-          vcpkg install libarchive boost-program-options boost-format tinyxml2
+          vcpkg install libarchive boost-program-options boost-format boost-algorithm tinyxml2
           git fetch --unshallow --tags
           cmd /c '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" & set' |
             foreach { if ($_ -match "=") { $v = $_.split("="); Set-Item -Force -Path "Env:\$($v[0])" -Value "$($v[1])" } }

@@ -62,7 +62,6 @@ lro_error::lro_error(const err_msg msg_code, std::vector<wstr> msg_args, const H
 
 lro_error lro_error::from_hresult(const err_msg msg_code, std::vector<wstr> msg_args, const HRESULT err_code) {
 	return lro_error(msg_code, std::move(msg_args), err_code);
-
 }
 
 lro_error lro_error::from_win32(const err_msg msg_code, std::vector<wstr> msg_args, const uint32_t err_code) {
@@ -86,10 +85,10 @@ wstr lro_error::format() const {
 
 	auto fmt = boost::wformat(msg_table[static_cast<size_t>(msg_code)]);
 	for (crwstr s : msg_args) fmt = fmt % s;
-	ss << fmt << std::endl;
+	ss << fmt;
 
 	if (err_code != 0) {
-		ss << L"Reason: ";
+		ss << L"\nReason: ";
 		if ((err_code & FACILITY_NT_BIT) != 0) {
 			auto stat = err_code & ~FACILITY_NT_BIT;
 			wchar_t *buf = nullptr;
@@ -113,5 +112,7 @@ wstr lro_error::format() const {
 		}
 	}
 
-	return ss.str();
+	auto ret = ss.str();
+	boost::trim(ret);
+	return ret;
 }

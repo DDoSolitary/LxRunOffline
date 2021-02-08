@@ -10,6 +10,7 @@ void release_interface(T *p) {
 void create_shortcut(crwstr distro_name, crwstr file_path, crwstr icon_path) {
 	auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 	if (FAILED(hr)) throw lro_error::from_hresult(err_msg::err_create_shortcut, {}, hr);
+	if (hr == S_FALSE) CoUninitialize();
 	IShellLink *psl;
 	hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&psl));
 	if (FAILED(hr)) throw lro_error::from_hresult(err_msg::err_create_shortcut, {}, hr);

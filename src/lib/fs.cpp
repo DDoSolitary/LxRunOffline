@@ -280,9 +280,7 @@ void archive_writer::write_hard_link() {
 	archive_entry_clear(pe.get());
 }
 
-bool archive_writer::check_source_path(const file_path &) const {
-	return true;
-}
+void archive_writer::check_path(const file_path &) const {}
 
 wsl_writer::wsl_writer() : hf_data(nullptr) {}
 
@@ -331,9 +329,15 @@ void wsl_writer::write_hard_link() {
 	}
 }
 
-bool wsl_writer::check_source_path(const file_path &sp) const {
+void wsl_writer::check_path(const file_path &sp) const {
 	// base_len of a linux_path is always 0, so it will be safely ignored.
-	return path->data.compare(0, std::min(path->base_len, sp.base_len), sp.data, 0, sp.base_len);
+	if (path->data.compare(0, std::min(path->base_len, sp.base_len), sp.data, 0, sp.base_len) == 0) {
+		throw lro_error::from_other(err_msg::err_copy_subdir, {});
+	}
+	const auto c = tolower(path->data[4]);
+	if (c >= 'a' && c <= 'z' && path->data.compare(5, wstr::npos, L":\\", 0, 2) == 0) {
+		throw lro_error::from_other(err_msg::err_root_dir, { path->data });
+	}
 }
 
 wsl_v1_writer::wsl_v1_writer(crwstr base_path) {
@@ -601,9 +605,7 @@ void wsl_reader::run(fs_writer &writer) {
 }
 
 void wsl_reader::run_checked(fs_writer &writer) {
-	if (!writer.check_source_path(*path)) {
-		throw lro_error::from_other(err_msg::err_copy_subdir, {});
-	}
+	writer.check_path(*path);
 	run(writer);
 }
 

@@ -26,7 +26,7 @@ public:
 	virtual bool write_new_file(const file_attr *) = 0;
 	virtual void write_file_data(const char *, uint32_t) = 0;
 	virtual void write_hard_link() = 0;
-	[[nodiscard]] virtual bool check_source_path(const file_path &) const = 0;
+	virtual void check_path(const file_path &) const = 0;
 };
 
 class archive_writer : public fs_writer {
@@ -37,7 +37,7 @@ public:
 	bool write_new_file(const file_attr *) override;
 	void write_file_data(const char *, uint32_t) override;
 	void write_hard_link() override;
-	[[nodiscard]] bool check_source_path(const file_path &) const override;
+	void check_path(const file_path &) const override;
 };
 
 class wsl_writer : public fs_writer {
@@ -50,7 +50,7 @@ public:
 	bool write_new_file(const file_attr *) override;
 	void write_file_data(const char *, uint32_t) override;
 	void write_hard_link() override;
-	[[nodiscard]] bool check_source_path(const file_path &) const override;
+	void check_path(const file_path &) const override;
 };
 
 class wsl_v1_writer : public wsl_writer {

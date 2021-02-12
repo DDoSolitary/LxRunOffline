@@ -180,15 +180,10 @@ void register_distro(crwstr name, crwstr path, const uint32_t version) {
 		throw lro_error::from_other(err_msg::err_distro_exists, { name });
 	}
 
-	const auto fp = get_full_path(path);
-	if (fp.size() == 3 && fp == fp.substr(0, 1) + L":\\") {
-		throw lro_error::from_other(err_msg::err_root_dir, { fp });
-	}
-
 	const auto p = reg_base_path + new_guid();
 	create_key(p);
 	set_value(p, vn_distro_name, name);
-	set_value(p, vn_dir, fp);
+	set_value(p, vn_dir, get_full_path(path));
 	set_value(p, vn_state, static_cast<uint32_t>(1));
 	set_value(p, vn_version, version);
 

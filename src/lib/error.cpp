@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "error.h"
 
-const wstr msg_table[] = {
+static const wstr msg_table[] = {
 	L"Couldn't open the file \"%1%\".",
 	L"Couldn't open the directory \"%1%\".",
 	L"Couldn't create the file \"%1%\".",

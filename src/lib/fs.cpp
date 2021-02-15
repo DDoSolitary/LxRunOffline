@@ -25,9 +25,9 @@ struct lxattrb {
 	uint64_t ctime;
 };
 
-IO_STATUS_BLOCK iostat;
+static IO_STATUS_BLOCK iostat;
 
-bool check_archive(archive *pa, const int stat) {
+static bool check_archive(archive *pa, const int stat) {
 	if (stat == ARCHIVE_OK) return true;
 	if (stat == ARCHIVE_EOF) return false;
 	const auto es = archive_error_string(pa);
@@ -41,7 +41,7 @@ bool check_archive(archive *pa, const int stat) {
 	throw lro_error::from_other(err_msg::err_archive, { ss.str() });
 }
 
-unique_ptr_del<HANDLE> open_file(crwstr path, const bool is_dir, const bool create, const bool no_share = false) {
+static unique_ptr_del<HANDLE> open_file(crwstr path, const bool is_dir, const bool create, const bool no_share = false) {
 	const auto h = CreateFile(
 		path.c_str(),
 		MAXIMUM_ALLOWED, no_share ? 0 : FILE_SHARE_READ, nullptr,
@@ -55,7 +55,7 @@ unique_ptr_del<HANDLE> open_file(crwstr path, const bool is_dir, const bool crea
 	return unique_ptr_del<HANDLE>(h, &CloseHandle);
 }
 
-void create_recursive(crwstr path) {
+static void create_recursive(crwstr path) {
 	for (auto i = path.find(L'\\', 7); i != wstr::npos; i = path.find(L'\\', i + 1)) {
 		auto p = path.substr(0, i);
 		if (!CreateDirectory(p.c_str(), nullptr) && GetLastError() != ERROR_ALREADY_EXISTS) {
@@ -64,13 +64,13 @@ void create_recursive(crwstr path) {
 	}
 }
 
-uint64_t get_file_size(const HANDLE hf) {
+static uint64_t get_file_size(const HANDLE hf) {
 	LARGE_INTEGER sz;
 	if (!GetFileSizeEx(hf, &sz)) throw lro_error::from_win32_last(err_msg::err_file_size, {});
 	return sz.QuadPart;
 }
 
-void grant_delete_child(const HANDLE hf) {
+static void grant_delete_child(const HANDLE hf) {
 	PACL pa;
 	PSECURITY_DESCRIPTOR pdb;
 	if (GetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, &pa, nullptr, &pdb)) return;
@@ -86,7 +86,7 @@ void grant_delete_child(const HANDLE hf) {
 	SetSecurityInfo(hf, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, nullptr, nullptr, pna.get(), nullptr);
 }
 
-void set_cs_info(const HANDLE hd) {
+static void set_cs_info(const HANDLE hd) {
 	FILE_CASE_SENSITIVE_INFORMATION info = {};
 	auto stat = NtQueryInformationFile(hd, &iostat, &info, sizeof info, FileCaseSensitiveInformation);
 	if (!stat && (info.Flags & FILE_CS_FLAG_CASE_SENSITIVE_DIR)) return;
@@ -100,7 +100,7 @@ void set_cs_info(const HANDLE hd) {
 }
 
 template<typename T>
-T get_ea(const HANDLE hf, const char *name) {
+static T get_ea(const HANDLE hf, const char *name) {
 	const auto nl = static_cast<uint8_t>(strlen(name));
 	const auto gil = static_cast<uint32_t>(FIELD_OFFSET(FILE_GET_EA_INFORMATION, EaName) + nl + 1);
 	const auto pgi = create_fam_struct<FILE_GET_EA_INFORMATION>(gil);
@@ -124,7 +124,7 @@ T get_ea(const HANDLE hf, const char *name) {
 }
 
 template<typename T>
-void set_ea(const HANDLE hf, const char *name, const T &data) {
+static void set_ea(const HANDLE hf, const char *name, const T &data) {
 	const auto nl = static_cast<uint8_t>(strlen(name));
 	const auto il = static_cast<uint32_t>(FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + sizeof(T) + nl + 1);
 	const auto pi = create_fam_struct<FILE_FULL_EA_INFORMATION>(il);
@@ -141,11 +141,11 @@ void set_ea(const HANDLE hf, const char *name, const T &data) {
 	if (stat) throw lro_error::from_nt(err_msg::err_set_ea, { from_utf8(name) }, stat);
 }
 
-void find_close_safe(const HANDLE hs) {
+static void find_close_safe(const HANDLE hs) {
 	if (hs != INVALID_HANDLE_VALUE) FindClose(hs);
 }
 
-void enum_directory(file_path &path, const bool rootfs_first, std::function<void(enum_dir_type)> action) {
+static void enum_directory(file_path &path, const bool rootfs_first, std::function<void(enum_dir_type)> action) {
 	std::function<void(bool)> enum_rec;
 	enum_rec = [&](const bool is_root) {
 		try {
@@ -196,11 +196,11 @@ void enum_directory(file_path &path, const bool rootfs_first, std::function<void
 	enum_rec(rootfs_first);
 }
 
-void time_u2f(const unix_time &ut, LARGE_INTEGER &ft) {
+static void time_u2f(const unix_time &ut, LARGE_INTEGER &ft) {
 	ft.QuadPart = ut.sec * 10000000 + ut.nsec / 100 + 116444736000000000;
 }
 
-void time_f2u(const LARGE_INTEGER &ft, unix_time &ut) {
+static void time_f2u(const LARGE_INTEGER &ft, unix_time &ut) {
 	const auto t = ft.QuadPart - 116444736000000000;
 	ut.sec = static_cast<uint64_t>(t / 10000000);
 	ut.nsec = static_cast<uint32_t>(t % 10000000 * 100);
@@ -709,7 +709,7 @@ wsl_legacy_reader::wsl_legacy_reader(crwstr base) {
 }
 
 template<typename T>
-bool has_ea(crwstr path, const char *name, const bool ignore_error) {
+static bool has_ea(crwstr path, const char *name, const bool ignore_error) {
 	try {
 		get_ea<T>(open_file(path, true, false).get(), name);
 		return true;

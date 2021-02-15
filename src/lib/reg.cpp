@@ -5,7 +5,7 @@
 
 namespace tx = tinyxml2;
 
-const wstr
+static const wstr
 	reg_base_path = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\",
 	vn_default_distro = L"DefaultDistribution",
 	vn_distro_name = L"DistributionName",
@@ -16,13 +16,13 @@ const wstr
 	vn_uid = L"DefaultUid",
 	vn_kernel_cmd = L"KernelCommandLine",
 	vn_flags = L"Flags";
-const auto guid_len = 38;
+static const auto guid_len = 38;
 
 void fclose_safe(FILE *f) {
 	if (f) fclose(f);
 }
 
-wstr new_guid() {
+static wstr new_guid() {
 	GUID guid;
 	const auto hr = CoCreateGuid(&guid);
 	if (FAILED(hr)) throw lro_error::from_hresult(err_msg::err_create_guid, {}, hr);
@@ -33,7 +33,7 @@ wstr new_guid() {
 	return buf.get();
 }
 
-std::unique_ptr<wchar_t[]> get_dynamic(crwstr path, crwstr value_name, const uint32_t type) {
+static std::unique_ptr<wchar_t[]> get_dynamic(crwstr path, crwstr value_name, const uint32_t type) {
 	return probe_and_call<wchar_t, DWORD>([&](wchar_t *buf, DWORD len) {
 		const auto code = RegGetValue(
 			HKEY_CURRENT_USER, path.c_str(),
@@ -44,7 +44,7 @@ std::unique_ptr<wchar_t[]> get_dynamic(crwstr path, crwstr value_name, const uin
 	}).first;
 }
 
-void set_dynamic(crwstr path, crwstr value_name, const uint32_t type, const void *value, const uint32_t len) {
+static void set_dynamic(crwstr path, crwstr value_name, const uint32_t type, const void *value, const uint32_t len) {
 	const auto code = RegSetKeyValue(
 		HKEY_CURRENT_USER, path.c_str(),
 		value_name.c_str(), type, value, len
@@ -53,7 +53,7 @@ void set_dynamic(crwstr path, crwstr value_name, const uint32_t type, const void
 }
 
 template<typename T>
-T get_value(crwstr, crwstr);
+static T get_value(crwstr, crwstr);
 
 template<>
 wstr get_value<wstr>(crwstr path, crwstr value_name) {
@@ -84,7 +84,7 @@ uint32_t get_value<uint32_t>(crwstr path, crwstr value_name) {
 }
 
 template<typename T>
-void set_value(crwstr, crwstr, const T &);
+static void set_value(crwstr, crwstr, const T &);
 
 template<>
 void set_value<wstr>(crwstr path, crwstr value_name, crwstr value) {
@@ -114,7 +114,7 @@ void set_value<uint32_t>(crwstr path, crwstr value_name, const uint32_t &value) 
 	set_dynamic(path, value_name, REG_DWORD, &value, sizeof value);
 }
 
-unique_ptr_del<HKEY> create_key(crwstr path) {
+static unique_ptr_del<HKEY> create_key(crwstr path) {
 	HKEY hk;
 	const auto code = RegCreateKeyEx(
 		HKEY_CURRENT_USER, path.c_str(),
@@ -124,7 +124,7 @@ unique_ptr_del<HKEY> create_key(crwstr path) {
 	return unique_ptr_del<HKEY>(hk, &RegCloseKey);
 }
 
-std::vector<wstr> list_distro_id() {
+static std::vector<wstr> list_distro_id() {
 	std::vector<wstr> res;
 	const auto hk = create_key(reg_base_path);
 	const auto ib = std::make_unique<wchar_t[]>(guid_len + 1);
@@ -147,7 +147,7 @@ std::vector<wstr> list_distros() {
 	return res;
 }
 
-wstr get_distro_id(crwstr name) {
+static wstr get_distro_id(crwstr name) {
 	for (crwstr id : list_distro_id()) {
 		auto cn = get_value<wstr>(reg_base_path + id, vn_distro_name);
 		if (name == cn) return id;
@@ -155,7 +155,7 @@ wstr get_distro_id(crwstr name) {
 	throw lro_error::from_other(err_msg::err_distro_not_found, { name });
 }
 
-wstr get_distro_key(crwstr name) {
+static wstr get_distro_key(crwstr name) {
 	return reg_base_path + get_distro_id(name);
 }
 
@@ -263,7 +263,7 @@ reg_config::reg_config(const bool is_wsl2) {
 	if (is_wsl2) flags |= flag_wsl2;
 }
 
-lro_error error_xml(const tx::XMLError &e) {
+static lro_error error_xml(const tx::XMLError &e) {
 	return lro_error::from_other(err_msg::err_config_file, { from_utf8(tx::XMLDocument::ErrorIDToName(e)) });
 }
 
@@ -326,7 +326,7 @@ void reg_config::save_file(crwstr path) const {
 }
 
 template<typename T>
-void try_get_value(crwstr path, crwstr value_name, T &value) {
+static void try_get_value(crwstr path, crwstr value_name, T &value) {
 	try {
 		value = get_value<T>(path, value_name);
 	} catch (const lro_error &e) {

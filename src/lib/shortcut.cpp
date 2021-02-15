@@ -3,7 +3,7 @@
 #include "utils.h"
 
 template<typename T>
-void release_interface(T *p) {
+static void release_interface(T *p) {
 	p->Release();
 }
 

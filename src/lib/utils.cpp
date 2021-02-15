@@ -13,14 +13,14 @@ uint32_t get_win_build() {
 	return ver.dwBuildNumber;
 }
 
-HANDLE get_hcon() {
+static HANDLE get_hcon() {
 	const static auto hcon = GetStdHandle(STD_ERROR_HANDLE);
 	return hcon;
 }
 
-bool progress_printed;
+static bool progress_printed;
 
-void write(crwstr output, const uint16_t color) {
+static void write(crwstr output, const uint16_t color) {
 	CONSOLE_SCREEN_BUFFER_INFO ci;
 	const auto hcon = get_hcon();
 	const auto ok = hcon != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hcon, &ci);

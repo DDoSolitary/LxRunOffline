@@ -6,8 +6,9 @@ add_library(LibLxRunOffline STATIC
 	"shortcut.cpp"
 	"utils.cpp")
 
-target_include_directories(LibLxRunOffline INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_precompile_headers(LibLxRunOffline PRIVATE pch.h)
+target_include_directories(LibLxRunOffline PRIVATE include/LxRunOffline)
+target_include_directories(LibLxRunOffline INTERFACE include)
+target_precompile_headers(LibLxRunOffline PRIVATE include/LxRunOffline/pch.h)
 target_link_libraries(LibLxRunOffline PUBLIC ntdll)
 if(LXRUNOFFLINE_STATIC AND MSVC)
 	target_link_libraries(LibLxRunOffline PUBLIC ws2_32 crypt32)

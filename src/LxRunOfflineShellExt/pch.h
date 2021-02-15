@@ -22,3 +22,5 @@
 #include <atlcom.h>
 #include <ShlObj.h>
 #include <strsafe.h>
+
+#include <LxRunOffline/reg.h>

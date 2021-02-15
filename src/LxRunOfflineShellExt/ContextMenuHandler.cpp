@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "dllmain.h"
 #include "ContextMenuHandler.h"
-#include "reg.h"
 
 void CContextMenuHandler::FinalRelease() const {
 	if (this->hsm) {

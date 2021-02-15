@@ -1,14 +1,14 @@
 #include <boost/program_options.hpp>
+#include <LxRunOffline/error.h>
+#include <LxRunOffline/fs.h>
+#include <LxRunOffline/reg.h>
+#include <LxRunOffline/shortcut.h>
+#include <LxRunOffline/utils.h>
 #include "config.h"
-#include "error.h"
-#include "fs.h"
-#include "reg.h"
-#include "shortcut.h"
-#include "utils.h"
 
 namespace po = boost::program_options;
 
-void check_running(crwstr name) {
+static void check_running(crwstr name) {
 	const auto p = get_distro_dir(name);
 	if (check_in_use(p + L"\\rootfs\\init") || check_in_use(p + L"\\ext4.vhdx")) {
 		throw lro_error::from_other(err_msg::err_distro_running, { name });

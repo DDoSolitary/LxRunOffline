@@ -21,15 +21,16 @@ list(APPEND MIDL_COMMAND ${IDL_FILE})
 add_custom_command(
 	OUTPUT ${IDL_HEADER_FILE} ${IID_FILE} ${TLB_FILE}
 	COMMAND ${MIDL_COMMAND}
-	DEPENDS config.h
+	DEPENDS config.h ${IDL_FILE}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-	DEPENDS ${IDL_FILE}
 	VERBATIM)
 
 add_library(LxRunOfflineShellExt SHARED
 	dllmain.cpp
 	ContextMenuHandler.cpp
+	${IDL_HEADER_FILE}
 	${IID_FILE}
+	${TLB_FILE}
 	LxRunOfflineShellExt.def
 	res/resources.rc)
 

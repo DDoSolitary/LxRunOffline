@@ -12,6 +12,8 @@ target_link_libraries(LxRunOffline PRIVATE Boost::program_options)
 
 if(MSVC)
 	target_link_options(LxRunOffline PRIVATE /MANIFEST:NO)
+else()
+	target_link_options(LxRunOffline PRIVATE -municode)
 endif()
 
 install(TARGETS LxRunOffline RUNTIME DESTINATION .)

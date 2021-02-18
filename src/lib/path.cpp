@@ -2,6 +2,8 @@
 #include "path.h"
 #include "utils.h"
 
+using namespace std::literals::string_literals;
+
 prefix_matcher::prefix_matcher(std::initializer_list<wstr> patterns)
 	: done(false), pos(0) {
 	trie.resize(1);
@@ -21,7 +23,7 @@ prefix_matcher::prefix_matcher(std::initializer_list<wstr> patterns)
 
 match_result prefix_matcher::move(const wchar_t c) {
 	if (done) return match_result::unknown;
-	auto &m = trie[pos];
+	const auto &m = trie[pos];
 	const auto it = m.find(c);
 	if (it == m.end()) {
 		done = true;
@@ -60,12 +62,18 @@ linux_path::linux_path()
 linux_path::linux_path(crwstr path, crwstr root_path) : linux_path() {
 	size_t pos = 0;
 	if (!root_path.empty()) {
-		if (path.compare(0, root_path.size(), root_path)) skip = true;
-		else {
-			if (root_path.back() != '/') {
-				if (pos < path.size() && path[pos + root_path.size()] == '/') pos += root_path.size() + 1;
-			} else pos += root_path.size();
-			if (pos == path.size()) skip = true;
+		wstr root_path_slash;
+		const wstr *prefix;
+		if (root_path.back() != L'/') {
+			root_path_slash = root_path + L'/';
+			prefix = &root_path_slash;
+		} else {
+			prefix = &root_path;
+		}
+		if (path.compare(0, (*prefix).size(), *prefix)) {
+			skip = true;
+		} else {
+			pos += (*prefix).size();
 		}
 		if (skip) return;
 	}
@@ -104,7 +112,7 @@ bool linux_path::append(const wchar_t c) {
 		data.clear();
 		break;
 	case match_result::unknown:
-		data += c;
+		if (c) data += c;
 		break;
 	}
 	return true;
@@ -113,7 +121,7 @@ bool linux_path::append(const wchar_t c) {
 bool linux_path::convert(file_path &output) const {
 	if (skip) return false;
 	output.reset();
-	return output.append(L"rootfs/") && output.append(data);
+	return output.append(L"rootfs/") && output.append(data) && output.append(0);
 }
 
 void linux_path::reset() {
@@ -154,13 +162,13 @@ bool wsl_path::real_convert(file_path &output) const {
 			if (!output.append(c)) return false;
 		}
 	}
-	return true;
+	return output.append(0);
 }
 
 bool wsl_path::append(const wchar_t c) {
 	if (is_special_input(c)) append_special(c);
 	else if (c == L'/') data += L'\\';
-	else data += c;
+	else if (c) data += c;
 	return true;
 }
 
@@ -213,7 +221,7 @@ std::unique_ptr<file_path> wsl_v2_path::clone() const {
 
 wsl_legacy_path::wsl_legacy_path(crwstr base) :
 	wsl_v1_path(base),
-	matcher1({ L"home/", L"root/", L"mnt/" }),
+	matcher1({ L"home/", L"root/", L"mnt/", L"home\0"s, L"root\0"s, L"mnt\0"s }),
 	matcher2({ L"rootfs/home/", L"rootfs/root/", L"rootfs/mnt/" }) {}
 
 bool wsl_legacy_path::append(const wchar_t c) {
@@ -228,13 +236,18 @@ bool wsl_legacy_path::append(const wchar_t c) {
 }
 
 bool wsl_legacy_path::convert(file_path &output) const {
-	if (!data.compare(base_len, 12, L"rootfs\\root\\") || !data.compare(base_len, 12, L"rootfs\\home\\") ||
-		!data.compare(base_len, 11, L"rootfs\\mnt\\")) {
+	if (!data.compare(base_len, 12, L"rootfs\\root\\") ||
+		!data.compare(base_len, 12, L"rootfs\\home\\") ||
+		!data.compare(base_len, 11, L"rootfs\\mnt\\") ||
+		!data.compare(base_len, wstr::npos, L"rootfs\\root") ||
+		!data.compare(base_len, wstr::npos, L"rootfs\\home") ||
+		!data.compare(base_len, wstr::npos, L"rootfs\\mnt")) {
 		// Maybe add warning
 		return false;
 	}
 	output.reset();
-	if (!data.compare(base_len, 5, L"root\\") || !data.compare(base_len, 5, L"home\\") ||
+	if (!data.compare(base_len, 5, L"root\\") ||
+		!data.compare(base_len, 5, L"home\\") ||
 		!data.compare(base_len, 4, L"mnt\\")) {
 		if (!output.append(L"rootfs/")) return false;
 	}

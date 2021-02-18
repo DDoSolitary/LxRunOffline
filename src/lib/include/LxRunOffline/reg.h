@@ -19,7 +19,7 @@ enum config_item_flags {
 };
 
 class reg_config {
-	const uint32_t flags_mask = 7, flag_wsl2 = 8;
+	static const uint32_t flags_mask = 7, flag_wsl2 = 8;
 	uint32_t flags;
 public:
 	std::vector<wstr> env;

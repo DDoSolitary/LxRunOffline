@@ -65,7 +65,7 @@ void print_progress(const double progress) {
 
 wstr from_utf8(const char *s) {
 	const auto res = probe_and_call<wchar_t, int>([&](wchar_t *buf, const int len) {
-		return MultiByteToWideChar(CP_UTF8, 0, s, -1, buf, len);
+		return MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, -1, buf, len);
 	});
 	if (!res.second) throw lro_error::from_win32_last(err_msg::err_convert_encoding, {});
 	return res.first.get();
@@ -73,7 +73,7 @@ wstr from_utf8(const char *s) {
 
 std::unique_ptr<char[]> to_utf8(wstr s) {
 	auto res = probe_and_call<char, int>([&](char *buf, const int len) {
-		return WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, buf, len, nullptr, nullptr);
+		return WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, s.c_str(), -1, buf, len, nullptr, nullptr);
 	});
 	if (!res.second) throw lro_error::from_win32_last(err_msg::err_convert_encoding, {});
 	return std::move(res.first);

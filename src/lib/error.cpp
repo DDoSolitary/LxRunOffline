@@ -2,6 +2,7 @@
 #include "error.h"
 
 static const wstr msg_table[] = {
+	L"Test error message: %1%",
 	L"Couldn't open the file \"%1%\".",
 	L"Couldn't open the directory \"%1%\".",
 	L"Couldn't create the file \"%1%\".",

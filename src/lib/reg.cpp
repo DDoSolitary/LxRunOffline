@@ -5,8 +5,19 @@
 
 namespace tx = tinyxml2;
 
+extern "C" {
+#ifdef _MSC_VER
+	extern const wchar_t *const reg_base_path;
+	extern const wchar_t *const reg_base_path_default =
+		L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\";
+#pragma comment(linker, "/alternatename:reg_base_path=reg_base_path_default")
+#else
+	extern const wchar_t *reg_base_path __attribute__((weak));
+	const wchar_t *reg_base_path = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\";
+#endif
+}
+
 static const wstr
-	reg_base_path = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss\\",
 	vn_default_distro = L"DefaultDistribution",
 	vn_distro_name = L"DistributionName",
 	vn_dir = L"BasePath",
@@ -221,7 +232,7 @@ void unregister_distro(crwstr name) {
 			if (l.empty()) {
 				const auto code2 = RegDeleteKeyValue(
 					HKEY_CURRENT_USER,
-					reg_base_path.c_str(), vn_default_distro.c_str()
+					reg_base_path, vn_default_distro.c_str()
 				);
 				if (code2) {
 					throw lro_error::from_win32(

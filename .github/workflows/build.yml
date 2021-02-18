@@ -14,7 +14,7 @@ jobs:
           C:\msys64\usr\bin\bash.exe -l -c "
             cd /d/a/LxRunOffline/LxRunOffline &&
             cmake -G 'MSYS Makefiles' -DCMAKE_BUILD_TYPE=Release . &&
-            make package -j"
+            make -j && make test && make package"
           if ($LASTEXITCODE -ne 0) { Exit 1 }
       - if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         run: |
@@ -42,7 +42,7 @@ jobs:
           Copy-Item misc\remove-slash-conversion.patch $portPath
           $portfilePath = (Join-Path $portPath portfile.cmake)
           (Get-Content $portfilePath) -replace 'PATCHES', 'PATCHES remove-slash-conversion.patch' | Set-Content $portfilePath
-          vcpkg install libarchive boost-program-options boost-format boost-algorithm tinyxml2
+          vcpkg install libarchive boost-program-options boost-format boost-algorithm boost-test tinyxml2
           git fetch --unshallow --tags
           cmd /c '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" & set' |
             foreach { if ($_ -match "=") { $v = $_.split("="); Set-Item -Force -Path "Env:\$($v[0])" -Value "$($v[1])" } }
@@ -52,6 +52,8 @@ jobs:
             -DVCPKG_TARGET_TRIPLET="$Env:VCPKG_DEFAULT_TRIPLET" `
             -DCMAKE_BUILD_TYPE=Release `
             -DBUILD_CHOCO_PKG=ON
+          nmake
+          nmake test
           nmake package
           if ($LASTEXITCODE -ne 0) { Exit 1 }
       - if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')

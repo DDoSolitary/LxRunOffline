@@ -1,0 +1,79 @@
+From 853a9d8c546be3d4f139cbc96cd64919b0f64100 Mon Sep 17 00:00:00 2001
+From: DDoSolitary <DDoSolitary@gmail.com>
+Date: Fri, 19 Feb 2021 14:21:49 +0800
+Subject: [PATCH] [libarchive] Remove slash conversion
+
+---
+ ports/libarchive/portfile.cmake               |  1 +
+ .../libarchive/remove-slash-conversion.patch  | 47 +++++++++++++++++++
+ 2 files changed, 48 insertions(+)
+ create mode 100644 ports/libarchive/remove-slash-conversion.patch
+
+diff --git a/ports/libarchive/portfile.cmake b/ports/libarchive/portfile.cmake
+index 4e6a5fd85..168186e93 100644
+--- a/ports/libarchive/portfile.cmake
++++ b/ports/libarchive/portfile.cmake
+@@ -7,6 +7,7 @@ vcpkg_from_github(
+     SHA512 54ca4f3cc3b38dcf6588b2369ce43109c4a57a04061348ab8bf046c5c13ace0c4f42c9f3961288542cb5fe12c05359d572b39fe7cec32a10151dbac78e8a3707
+     HEAD_REF master
+     PATCHES
++        remove-slash-conversion.patch
+         fix-buildsystem.patch
+         fix-dependencies.patch
+         fix-cpu-set.patch
+diff --git a/ports/libarchive/remove-slash-conversion.patch b/ports/libarchive/remove-slash-conversion.patch
+new file mode 100644
+index 000000000..1419a2849
+--- /dev/null
++++ b/ports/libarchive/remove-slash-conversion.patch
+@@ -0,0 +1,47 @@
++diff --git a/libarchive/archive_windows.c b/libarchive/archive_windows.c
++index 624e2700..c923ca9d 100644
++--- a/libarchive/archive_windows.c
+++++ b/libarchive/archive_windows.c
++@@ -748,41 +748,7 @@ fix_pathseparator(struct archive_entry *entry)
++ struct archive_entry *
++ __la_win_entry_in_posix_pathseparator(struct archive_entry *entry)
++ {
++-	struct archive_entry *entry_main;
++-	const wchar_t *wp;
++-	int has_backslash = 0;
++-	int ret;
++-
++-	wp = archive_entry_pathname_w(entry);
++-	if (wp != NULL && wcschr(wp, L'\\') != NULL)
++-		has_backslash = 1;
++-	if (!has_backslash) {
++-		wp = archive_entry_hardlink_w(entry);
++-		if (wp != NULL && wcschr(wp, L'\\') != NULL)
++-			has_backslash = 1;
++-	}
++-	if (!has_backslash) {
++-		wp = archive_entry_symlink_w(entry);
++-		if (wp != NULL && wcschr(wp, L'\\') != NULL)
++-			has_backslash = 1;
++-	}
++-	/*
++-	 * If there is no backslash chars, return the original.
++-	 */
++-	if (!has_backslash)
++-		return (entry);
++-
++-	/* Copy entry so we can modify it as needed. */
++-	entry_main = archive_entry_clone(entry);
++-	if (entry_main == NULL)
++-		return (NULL);
++-	/* Replace the Windows path-separator '\' with '/'. */
++-	ret = fix_pathseparator(entry_main);
++-	if (ret < ARCHIVE_WARN) {
++-		archive_entry_free(entry_main);
++-		return (NULL);
++-	}
++-	return (entry_main);
+++	return entry;
++ }
++ 
++ 
+-- 
+2.30.0
+

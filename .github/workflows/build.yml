@@ -29,6 +29,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@master
+      - uses: actions/cache@master
+        with:
+          path: ~\AppData\Local\vcpkg
+          key: vcpkg-cache
       - env:
           VCPKG_DEFAULT_TRIPLET: x64-windows-static
         run: |

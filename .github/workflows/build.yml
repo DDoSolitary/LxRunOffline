@@ -40,7 +40,6 @@ jobs:
           pushd $Env:VCPKG_INSTALLATION_ROOT
           git pull
           git apply "$Env:GITHUB_WORKSPACE\misc\vcpkg-libarchive-slash.patch"
-          git apply "$Env:GITHUB_WORKSPACE\misc\vcpkg-libarchive-static.patch"
           .\bootstrap-vcpkg.bat
           popd
           vcpkg integrate install

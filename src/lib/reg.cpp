@@ -33,6 +33,11 @@ void fclose_safe(FILE *f) {
 	if (f) fclose(f);
 }
 
+static bool is_guid(wstr str) {
+	std::wregex guid_regex(R"#(\{[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}\})#");
+	return std::regex_match(str, guid_regex);
+}
+
 static wstr new_guid() {
 	GUID guid;
 	const auto hr = CoCreateGuid(&guid);
@@ -144,7 +149,7 @@ static std::vector<wstr> list_distro_id() {
 		const auto code = RegEnumKeyEx(hk.get(), i, ib.get(), &bs, nullptr, nullptr, nullptr, nullptr);
 		if (code == ERROR_NO_MORE_ITEMS) break;
 		else if (code) throw lro_error::from_win32(err_msg::err_enum_key, { reg_base_path }, code);
-		res.emplace_back(ib.get());
+		if (is_guid(ib.get())) res.emplace_back(ib.get());
 	}
 	return res;
 }

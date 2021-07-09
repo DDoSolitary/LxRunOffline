@@ -34,7 +34,9 @@ void fclose_safe(FILE *f) {
 }
 
 static bool is_guid(crwstr str) {
-	static const std::wregex guid_regex(LR"#(\{[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}\})#");
+	static const std::wregex guid_regex(
+		LR"#(\{[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}\})#",
+		std::regex_constants::icase);
 	return std::regex_match(str, guid_regex);
 }
 

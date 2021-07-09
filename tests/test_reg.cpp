@@ -133,6 +133,9 @@ BOOST_FIXTURE_TEST_CASE(test_list_distros, fixture_tmp_reg) {
 	register_test_distro(root_key, L"foo1", L"C:\\bar1");
 	register_test_distro(root_key, L"foo2", L"C:\\bar2");
 	register_test_distro(root_key, L"foo3", L"C:\\bar3");
+	const auto non_guid_key = root_key.open_subkey(L"AppxInstallerCache", true);
+	const auto long_key = root_key.open_subkey(
+		L"a string which is longer than the buffer for GUID in list_distro_id", true);
 	auto list = list_distros();
 	std::sort(list.begin(), list.end());
 	BOOST_TEST(list == (std::vector<std::wstring> { L"foo1", L"foo2", L"foo3" }));

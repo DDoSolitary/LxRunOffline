@@ -33,7 +33,13 @@ namespace LxRunOfflineRedirect {
 
 		public IActionResult Ubuntu(string version) {
 			version = version.ToLower();
-			return Redirect($"https://github.com/tianon/docker-brew-ubuntu-core/raw/dist-amd64/{version}/ubuntu-{version}-core-cloudimg-amd64-root.tar.gz");
+			string filename;
+			if (version == "trusty" || version == "xenial") {
+				filename = $"ubuntu-{version}-core-cloudimg-amd64-root.tar.gz"
+			} else {
+				filename = $"ubuntu-{version}-oci-amd64-root.tar.gz"
+			}
+			return Redirect($"https://github.com/tianon/docker-brew-ubuntu-core/raw/dist-amd64/{version}/{filename}");
 		}
 
 		public async Task<IActionResult> ArchLinux() {

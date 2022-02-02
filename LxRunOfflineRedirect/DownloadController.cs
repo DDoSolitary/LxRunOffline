@@ -35,9 +35,9 @@ namespace LxRunOfflineRedirect {
 			version = version.ToLower();
 			string filename;
 			if (version == "trusty" || version == "xenial") {
-				filename = $"ubuntu-{version}-core-cloudimg-amd64-root.tar.gz"
+				filename = $"ubuntu-{version}-core-cloudimg-amd64-root.tar.gz";
 			} else {
-				filename = $"ubuntu-{version}-oci-amd64-root.tar.gz"
+				filename = $"ubuntu-{version}-oci-amd64-root.tar.gz";
 			}
 			return Redirect($"https://github.com/tianon/docker-brew-ubuntu-core/raw/dist-amd64/{version}/{filename}");
 		}
